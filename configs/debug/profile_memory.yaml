@@ -1,0 +1,37 @@
+# @package _global_
+
+# Memory profiling configuration
+# Use with: python cyto_dl/train.py debug=profile_memory
+
+defaults:
+  - override /trainer: gpu_optimized
+
+# Short training for memory profiling
+trainer:
+  max_epochs: 1
+  limit_train_batches: 50
+  limit_val_batches: 10
+
+  # Simple profiler for basic timing
+  profiler: simple
+
+# Test different batch sizes to find optimal memory usage
+data:
+  batch_size: 1  # Start small, can override with +data.batch_size=N
+
+# Performance settings
+performance:
+  enable_cudnn_benchmark: True
+  enable_tf32: True
+  matmul_precision: high
+  channels_last: True
+
+# Enable gradient checkpointing to save memory
+model:
+  gradient_checkpointing: True
+
+callbacks:
+  # Monitor memory usage
+  device_stats:
+    _target_: lightning.pytorch.callbacks.DeviceStatsMonitor
+    cpu_stats: True

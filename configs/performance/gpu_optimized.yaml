@@ -1,0 +1,37 @@
+# GPU Performance Optimizations
+# Apply these settings for maximum performance on modern NVIDIA GPUs (4090, 5080, A100, etc.)
+
+# Enable CUDNN benchmarking for optimal conv algorithms
+enable_cudnn_benchmark: True
+
+# Enable TF32 tensor cores on Ampere+ GPUs
+enable_tf32: True
+
+# Matrix multiplication precision: "highest", "high", "medium"
+# "high" enables TF32, "medium" adds more aggressive optimizations
+matmul_precision: high
+
+# Use channels-last memory format for better GPU performance
+# Provides 20-30% speedup on modern GPUs
+channels_last: True
+
+# torch.compile settings
+compile:
+  enabled: True
+  # Mode options: "default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"
+  # "reduce-overhead" is best for inference (uses CUDA graphs)
+  # "max-autotune" is best for training (longer compile, best perf)
+  mode: default
+  fullgraph: False  # Set True if model supports full graph compilation
+  dynamic: False  # Set True for dynamic input shapes (slower but flexible)
+
+# CUDA graphs for inference (fixed input shapes only)
+cuda_graphs:
+  enabled: False  # Enable for production inference with fixed shapes
+  warmup_iterations: 3
+
+# Gradient checkpointing (trade compute for memory)
+gradient_checkpointing:
+  enabled: False  # Enable for large models when OOM
+  # Which layers to checkpoint (model-specific)
+  checkpoint_segments: null

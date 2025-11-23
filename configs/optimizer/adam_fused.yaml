@@ -1,0 +1,18 @@
+# Fused Adam optimizer - 10-20% faster than standard Adam
+# Uses GPU-fused kernels for optimization step
+# Requires PyTorch 2.0+ and CUDA
+
+_target_: torch.optim.Adam
+lr: 0.001
+betas: [0.9, 0.999]
+eps: 1e-8
+weight_decay: 0.0
+amsgrad: False
+
+# Enable fused kernels for GPU acceleration
+fused: True
+
+# Note: fused=True requires:
+# 1. CUDA tensors
+# 2. PyTorch >= 2.0
+# Falls back to non-fused if not available

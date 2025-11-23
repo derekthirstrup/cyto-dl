@@ -1,0 +1,56 @@
+# @package _global_
+
+# Enhanced GPU profiling configuration
+# Use with: python cyto_dl/train.py debug=profile_gpu
+
+defaults:
+  - override /trainer: gpu_optimized
+
+# Only train for 2 epochs for profiling
+trainer:
+  max_epochs: 2
+  limit_train_batches: 100  # Only 100 batches per epoch
+  limit_val_batches: 20     # Only 20 validation batches
+
+  # Enable PyTorch profiler for detailed performance analysis
+  profiler:
+    _target_: lightning.pytorch.profilers.PyTorchProfiler
+    dirpath: ${paths.output_dir}/profiler
+    filename: gpu_profile
+    group_by_input_shapes: True
+    emit_nvtx: True  # Enable NVIDIA Tools Extension for Nsight Systems
+    activities:
+      - cpu
+      - cuda
+    schedule:
+      _target_: torch.profiler.schedule
+      wait: 1
+      warmup: 1
+      active: 3
+      repeat: 2
+    on_trace_ready:
+      _target_: torch.profiler.tensorboard_trace_handler
+      dir_name: ${paths.output_dir}/profiler
+    with_stack: True
+    with_flops: True
+    with_modules: True
+
+# Enable performance optimizations for profiling
+performance:
+  enable_cudnn_benchmark: True
+  enable_tf32: True
+  matmul_precision: high
+  channels_last: True
+
+# Log extra information
+callbacks:
+  model_summary:
+    _target_: lightning.pytorch.callbacks.ModelSummary
+    max_depth: 3
+
+# Reduce logging overhead
+logger:
+  csv:
+    _target_: lightning.pytorch.loggers.CSVLogger
+    save_dir: ${paths.output_dir}
+    name: profile_logs

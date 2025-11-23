@@ -3,10 +3,11 @@ _target_: cyto_dl.datamodules.dataframe.DataframeDatamodule
 path:
 cache_dir:
 
-num_workers: 0
+num_workers: 4  # Parallel data loading for better GPU utilization
 shuffle: True
 batch_size: 1
 pin_memory: True
+persistent_workers: True  # Keep workers alive between epochs
 
 columns:
   - ${source_col}

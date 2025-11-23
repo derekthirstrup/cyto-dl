@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional
+import torch.utils.checkpoint as checkpoint
 from einops import rearrange
 from einops.layers.torch import Rearrange
 from timm.models.layers import trunc_normal_
@@ -79,6 +80,7 @@ class MAE_Encoder(torch.nn.Module):
             if weight_intermediates
             else None
         )
+        self.gradient_checkpointing = False  # Can be enabled to save memory
         self.init_weight()
 
     def init_weight(self):
@@ -92,12 +94,23 @@ class MAE_Encoder(torch.nn.Module):
         if self.intermediate_weighter is not None:
             intermediates = [patches]
             for block in self.transformer:
-                patches = block(patches)
+                # Apply gradient checkpointing if enabled
+                if self.gradient_checkpointing and self.training:
+                    patches = checkpoint.checkpoint(block, patches, use_reentrant=False)
+                else:
+                    patches = block(patches)
                 intermediates.append(patches)
             features = self.layer_norm(self.intermediate_weighter(intermediates))
             features = rearrange(features, "n b t c -> n t b c")
         else:
-            features = self.layer_norm(self.transformer(patches))
+            # Apply gradient checkpointing for sequential transformer
+            if self.gradient_checkpointing and self.training:
+                # Checkpoint each transformer block individually
+                for module in self.transformer:
+                    patches = checkpoint.checkpoint(module, patches, use_reentrant=False)
+                features = self.layer_norm(patches)
+            else:
+                features = self.layer_norm(self.transformer(patches))
             features = rearrange(features, "b t c -> t b c")
         if mask_ratio > 0:
             return features, mask, forward_indexes, backward_indexes
