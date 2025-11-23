@@ -1,0 +1,17 @@
+# TensorRT Requirements for CytoDL
+# Install after installing base requirements
+#
+# For CUDA 11.8+:
+#   pip install -r requirements/tensorrt-requirements.txt
+#
+# For other CUDA versions, adjust nvidia-tensorrt version accordingly
+
+# TensorRT for PyTorch (Torch-TensorRT)
+torch-tensorrt>=2.1.0
+
+# NVIDIA TensorRT runtime
+# Note: Version must match your CUDA version
+nvidia-tensorrt>=8.6.0  # For CUDA 11.8/12.x
+
+# Additional dependencies for TensorRT workflows
+Pillow>=9.0.0  # For calibration data loading

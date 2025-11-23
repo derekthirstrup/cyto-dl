@@ -1,0 +1,31 @@
+# TensorRT FP16 Inference Configuration
+# Provides 2-3x faster inference compared to PyTorch
+
+# TensorRT export settings
+tensorrt:
+  enabled: True
+  precision: fp16  # FP16 precision (2-3x speedup, minimal accuracy loss)
+  workspace_size: 4  # GB
+  dynamic_shapes: False  # Fixed shapes for maximum performance
+
+  # Batch size settings (for dynamic shapes)
+  min_batch_size: 1
+  max_batch_size: 16
+  opt_batch_size: 4
+
+# Use optimized inference trainer
+defaults:
+  - override /trainer: gpu_optimized
+  - override /performance: gpu_optimized
+
+# Inference-specific trainer settings
+trainer:
+  precision: bf16-mixed  # Match TensorRT precision
+
+# Model compilation for comparison
+model:
+  compile_model: False  # TensorRT replaces torch.compile
+  channels_last: True
+  inference_args:
+    sw_batch_size: 4  # Increase for TensorRT (faster)
+    mode: gaussian

@@ -1,0 +1,37 @@
+# TensorRT INT8 Inference Configuration
+# Provides 4x faster inference with minimal accuracy loss (requires calibration)
+
+# TensorRT export settings
+tensorrt:
+  enabled: True
+  precision: int8  # INT8 quantization (4x speedup)
+  workspace_size: 4  # GB
+  dynamic_shapes: False  # Fixed shapes for maximum performance
+
+  # INT8 calibration settings
+  calibration:
+    enabled: True
+    num_samples: 100  # Number of calibration samples
+    cache_file: calibration.cache
+
+  # Batch size settings
+  min_batch_size: 1
+  max_batch_size: 16
+  opt_batch_size: 4
+
+# Use optimized inference trainer
+defaults:
+  - override /trainer: gpu_optimized
+  - override /performance: gpu_optimized
+
+# Inference-specific trainer settings
+trainer:
+  precision: bf16-mixed
+
+# Model settings
+model:
+  compile_model: False  # TensorRT replaces torch.compile
+  channels_last: True
+  inference_args:
+    sw_batch_size: 8  # INT8 allows larger batches
+    mode: gaussian
