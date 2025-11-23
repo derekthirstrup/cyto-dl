@@ -1,20 +1,37 @@
-"""Benchmark script for measuring inference and training performance.
+"""Comprehensive performance benchmarking script for CytoDL (Phase 4).
 
-This script helps you:
-1. Measure inference throughput (FPS) and latency
-2. Compare different optimization settings
-3. Find optimal batch sizes for your GPU
-4. Profile memory usage
+This script benchmarks a model across all optimization levels:
+- Baseline (no optimizations)
+- Phase 1 (GPU optimizations: cudnn, TF32, compile, etc.)
+- Phase 2 (TensorRT FP16/INT8) - if available
+- Phase 3 (Quantization / Flash Attention) - if available
+
+Generates detailed reports comparing performance and accuracy.
 
 Usage:
-    # Benchmark a trained model
-    python scripts/benchmark_performance.py --config configs/experiment/im2im/segmentation.yaml --ckpt path/to/checkpoint.ckpt
+    # Benchmark all phases
+    python scripts/benchmark_performance.py \
+        --config configs/experiment/im2im/labelfree.yaml \
+        --ckpt path/to/checkpoint.ckpt \
+        --all-phases
 
     # Benchmark with different batch sizes
-    python scripts/benchmark_performance.py --config configs/experiment/im2im/mae.yaml --batch-sizes 1 2 4 8 16
+    python scripts/benchmark_performance.py \
+        --config configs/experiment/im2im/mae.yaml \
+        --batch-sizes 1 2 4 8 16
 
-    # Compare optimizations
-    python scripts/benchmark_performance.py --config configs/experiment/im2im/labelfree.yaml --compare-opts
+    # Compare specific phases
+    python scripts/benchmark_performance.py \
+        --config configs/experiment/im2im/segmentation.yaml \
+        --baseline --phase1 --phase2 \
+        --generate-html
+
+    # With validation data for accuracy check
+    python scripts/benchmark_performance.py \
+        --config configs/experiment/im2im/labelfree.yaml \
+        --ckpt path/to/checkpoint.ckpt \
+        --validation-data path/to/val/images \
+        --all-phases
 """
 
 import argparse
@@ -36,7 +53,7 @@ from cyto_dl.utils.performance import benchmark_model, setup_gpu_optimizations
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Benchmark model performance")
+    parser = argparse.ArgumentParser(description="Benchmark model performance across all optimization phases")
     parser.add_argument(
         "--config", type=str, required=True, help="Path to experiment config file"
     )
@@ -61,13 +78,45 @@ def parse_args():
     parser.add_argument(
         "--warmup-iterations", type=int, default=10, help="Number of warmup iterations"
     )
+
+    # Phase selection
+    parser.add_argument(
+        "--all-phases", action="store_true", help="Benchmark all optimization phases"
+    )
+    parser.add_argument(
+        "--baseline", action="store_true", help="Benchmark baseline (no opts)"
+    )
+    parser.add_argument(
+        "--phase1", action="store_true", help="Benchmark Phase 1 (GPU opts)"
+    )
+    parser.add_argument(
+        "--phase2", action="store_true", help="Benchmark Phase 2 (TensorRT)"
+    )
+    parser.add_argument(
+        "--phase3", action="store_true", help="Benchmark Phase 3 (Quantization)"
+    )
+
+    # Validation
+    parser.add_argument(
+        "--validation-data", type=str, default=None, help="Path to validation images"
+    )
+    parser.add_argument(
+        "--num-val-samples", type=int, default=100, help="Number of validation samples"
+    )
+
+    # Legacy option
     parser.add_argument(
         "--compare-opts",
         action="store_true",
-        help="Compare different optimization settings",
+        help="Compare different optimization settings (legacy, use --all-phases)",
+    )
+
+    # Output options
+    parser.add_argument(
+        "--output", type=str, default="benchmark_results", help="Output directory"
     )
     parser.add_argument(
-        "--output", type=str, default="benchmark_results.json", help="Output file"
+        "--generate-html", action="store_true", help="Generate HTML report"
     )
     parser.add_argument(
         "--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu"
