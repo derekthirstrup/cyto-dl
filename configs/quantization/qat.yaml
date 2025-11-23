@@ -1,0 +1,71 @@
+# Quantization-Aware Training (QAT) Configuration
+#
+# INT8 QAT - best accuracy for quantized models
+# - 4x smaller model size
+# - 3-4x faster inference
+# - Best accuracy (minimal loss)
+# - Requires fine-tuning
+#
+# Usage:
+#   python scripts/export_quantized_model.py \
+#     --config configs/experiment/im2im/labelfree.yaml \
+#     --ckpt path/to/checkpoint.ckpt \
+#     --output model_qat.pt \
+#     --mode qat \
+#     --calibration-data path/to/training/images \
+#     --qat-epochs 5 \
+#     --qat-lr 1e-5
+
+# Quantization mode
+mode: qat
+
+# Backend (hardware-specific)
+backend: fbgemm  # fbgemm for x86 CPU, qnnpack for ARM/mobile
+
+# Quantization dtype
+dtype: qint8  # INT8 quantization
+
+# QAT training settings
+training:
+  epochs: 5  # Fine-tuning epochs (5-10 recommended)
+  learning_rate: 1e-5  # Lower LR for fine-tuning
+  batch_size: 4
+  num_samples: 1000  # Training samples (use subset of training set)
+
+# Quantization configuration
+qconfig: default  # Options: default, fbgemm, qnnpack
+
+# Fuse operations before QAT
+fuse_modules: true  # Fuse Conv-BN-ReLU
+
+# Observer settings
+observer:
+  reduce_range: true  # Better compatibility
+  dtype: torch.quint8  # Unsigned INT8
+
+# Export options
+export:
+  format: torchscript  # torchscript or state_dict
+  include_onnx: true  # Also export ONNX
+
+# Benchmarking
+benchmark:
+  enabled: true
+  num_iterations: 100
+  device: cpu
+
+# Expected performance:
+# - Model size: 4x smaller
+# - CPU inference: 3-4x faster
+# - Accuracy loss: <0.5% (best quantization method)
+# - Best for: Production deployment requiring best accuracy
+#
+# QAT workflow:
+# 1. Train full-precision model normally
+# 2. Run QAT fine-tuning for 5-10 epochs
+# 3. Convert to fully quantized model
+# 4. Deploy
+#
+# QAT vs Static:
+# - QAT: Better accuracy, requires training
+# - Static: Faster to set up, slightly lower accuracy

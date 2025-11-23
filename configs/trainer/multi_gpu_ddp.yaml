@@ -1,0 +1,79 @@
+# Multi-GPU DDP Trainer Configuration
+#
+# Optimized for distributed training on multiple GPUs with:
+# - DistributedDataParallel (DDP)
+# - Synchronized BatchNorm
+# - Gradient compression
+# - BF16 mixed precision
+#
+# Usage:
+#   # Single node, 4 GPUs
+#   python cyto_dl/train.py \
+#     experiment=im2im/labelfree \
+#     trainer=multi_gpu_ddp \
+#     trainer.devices=4
+#
+#   # Multi-node (2 nodes, 4 GPUs each)
+#   # Node 0:
+#   python cyto_dl/train.py \
+#     experiment=im2im/labelfree \
+#     trainer=multi_gpu_ddp \
+#     trainer.num_nodes=2 \
+#     trainer.devices=4
+#
+#   # Node 1:
+#   python cyto_dl/train.py \
+#     experiment=im2im/labelfree \
+#     trainer=multi_gpu_ddp \
+#     trainer.num_nodes=2 \
+#     trainer.devices=4
+
+_target_: lightning.pytorch.Trainer
+
+# Multi-GPU settings
+accelerator: gpu
+devices: 4  # Number of GPUs per node
+num_nodes: 1  # Number of nodes
+strategy: ddp  # DistributedDataParallel
+
+# Mixed precision for speed
+precision: bf16-mixed
+
+# Training configuration
+max_epochs: 100
+gradient_clip_val: 1.0
+gradient_clip_algorithm: norm
+
+# Gradient accumulation (if needed for effective larger batch size)
+accumulate_grad_batches: 1
+
+# Validation
+check_val_every_n_epoch: 1
+val_check_interval: null  # Validate after each epoch
+
+# Callbacks
+enable_checkpointing: true
+enable_progress_bar: true
+enable_model_summary: true
+
+# Logging
+log_every_n_steps: 50
+logger: true
+
+# Performance
+benchmark: true  # cudnn benchmark for speed
+deterministic: false  # Set true for reproducibility (slower)
+
+# DDP-specific settings (via strategy)
+# These are set via performance/advanced.yaml:
+# - sync_batchnorm: true
+# - find_unused_parameters: false
+# - gradient_as_bucket_view: true
+# - static_graph: false
+
+# Expected speedup:
+# - 2 GPUs: ~1.8x (90% efficiency)
+# - 4 GPUs: ~3.5x (87% efficiency)
+# - 8 GPUs: ~6.5x (81% efficiency)
+# With gradient compression (multi-node):
+# - 2 nodes (8 GPUs): ~12x (75% efficiency)

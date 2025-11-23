@@ -1,0 +1,48 @@
+# Dynamic Quantization Configuration
+#
+# INT8 dynamic quantization - easiest to use, CPU-optimized
+# - 4x smaller model size
+# - 2-4x faster inference on CPU
+# - No calibration required
+# - Minimal accuracy loss
+#
+# Usage:
+#   python scripts/export_quantized_model.py \
+#     --config configs/experiment/im2im/labelfree.yaml \
+#     --ckpt path/to/checkpoint.ckpt \
+#     --output model_quantized.pt \
+#     --mode dynamic
+
+# Quantization mode
+mode: dynamic
+
+# Backend (hardware-specific)
+backend: fbgemm  # fbgemm for x86 CPU, qnnpack for ARM/mobile
+
+# Quantization dtype
+dtype: qint8  # INT8 quantization
+
+# Layers to quantize
+layers:
+  - nn.Linear  # Fully connected layers
+  - nn.LSTM  # Recurrent layers (if present)
+  - nn.GRU
+  - nn.LSTMCell
+  - nn.GRUCell
+
+# Export options
+export:
+  format: torchscript  # torchscript or state_dict
+  include_onnx: false  # Also export ONNX
+
+# Benchmarking
+benchmark:
+  enabled: true
+  num_iterations: 100
+  device: cpu  # Dynamic quantization optimized for CPU
+
+# Expected performance:
+# - Model size: 4x smaller
+# - CPU inference: 2-4x faster
+# - Accuracy loss: <0.1% (negligible)
+# - Works on: Any model with Linear/LSTM layers

@@ -1,0 +1,82 @@
+# Advanced Profiling Configuration
+#
+# Detailed performance profiling with:
+# - Memory tracking and leak detection
+# - CUDA kernel profiling
+# - Bottleneck detection
+# - Chrome trace export
+#
+# Usage:
+#   python cyto_dl/train.py \
+#     experiment=im2im/labelfree \
+#     profiling=advanced \
+#     trainer.max_epochs=1
+
+# Enable profiling
+enabled: true
+
+# Profiling scope
+profile_training: true
+profile_validation: true
+profile_inference: false
+
+# PyTorch profiler settings
+pytorch_profiler:
+  enabled: true
+  activities:
+    - cpu  # Profile CPU operations
+    - cuda  # Profile CUDA operations
+  schedule:
+    wait: 1  # Wait steps before profiling
+    warmup: 1  # Warmup steps
+    active: 3  # Active profiling steps
+    repeat: 2  # Repeat cycle
+  record_shapes: true  # Record tensor shapes
+  profile_memory: true  # Profile memory usage
+  with_stack: false  # Record stack traces (very slow)
+  with_flops: true  # Estimate FLOPs
+  with_modules: true  # Record module hierarchy
+
+# Memory profiler
+memory_profiler:
+  enabled: true
+  snapshot_every_n_steps: 10  # Take memory snapshot every N steps
+  detect_leaks: true  # Detect memory leaks
+  leak_threshold_gb: 0.1  # Flag leaks >100MB
+
+# Bottleneck detector
+bottleneck_detector:
+  enabled: true
+  mark_data_loading: true  # Mark data loading time
+  mark_forward: true  # Mark forward pass time
+  mark_backward: true  # Mark backward pass time
+  mark_optimizer: true  # Mark optimizer step time
+  low_gpu_util_threshold: 70  # Flag if GPU util <70%
+
+# Export options
+export:
+  chrome_trace: true  # Export Chrome trace
+  chrome_trace_path: "logs/profiling/trace.json"
+
+  memory_report: true  # Export memory report
+  memory_report_path: "logs/profiling/memory_report.json"
+
+  bottleneck_report: true  # Export bottleneck analysis
+  bottleneck_report_path: "logs/profiling/bottlenecks.txt"
+
+  stack_traces: false  # Export stack traces (if with_stack=true)
+  stack_trace_path: "logs/profiling/stacks.txt"
+
+# Recommendations
+auto_recommendations: true  # Automatically print optimization recommendations
+
+# Profiling overhead:
+# - CPU profiling: ~5-10% overhead
+# - CUDA profiling: ~10-20% overhead
+# - Memory profiling: ~5% overhead
+# - with_stack=true: ~50% overhead (not recommended for training)
+#
+# Viewing results:
+# 1. Chrome trace: Open chrome://tracing and load trace.json
+# 2. Memory report: View memory_report.json
+# 3. Bottlenecks: Read bottlenecks.txt for recommendations

@@ -1,0 +1,60 @@
+# Static Quantization Configuration
+#
+# INT8 static quantization - best speed/accuracy tradeoff
+# - 4x smaller model size
+# - 3-4x faster inference
+# - Requires calibration data
+# - <1% accuracy loss (with good calibration)
+#
+# Usage:
+#   python scripts/export_quantized_model.py \
+#     --config configs/experiment/im2im/labelfree.yaml \
+#     --ckpt path/to/checkpoint.ckpt \
+#     --output model_quantized.pt \
+#     --mode static \
+#     --calibration-data path/to/images \
+#     --num-calibration-samples 100
+
+# Quantization mode
+mode: static
+
+# Backend (hardware-specific)
+backend: fbgemm  # fbgemm for x86 CPU, qnnpack for ARM/mobile
+
+# Quantization dtype
+dtype: qint8  # INT8 quantization
+
+# Calibration settings
+calibration:
+  num_samples: 100  # Number of calibration images (50-500 recommended)
+  batch_size: 4  # Calibration batch size
+  use_validation_set: true  # Use validation data for calibration
+
+# Quantization configuration
+qconfig: default  # Options: default, fbgemm, qnnpack
+
+# Fuse operations before quantization
+fuse_modules: true  # Fuse Conv-BN-ReLU for better performance
+
+# Export options
+export:
+  format: torchscript  # torchscript or state_dict
+  include_onnx: true  # Also export ONNX
+
+# Benchmarking
+benchmark:
+  enabled: true
+  num_iterations: 100
+  device: cpu  # Static quantization optimized for CPU
+
+# Expected performance:
+# - Model size: 4x smaller
+# - CPU inference: 3-4x faster
+# - Accuracy loss: <1% (with good calibration)
+# - Best for: Deployment on CPU servers
+#
+# Calibration tips:
+# - Use 100-500 representative samples
+# - Cover full data distribution
+# - Use validation set images
+# - More samples = better accuracy
