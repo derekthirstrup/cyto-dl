@@ -1,0 +1,9 @@
+path,channel,split,scene,resolution,start,stop,cell_id,treatment
+/data/timelapse1.nd2,0,train,0,0,0,100,cell_001,control
+/data/timelapse2.nd2,0,train,0,0,0,100,cell_002,control
+/data/timelapse3.czi,"0,1",train,0,1,10,200,cell_003,drug_A
+/data/timelapse4.ome.zarr,1,train,0,0,0,-1,cell_004,drug_A
+/data/timelapse5.nd2,2,val,1,0,0,150,cell_005,drug_B
+/data/timelapse6.czi,0,val,0,0,20,180,cell_006,drug_B
+s3://my-bucket/data/timelapse7.nd2,0,test,0,0,0,100,cell_007,control
+s3://my-bucket/data/timelapse8.ome.zarr,"0,1,2",test,0,0,0,-1,cell_008,drug_C

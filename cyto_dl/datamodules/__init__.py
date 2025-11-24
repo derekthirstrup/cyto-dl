@@ -1,2 +1,4 @@
 from .dataframe import DataframeDatamodule
 from .folder import make_folder_dataloader
+from .random_timelapse import RandomSamplingTimelapseDataset
+from .random_timelapse_datamodule import RandomTimelapseDatamodule

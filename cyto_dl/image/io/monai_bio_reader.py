@@ -9,6 +9,7 @@ from monai.data import ImageReader
 from monai.data.image_reader import _stack_images
 from monai.utils import ensure_tuple, require_pkg
 from omegaconf import Container, OmegaConf
+from upath import UPath
 
 
 @require_pkg(pkg_name="bioio")
@@ -30,7 +31,8 @@ class MonaiBioReader(ImageReader):
 
     def read(self, data: Union[Sequence[PathLike], PathLike]):
         filenames: Sequence[PathLike] = ensure_tuple(data)
-        img_ = [BioImage(name) for name in filenames]
+        # Use UPath to handle S3, GCS, Azure, and local paths transparently
+        img_ = [BioImage(UPath(name)) for name in filenames]
         return img_ if len(filenames) > 1 else img_[0]
 
     def get_data(self, img) -> Tuple[np.ndarray, Dict]:

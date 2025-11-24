@@ -5,6 +5,7 @@ import numpy as np
 from bioio import BioImage
 from monai.data import MetaTensor
 from monai.transforms import Transform
+from upath import UPath
 
 from cyto_dl.utils.arg_checking import get_dtype
 
@@ -78,6 +79,8 @@ class BioIOImageLoaderd(Transform):
         if self.path_key not in data and not self.allow_missing_keys:
             raise KeyError(f"Missing key {self.path_key} in data dictionary")
         path = data[self.path_key]
+        # Use UPath to handle S3, GCS, Azure, and local paths transparently
+        path = UPath(path)
         img = BioImage(path)
         if self.scene_key in data:
             img.set_scene(data[self.scene_key])

@@ -1,0 +1,54 @@
+# Example: Random timelapse sampling with S3/cloud storage
+# This config demonstrates using inline metadata and cloud paths
+
+_target_: cyto_dl.datamodules.random_timelapse_datamodule.RandomTimelapseDatamodule
+
+# Option 1: Separate CSV files per split (local or S3)
+path:
+  train: s3://my-bucket/data/train.csv
+  val: s3://my-bucket/data/val.csv
+  test: s3://my-bucket/data/test.csv
+
+# CSV files should have these columns
+img_path_column: path  # e.g., "s3://my-bucket/images/timelapse.nd2"
+channel_column: channel  # e.g., "0,1,2" for multiple channels
+spatial_dims: 2  # 2D images (YX)
+
+# Timelapse sampling
+num_timepoints: 5  # Sample 5 random timepoints per file
+timepoint_sampling: random
+
+# Random seed
+seed: 42
+
+# DataLoader settings
+num_workers: 8
+batch_size: 4
+pin_memory: True
+
+# Transforms
+transforms:
+  train:
+    _target_: monai.transforms.Compose
+    transforms:
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: raw
+        dask_load: True
+        dtype: numpy.float16  # Use float16 to save memory
+
+      - _target_: monai.transforms.EnsureChannelFirstd
+        keys: raw
+        channel_dim: "no_channel"
+
+      - _target_: monai.transforms.RandSpatialCropd
+        keys: raw
+        roi_size: [256, 256]
+        random_size: False
+
+      - _target_: monai.transforms.NormalizeIntensityd
+        keys: raw
+        channel_wise: True
+
+      - _target_: monai.transforms.ToTensord
+        keys: raw

@@ -1,0 +1,82 @@
+# Example: Random timelapse sampling with inline metadata
+# Useful for quick testing without creating CSV files
+
+_target_: cyto_dl.datamodules.random_timelapse_datamodule.RandomTimelapseDatamodule
+
+# Inline metadata as dictionary (no CSV needed)
+# This creates a single dataset that can be split using split_column
+path:
+  dict_meta:
+    path:
+      - /path/to/timelapse1.nd2
+      - /path/to/timelapse2.czi
+      - /path/to/timelapse3.ome.zarr
+      - s3://bucket/timelapse4.nd2  # S3 paths also supported
+    channel:
+      - "0,1"  # Channels 0 and 1
+      - "2"  # Channel 2 only
+      - "0,1,2,3"  # All 4 channels
+      - "1"
+    split:
+      - train
+      - train
+      - val
+      - test
+    # Optional: specify scene and resolution
+    scene:
+      - 0
+      - 0
+      - 1
+      - 0
+    resolution:
+      - 0
+      - 1  # Use resolution level 1 (downsampled)
+      - 0
+      - 0
+    # Optional: specify timepoint range
+    start:
+      - 0
+      - 10
+      - 0
+      - 5
+    stop:
+      - 100
+      - 50
+      - 200
+      - 150
+
+split_column: split
+
+# Sample 3 random timepoints per file
+num_timepoints: 3
+timepoint_sampling: random
+
+spatial_dims: 3  # 3D images (ZYX)
+
+seed: 42
+
+# DataLoader settings
+num_workers: 4
+batch_size: 2
+pin_memory: True
+
+# Transforms (same for all splits in this simple example)
+transforms:
+  _target_: monai.transforms.Compose
+  transforms:
+    - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+      path_key: original_path
+      out_key: raw
+      dask_load: True
+      dtype: numpy.float32
+
+    - _target_: monai.transforms.EnsureChannelFirstd
+      keys: raw
+      channel_dim: "no_channel"
+
+    - _target_: monai.transforms.NormalizeIntensityd
+      keys: raw
+      channel_wise: True
+
+    - _target_: monai.transforms.ToTensord
+      keys: raw
