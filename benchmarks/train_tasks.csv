@@ -1,0 +1,13 @@
+branch,experiment,trainer,max_epochs,batch_size,overrides
+# Baseline - main branch
+main,im2im/segmentation,gpu,5,8,
+# Phase 1 - GPU Performance Optimizations
+claude/optimize-gpu-performance-014viXtwt7gNsiG4xedaMKNA,im2im/segmentation,gpu,5,8,
+# Phase 2 - TensorRT Integration
+claude/tensorrt-integration-phase2-014viXtwt7gNsiG4xedaMKNA,im2im/segmentation,gpu,5,8,
+# Phase 3 - Advanced Optimizations
+claude/advanced-optimizations-phase3-014viXtwt7gNsiG4xedaMKNA,im2im/segmentation,gpu,5,8,
+# Phase 4 - Benchmarking Enhancements
+claude/benchmarking-phase4-014viXtwt7gNsiG4xedaMKNA,im2im/segmentation,gpu,5,8,
+# Combined - All Optimizations
+claude/all-optimizations-combined-014viXtwt7gNsiG4xedaMKNA,im2im/segmentation,gpu,5,8,
