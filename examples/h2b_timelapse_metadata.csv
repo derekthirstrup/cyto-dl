@@ -1,0 +1,7 @@
+path,raw_channel,seg_channel,split,start,stop,scene
+C:/data/experiment1/timelapse1.nd2,0,1,train,0,100,0
+C:/data/experiment1/timelapse2.nd2,0,1,train,0,150,0
+C:/data/experiment1/timelapse3.czi,0,1,train,10,200,0
+C:/data/experiment2/timelapse4.ome.zarr,0,1,val,0,80,0
+C:/data/experiment2/timelapse5.nd2,0,1,val,0,120,0
+C:/data/experiment3/timelapse6.nd2,0,1,test,0,100,0

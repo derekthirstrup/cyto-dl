@@ -1,0 +1,7 @@
+raw,seg,split
+C:/data/experiment1/cell001_raw.nd2,C:/data/experiment1/cell001_seg.nd2,train
+C:/data/experiment1/cell002_raw.nd2,C:/data/experiment1/cell002_seg.nd2,train
+C:/data/experiment1/cell003_raw.czi,C:/data/experiment1/cell003_seg.czi,train
+C:/data/experiment2/cell004_raw.nd2,C:/data/experiment2/cell004_seg.nd2,val
+C:/data/experiment2/cell005_raw.nd2,C:/data/experiment2/cell005_seg.nd2,val
+C:/data/experiment3/cell006_raw.nd2,C:/data/experiment3/cell006_seg.nd2,test
