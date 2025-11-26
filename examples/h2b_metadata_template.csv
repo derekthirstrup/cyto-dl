@@ -1,0 +1,8 @@
+path,channel,split,scene,resolution,start,stop,treatment
+C:/data/experiment1/timelapse1.nd2,0,train,0,0,0,100,control
+C:/data/experiment1/timelapse2.nd2,0,train,0,0,0,150,control
+C:/data/experiment1/timelapse3.czi,0,train,0,0,10,200,drug_a
+C:/data/experiment2/timelapse4.ome.zarr,0,val,0,0,0,80,control
+C:/data/experiment2/timelapse5.nd2,0,val,0,0,0,120,drug_a
+C:/data/experiment3/timelapse6.nd2,0,test,0,0,0,100,control
+C:/data/experiment3/timelapse7.czi,0,test,0,0,0,90,drug_b
