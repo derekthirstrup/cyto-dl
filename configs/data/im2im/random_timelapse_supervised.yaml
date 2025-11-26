@@ -1,0 +1,179 @@
+# Configuration for SUPERVISED random timelapse sampling
+# Use this when you need separate input (source) and target channels for training
+# Supports nd2, czi, ome-zarr, tif stacks, and other bioio formats
+# Works with local and S3/cloud storage paths
+
+_target_: cyto_dl.datamodules.random_timelapse_datamodule.RandomTimelapseDatamodule
+
+# CSV Format for supervised learning:
+# path,source_channel,target_channel,split,start,stop
+# C:/data/exp1.nd2,0,1,train,0,100
+# C:/data/exp2.czi,0,2,val,0,50
+#
+# Where:
+# - source_channel = input channel (e.g., raw/brightfield)
+# - target_channel = output channel (e.g., segmentation/label)
+
+path: /path/to/your/metadata.csv
+
+# Column names in CSV
+img_path_column: path  # Column with file paths
+split_column: split    # Column with train/val/test labels
+
+# NOTE: For supervised learning, DO NOT use channel_column
+# Instead, use extra_columns to specify separate source and target channels
+# channel_column: channel  # DON'T USE THIS for supervised learning
+
+# Extra columns from CSV that will be available in transforms
+extra_columns:
+  - source_channel  # CSV column with input channel index
+  - target_channel  # CSV column with target/output channel index
+
+# Timepoint sampling configuration
+num_timepoints: 1  # Number of timepoints to sample per file per batch
+timepoint_sampling: random  # Options: 'random', 'sequential', 'uniform'
+
+# Optional: specify timepoint range columns in CSV
+time_start_column: start  # Column with starting frame (default: 0)
+time_stop_column: stop    # Column with ending frame (default: all frames)
+
+# Image properties
+spatial_dims: 3  # 2 for YX, 3 for ZYX
+scene_column: scene  # Column with scene index (optional)
+resolution_column: resolution  # Column with resolution level (optional)
+
+# Random seed for reproducibility
+seed: 42
+
+# DataLoader settings
+num_workers: 4
+batch_size: 8
+pin_memory: True
+persistent_workers: True
+shuffle: True  # Only applied to train split
+
+# Transforms - Load BOTH source and target channels
+transforms:
+  train:
+    _target_: monai.transforms.Compose
+    transforms:
+      # Load SOURCE/INPUT channel
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: raw  # Key for input in batch dict
+        dask_load: True
+        dtype: numpy.float32
+        kwargs_keys:
+          - dimension_order_out
+          - source_channel  # Uses source_channel from CSV
+          - T
+
+      # Load TARGET/OUTPUT channel
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: seg  # Key for target in batch dict
+        dask_load: True
+        dtype: numpy.float32
+        kwargs_keys:
+          - dimension_order_out
+          - target_channel  # Uses target_channel from CSV
+          - T
+
+      # Ensure channel first for both
+      - _target_: monai.transforms.EnsureChannelFirstd
+        keys: [raw, seg]
+        channel_dim: "no_channel"
+
+      # Crop both together (ensures spatial alignment)
+      - _target_: monai.transforms.RandSpatialCropd
+        keys: [raw, seg]
+        roi_size: [64, 64, 64]  # Adjust based on spatial_dims
+        random_size: False
+
+      # Augmentation (applied to both to maintain alignment)
+      - _target_: monai.transforms.RandFlipd
+        keys: [raw, seg]
+        prob: 0.5
+        spatial_axis: [0, 1, 2]
+
+      - _target_: monai.transforms.RandRotate90d
+        keys: [raw, seg]
+        prob: 0.5
+        spatial_axes: [1, 2]
+
+      # Normalize both
+      - _target_: monai.transforms.NormalizeIntensityd
+        keys: [raw, seg]
+        channel_wise: True
+
+      # Convert to tensors
+      - _target_: monai.transforms.ToTensord
+        keys: [raw, seg]
+
+  val:
+    _target_: monai.transforms.Compose
+    transforms:
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: raw
+        dask_load: True
+        dtype: numpy.float32
+        kwargs_keys:
+          - dimension_order_out
+          - source_channel
+          - T
+
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: seg
+        dask_load: True
+        dtype: numpy.float32
+        kwargs_keys:
+          - dimension_order_out
+          - target_channel
+          - T
+
+      - _target_: monai.transforms.EnsureChannelFirstd
+        keys: [raw, seg]
+        channel_dim: "no_channel"
+
+      - _target_: monai.transforms.NormalizeIntensityd
+        keys: [raw, seg]
+        channel_wise: True
+
+      - _target_: monai.transforms.ToTensord
+        keys: [raw, seg]
+
+  test:
+    _target_: monai.transforms.Compose
+    transforms:
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: raw
+        dask_load: True
+        dtype: numpy.float32
+        kwargs_keys:
+          - dimension_order_out
+          - source_channel
+          - T
+
+      - _target_: cyto_dl.image.io.bioio_loader.BioIOImageLoaderd
+        path_key: original_path
+        out_key: seg
+        dask_load: True
+        dtype: numpy.float32
+        kwargs_keys:
+          - dimension_order_out
+          - target_channel
+          - T
+
+      - _target_: monai.transforms.EnsureChannelFirstd
+        keys: [raw, seg]
+        channel_dim: "no_channel"
+
+      - _target_: monai.transforms.NormalizeIntensityd
+        keys: [raw, seg]
+        channel_wise: True
+
+      - _target_: monai.transforms.ToTensord
+        keys: [raw, seg]
