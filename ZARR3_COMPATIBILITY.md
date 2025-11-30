@@ -10,7 +10,7 @@ cyto-dl is now fully compatible with zarr-3 format.
 ## Changes Made
 
 ### 1. Updated Dependencies
-- Added explicit `zarr>=3.0.0` dependency in `pyproject.toml`
+- Added explicit `zarr>=3.0.9` dependency in `pyproject.toml` (**CRITICAL**: versions 3.0.0-3.0.8 have a data corruption bug)
 - Updated `ome-zarr>=0.12.0` to ensure zarr-3 compatibility
 - Updated `anndata>=0.12.0` to ensure zarr-3 compatibility (anndata 0.12+ required for zarr 3.x support)
 - Current versions being used:
@@ -68,6 +68,21 @@ The bioio-based loader is fully compatible as bioio>=3.0.0 supports zarr-3.
 
 ## Known Issues
 
+### ⚠️ CRITICAL: Data Corruption Bug in zarr 3.0.0-3.0.8
+**DO NOT USE zarr versions 3.0.0 through 3.0.8** - these versions contain a data corruption bug. The minimum safe version is `zarr>=3.0.9`. This is enforced in `pyproject.toml`.
+
+If you experience crashes, server resets, or data corruption issues, verify you're using zarr >= 3.0.9:
+```bash
+python -c "import zarr; print(zarr.__version__)"
+```
+
+### Performance Considerations
+Zarr 3.x with sharding can have performance implications:
+- Many small chunks inside shards can be resource-intensive
+- Pure-python zarr v3 pipeline is slower than v2
+- Consider using `zarrs-python` package for rust-based acceleration if performance is critical
+- For cloud storage, proper chunk/shard configuration is important
+
 ### Minor Warning
 You may see this warning when reading some OME-Zarr files:
 ```
@@ -104,7 +119,7 @@ print(f"Loaded image with shape: {img_data.shape}")
 ## Dependencies
 
 Minimum versions required for zarr-3 compatibility:
-- `zarr>=3.0.0`
+- `zarr>=3.0.9` (**CRITICAL**: versions 3.0.0-3.0.8 have a data corruption bug)
 - `ome-zarr>=0.12.0`
 - `anndata>=0.12.0` (version 0.12.0+ required for zarr 3.x support)
 - `bioio>=3.0.0`
@@ -113,7 +128,9 @@ Minimum versions required for zarr-3 compatibility:
 
 All dependencies are now properly specified in `pyproject.toml`.
 
-**Important Note:** AnnData added zarr 3.x support in version 0.12.0. Using earlier versions (like 0.11.x) will cause an `ImportError: zarr-python major version > 2 is not supported` error.
+**Important Notes:**
+- **AnnData**: Version 0.12.0+ required for zarr 3.x support. Earlier versions (like 0.11.x) will cause an `ImportError: zarr-python major version > 2 is not supported` error.
+- **Zarr**: Version 3.0.9+ required to avoid data corruption bug in earlier 3.0.x versions.
 
 ## Conclusion
 

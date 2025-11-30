@@ -39,7 +39,7 @@ def read_h5ad(path, include_columns=None, backed=None):
 
     if backed:
         assert backed in ("r", "r+")
-    dataframe = anndata.read_hda5(path, backed=backed)
+    dataframe = anndata.read_h5ad(path, backed=backed)
 
     if include_columns is not None:
         columns = []
