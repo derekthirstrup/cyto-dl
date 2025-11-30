@@ -73,6 +73,9 @@ spatial_inferer:
     patch_size: ${data._aux.patch_shape}
     # pad mode null prevents inference on patches that go beyond the image boundary
     pad_mode: null
-    overlap: 0
+    overlap: ${model._aux.overlap}
   merger_cls: cyto_dl.models.im2im.utils.inferers.EmbeddingPatchMerger
   batch_size: ${data.batch_size}
+
+_aux:
+  overlap: 0.25

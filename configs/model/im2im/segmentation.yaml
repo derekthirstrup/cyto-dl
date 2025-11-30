@@ -35,11 +35,12 @@ lr_scheduler:
 inference_args:
   sw_batch_size: 1
   roi_size: ${data._aux.patch_shape}
-  overlap: 0
+  overlap: ${model._aux.overlap}
   mode: "gaussian"
   progress: True
 
 _aux:
+  overlap: 0.25
   _tasks:
     - - ${target_col}
       - _target_: cyto_dl.nn.BaseHead
