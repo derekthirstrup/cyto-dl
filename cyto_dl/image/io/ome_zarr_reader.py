@@ -13,11 +13,26 @@ from upath import UPath as Path
 @require_pkg(pkg_name="upath")
 @require_pkg(pkg_name="ome_zarr")
 class OmeZarrReader(ImageReader):
-    def __init__(self, level=0, image_name="default", channels=None):
+    def __init__(self, level=0, image_name="default", channels=None, lazy_load=False):
+        """
+        Parameters
+        ----------
+        level : int
+            Resolution level to read from multi-resolution zarr
+        image_name : str
+            Name of the image within the zarr store
+        channels : list, optional
+            List of channel indices or names to extract
+        lazy_load : bool
+            If True, returns dask arrays without computing (saves memory).
+            If False, computes arrays immediately (default, original behavior).
+            When True, you must add ComputeDaskd transform later in your pipeline.
+        """
         super().__init__()
         self.level = level
         self.image_name = image_name
         self.channels = channels
+        self.lazy_load = lazy_load
 
     def read(self, data: Union[Sequence[PathLike], PathLike]):
         filenames: Sequence[PathLike] = ensure_tuple(data)
@@ -36,7 +51,14 @@ class OmeZarrReader(ImageReader):
         img_array: List[np.ndarray] = []
 
         for img_obj in ensure_tuple(img):
-            data = img_obj.data[self.level].compute()[0]
+            # Get dask array from zarr store
+            data = img_obj.data[self.level]
+
+            # Remove time dimension (first dimension) - select first timepoint
+            # Note: For timelapse data, time selection should be done via BioImage, not here
+            if data.ndim > 0:
+                data = data[0]
+
             if self.channels:
                 _metadata_channels = img_obj.metadata["name"]
                 _channels = [
@@ -44,6 +66,10 @@ class OmeZarrReader(ImageReader):
                     for ch in self.channels
                 ]
                 data = data[_channels]
+
+            # Only compute if not lazy loading
+            if not self.lazy_load:
+                data = data.compute()
 
             img_array.append(data)
 

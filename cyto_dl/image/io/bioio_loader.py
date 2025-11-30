@@ -27,6 +27,7 @@ class BioIOImageLoaderd(Transform):
         allow_missing_keys=False,
         dtype: np.dtype = np.float16,
         dask_load: bool = True,
+        lazy_load: bool = False,
         include_meta_in_filename: bool = False,
     ):
         """
@@ -46,6 +47,10 @@ class BioIOImageLoaderd(Transform):
             Data type to cast the image to
         dask_load: bool = True
             Whether to use dask to load images. If False, full images are loaded into memory before extracting specified scenes/timepoints.
+        lazy_load: bool = False
+            If True, returns dask arrays without computing (saves memory for large timelapse datasets).
+            Requires dask_load=True. You must add ComputeDaskd transform later in your pipeline.
+            When False, arrays are computed immediately (default, original behavior).
         include_meta_in_filename: bool = False
             Whether to include metadata in the filename. Useful when loading multi-dimensional images with different kwargs.
         """
@@ -58,7 +63,11 @@ class BioIOImageLoaderd(Transform):
         self.scene_key = scene_key
         self.dtype = get_dtype(dtype)
         self.dask_load = dask_load
+        self.lazy_load = lazy_load
         self.include_meta_in_filename = include_meta_in_filename
+
+        if self.lazy_load and not self.dask_load:
+            raise ValueError("lazy_load=True requires dask_load=True")
 
     def split_args(self, arg):
         if isinstance(arg, str) and "," in arg:
@@ -85,10 +94,17 @@ class BioIOImageLoaderd(Transform):
             img.set_resolution_level(data[self.resolution_key])
         kwargs = {k: self.split_args(data[k]) for k in self.kwargs_keys if k in data}
         if self.dask_load:
-            img = img.get_image_dask_data(**kwargs).compute()
+            img = img.get_image_dask_data(**kwargs)
+            # Only compute if not lazy loading
+            if not self.lazy_load:
+                img = img.compute()
         else:
             img = img.get_image_data(**kwargs)
-        img = img.astype(self.dtype)
+
+        # For lazy loading, defer dtype conversion until after compute
+        # Otherwise convert now
+        if not self.lazy_load:
+            img = img.astype(self.dtype)
         if self.scene_key in data:
             kwargs["scene"] = data[self.scene_key]
         kwargs.update({"filename_or_obj": self._get_filename(path, kwargs)})

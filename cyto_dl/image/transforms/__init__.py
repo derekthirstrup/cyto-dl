@@ -1,5 +1,6 @@
 from .bright_sampler import BrightSampler
 from .clip import Clip, Clipd
+from .compute_dask import ComputeDaskd
 from .contrastadjust import ContrastAdjustd
 from .merge import Merged
 from .multiscale_cropper import RandomMultiScaleCropd

@@ -83,6 +83,31 @@ Zarr 3.x with sharding can have performance implications:
 - Consider using `zarrs-python` package for rust-based acceleration if performance is critical
 - For cloud storage, proper chunk/shard configuration is important
 
+### ⚡ Memory Issues with Large Timelapse Datasets
+
+**Problem:** By default, each timepoint is loaded fully into memory when accessed, which can cause:
+- Out of memory errors
+- Server resets during training
+- Poor performance with large datasets
+
+**Solution:** Use **lazy loading** to defer computation until after spatial transforms:
+
+```python
+from cyto_dl.image.io import BioIOImageLoaderd
+from cyto_dl.image.transforms import ComputeDaskd
+
+transforms = Compose([
+    BioIOImageLoaderd(keys=["raw"], lazy_load=True),  # ← Enable lazy loading
+    RandSpatialCropd(keys=["raw"], roi_size=[64, 64, 64]),  # Crop while still lazy
+    ComputeDaskd(keys=["raw"]),  # Compute only the cropped region
+    # ... rest of transforms
+])
+```
+
+This loads only the 64×64×64 crop instead of the entire timepoint, reducing memory usage by 100-1000x.
+
+**See [LAZY_LOADING.md](LAZY_LOADING.md) for complete documentation and usage examples.**
+
 ### Minor Warning
 You may see this warning when reading some OME-Zarr files:
 ```
