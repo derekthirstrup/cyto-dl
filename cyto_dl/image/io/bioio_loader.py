@@ -109,5 +109,15 @@ class BioIOImageLoaderd(Transform):
             kwargs["scene"] = data[self.scene_key]
         kwargs.update({"filename_or_obj": self._get_filename(path, kwargs)})
 
-        data[self.out_key] = MetaTensor(img, meta=kwargs)
+        # IMPORTANT: When lazy_load=True, we DON'T wrap in MetaTensor yet
+        # because MetaTensor will call .compute() on the dask array immediately.
+        # Instead, we store the dask array directly and let ComputeDaskd wrap it later.
+        if self.lazy_load:
+            # Store dask array directly with metadata attached as attribute
+            # This preserves lazy evaluation until ComputeDaskd
+            data[self.out_key] = img
+            data[f"{self.out_key}_meta"] = kwargs
+        else:
+            # Normal path: wrap in MetaTensor immediately
+            data[self.out_key] = MetaTensor(img, meta=kwargs)
         return data

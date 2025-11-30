@@ -61,6 +61,7 @@ class ComputeDaskd(Transform):
                 continue
 
             value = data[key]
+            meta_key = f"{key}_meta"
 
             # Check if it's a dask array
             if hasattr(value, "compute"):
@@ -73,16 +74,30 @@ class ComputeDaskd(Transform):
                 # If original was MetaTensor, preserve metadata
                 if isinstance(value, MetaTensor):
                     data[key] = MetaTensor(computed, meta=value.meta)
+                # If metadata was stored separately (from lazy loading), use it
+                elif meta_key in data:
+                    meta = data[meta_key]
+                    data[key] = MetaTensor(computed, meta=meta)
+                    # Clean up the metadata key
+                    del data[meta_key]
                 else:
-                    data[key] = computed
+                    # No metadata available, wrap in MetaTensor with empty meta
+                    data[key] = MetaTensor(computed, meta={})
 
             elif isinstance(value, MetaTensor):
                 # It's already computed MetaTensor, just ensure dtype
                 if value.dtype != self.dtype:
                     data[key] = MetaTensor(value.astype(self.dtype), meta=value.meta)
             else:
-                # It's a regular numpy array, ensure dtype
-                if value.dtype != self.dtype:
+                # It's a regular numpy array
+                # Check if metadata was stored separately
+                if meta_key in data:
+                    meta = data[meta_key]
+                    if value.dtype != self.dtype:
+                        value = value.astype(self.dtype)
+                    data[key] = MetaTensor(value, meta=meta)
+                    del data[meta_key]
+                elif value.dtype != self.dtype:
                     data[key] = value.astype(self.dtype)
 
         return data

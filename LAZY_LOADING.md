@@ -156,21 +156,49 @@ ComputeDaskd(...)      # Loads entire image!
 RandSpatialCropd(...)  # Crops already-loaded data
 ```
 
-### 2. Dask-Aware Transforms
-Most MONAI spatial transforms are dask-aware and will work with lazy arrays:
-- ✅ `RandSpatialCropd` - updates chunk metadata
-- ✅ `CenterSpatialCropd` - updates chunk metadata
-- ✅ `Resized` - works with dask
-- ⚠️ `Normalizationd` - may compute if needs full stats
+### 2. Dask Arrays and MetaTensor
+**Important:** MONAI's MetaTensor cannot wrap dask arrays without computing them. When you call `MetaTensor(dask_array)`, it automatically calls `.compute()` which defeats lazy loading.
 
-### 3. Dtype Conversion
+**How we handle this:**
+- When `lazy_load=True`, `BioIOImageLoaderd` stores the dask array directly (NOT in MetaTensor)
+- Metadata is stored separately in `{key}_meta`
+- `ComputeDaskd` computes the array AND wraps it in MetaTensor with the metadata
+- This preserves lazy evaluation until the controlled compute point
+
+### 3. Dask-Compatible Transforms
+**Most MONAI transforms work with raw dask arrays** because they support array-like objects:
+- ✅ `RandSpatialCropd` - works with dask arrays
+- ✅ `CenterSpatialCropd` - works with dask arrays
+- ✅ `Resized` - works with dask arrays
+- ⚠️ `Normalizationd` - may trigger compute if it needs full array stats
+- ⚠️ Custom transforms - check if they require MetaTensor specifically
+
+## Important Technical Details
+
+### Dtype Conversion
 When using lazy loading, dtype conversion happens in `ComputeDaskd`:
 ```python
 BioIOImageLoaderd(lazy_load=True, dtype="float16")  # ← Ignored when lazy
 ComputeDaskd(dtype="float16")  # ← Actual conversion happens here
 ```
 
-### 4. Debugging Lazy Loading
+### Data Format
+When `lazy_load=True`, the data structure looks like:
+```python
+data = {
+    "raw": <dask.array>,  # The lazy array
+    "raw_meta": {...},    # Metadata dictionary
+}
+```
+
+After `ComputeDaskd`:
+```python
+data = {
+    "raw": <MetaTensor>,  # Computed array wrapped in MetaTensor with metadata
+}
+```
+
+### Debugging Lazy Loading
 
 Check if data is still lazy:
 ```python
@@ -178,8 +206,11 @@ def check_lazy(data):
     for key, value in data.items():
         if hasattr(value, "compute"):
             print(f"{key}: Still lazy (dask array)")
+            print(f"  Shape: {value.shape}, Chunks: {value.chunks}")
+        elif isinstance(value, MetaTensor):
+            print(f"{key}: Computed (MetaTensor)")
         else:
-            print(f"{key}: Computed (numpy array)")
+            print(f"{key}: {type(value)}")
 ```
 
 ## Troubleshooting
