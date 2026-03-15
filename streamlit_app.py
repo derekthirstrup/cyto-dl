@@ -119,6 +119,420 @@ PRECISION_OPTIONS = {
 
 TRT_PRECISION_OPTIONS = ["fp16", "fp32", "int8"]
 
+# ---------------------------------------------------------------------------
+# Model Zoo — comprehensive architecture catalog with recommendations
+# ---------------------------------------------------------------------------
+# Task suitability ratings: best / good / fair / poor
+MODEL_ZOO = {
+    # ---- MONAI Architectures ----
+    "DynUNet": {
+        "target": "monai.networks.nets.DynUNet",
+        "source": "MONAI",
+        "category": "UNet Variants",
+        "description": (
+            "Dynamic UNet with auto-configured skip connections. Kernel sizes, strides, "
+            "and upsampling are parameterized per-level, making it very flexible for "
+            "different spatial resolutions. The default backbone in CytoDL."
+        ),
+        "strengths": "Flexible depth, residual blocks, proven on biomedical data, fast training",
+        "weaknesses": "Less capable on very large receptive fields than transformers",
+        "params": "~2-30M depending on filter config",
+        "tasks": {
+            "BF → Nuclei Segmentation": "best",
+            "BF → Cell Segmentation": "best",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "best",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "out_channels": 1,
+            "strides": [1, 2, 2, 2],
+            "kernel_size": [3, 3, 3, 3],
+            "upsample_kernel_size": [2, 2, 2],
+            "filters": [32, 64, 128, 256],
+            "dropout": 0.0,
+            "res_block": True,
+        },
+        "vram_estimate": "~2-6 GB",
+    },
+    "SwinUNETR": {
+        "target": "monai.networks.nets.SwinUNETR",
+        "source": "MONAI",
+        "category": "Transformer Hybrids",
+        "description": (
+            "Swin Transformer encoder with UNet-style decoder. Uses shifted-window "
+            "self-attention to capture both local and global context efficiently. "
+            "State-of-the-art on BTCV, MSD, and many 3D medical imaging benchmarks."
+        ),
+        "strengths": "Long-range context, SOTA accuracy on 3D benchmarks, good scaling",
+        "weaknesses": "Higher VRAM, slower training than CNN-only, needs larger patches",
+        "params": "~25-60M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "best",
+            "BF → Cell Segmentation": "best",
+            "BF → Fluorescence (label-free)": "best",
+            "Instance Segmentation": "good",
+            "Super-Resolution": "good",
+        },
+        "recommended_config": {
+            "img_size": [96, 96, 96],
+            "in_channels": 1,
+            "out_channels": 1,
+            "spatial_dims": 3,
+            "feature_size": 48,
+            "drop_rate": 0.0,
+        },
+        "vram_estimate": "~8-16 GB",
+    },
+    "UNETR": {
+        "target": "monai.networks.nets.UNETR",
+        "source": "MONAI",
+        "category": "Transformer Hybrids",
+        "description": (
+            "Vision Transformer encoder paired with CNN decoder. Patches the input into "
+            "tokens, processes through standard ViT blocks, then uses skip connections "
+            "to a convolutional decoder. Benefits from Flash Attention on Blackwell GPUs."
+        ),
+        "strengths": "Global context from ViT, flexible patch sizes, Flash Attention compatible",
+        "weaknesses": "Higher VRAM than UNets, can overfit on small datasets",
+        "params": "~90M (ViT-B)",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "fair",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "img_size": [96, 96, 96],
+            "in_channels": 1,
+            "out_channels": 1,
+            "spatial_dims": 3,
+            "hidden_size": 768,
+            "mlp_dim": 3072,
+            "num_heads": 12,
+            "dropout_rate": 0.0,
+        },
+        "vram_estimate": "~12-24 GB",
+    },
+    "AttentionUnet": {
+        "target": "monai.networks.nets.AttentionUnet",
+        "source": "MONAI",
+        "category": "UNet Variants",
+        "description": (
+            "Standard UNet with attention gates at skip connections. The gates learn to "
+            "suppress irrelevant background features and highlight salient regions. "
+            "Lightweight attention overhead compared to full transformer approaches."
+        ),
+        "strengths": "Focused skip connections, low overhead, good for boundary detection",
+        "weaknesses": "Less powerful than full transformer attention, fixed architecture",
+        "params": "~2-15M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good",
+            "BF → Cell Segmentation": "best",
+            "BF → Fluorescence (label-free)": "fair",
+            "Instance Segmentation": "good",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "out_channels": 1,
+            "channels": [32, 64, 128, 256],
+            "strides": [2, 2, 2],
+            "kernel_size": [3, 3, 3, 3],
+            "dropout": 0.0,
+        },
+        "vram_estimate": "~2-6 GB",
+    },
+    "SegResNet": {
+        "target": "monai.networks.nets.SegResNet",
+        "source": "MONAI",
+        "category": "UNet Variants",
+        "description": (
+            "Encoder-decoder with residual blocks and variational autoencoder (VAE) "
+            "regularization option. Winner of BraTS 2018 challenge. Uses group "
+            "normalization and has a clean, efficient architecture. Very good "
+            "out-of-the-box performance with minimal tuning."
+        ),
+        "strengths": "Excellent defaults, group norm stability, VAE regularization option",
+        "weaknesses": "Fixed encoder structure less flexible than DynUNet",
+        "params": "~5-20M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "best",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "good",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "out_channels": 1,
+            "init_filters": 32,
+            "blocks_down": [1, 2, 2, 4],
+            "blocks_up": [1, 1, 1],
+            "dropout_prob": 0.0,
+        },
+        "vram_estimate": "~3-8 GB",
+    },
+    "BasicUNet": {
+        "target": "monai.networks.nets.BasicUNet",
+        "source": "MONAI",
+        "category": "UNet Variants",
+        "description": (
+            "Simple, clean UNet implementation with configurable encoder/decoder depth. "
+            "Good starting point and baseline model. Fast to train, easy to debug. "
+            "Ideal for prototyping and establishing baselines before trying heavier models."
+        ),
+        "strengths": "Simple, fast, low VRAM, easy to understand and debug",
+        "weaknesses": "No residual connections, less expressive than DynUNet",
+        "params": "~1-10M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "fair",
+            "Super-Resolution": "poor",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "out_channels": 1,
+            "features": [32, 32, 64, 128, 256, 32],
+            "dropout": 0.0,
+        },
+        "vram_estimate": "~1-4 GB",
+    },
+    "VNet": {
+        "target": "monai.networks.nets.VNet",
+        "source": "MONAI",
+        "category": "UNet Variants",
+        "description": (
+            "V-Net architecture designed specifically for 3D volumetric segmentation. "
+            "Uses volumetric convolutions with residual connections throughout. "
+            "Introduced the Dice loss for training. Efficient 3D processing."
+        ),
+        "strengths": "Purpose-built for 3D, efficient volumetric convolutions, residual learning",
+        "weaknesses": "3D only, fixed architecture depth, older design",
+        "params": "~10-45M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "fair",
+            "Instance Segmentation": "fair",
+            "Super-Resolution": "poor",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "out_channels": 1,
+            "dropout_prob": 0.0,
+            "dropout_dim": 3,
+        },
+        "vram_estimate": "~4-12 GB",
+    },
+    "HighResNet": {
+        "target": "monai.networks.nets.HighResNet",
+        "source": "MONAI",
+        "category": "Specialized",
+        "description": (
+            "High-resolution network that maintains high-res representations throughout "
+            "the network. No downsampling/upsampling — processes at full resolution. "
+            "Good for tasks where fine spatial detail matters (cell boundaries, small structures)."
+        ),
+        "strengths": "Preserves spatial detail, no information loss from downsampling",
+        "weaknesses": "Very VRAM intensive at high resolution, limited receptive field",
+        "params": "~1-5M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "fair",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "fair",
+            "Instance Segmentation": "good",
+            "Super-Resolution": "good",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "out_channels": 1,
+        },
+        "vram_estimate": "~4-16 GB (resolution dependent)",
+    },
+    "FlexibleUNet": {
+        "target": "monai.networks.nets.FlexibleUNet",
+        "source": "MONAI",
+        "category": "UNet Variants",
+        "description": (
+            "UNet with a swappable encoder backbone from any torchvision or timm model. "
+            "Drop in EfficientNet, ResNet, ConvNeXt, etc. as the encoder while keeping "
+            "the UNet decoder. Great for transfer learning from ImageNet pretrained weights."
+        ),
+        "strengths": "Use any pretrained encoder, transfer learning, flexible",
+        "weaknesses": "2D-focused encoders need adaptation for 3D, decoder is basic",
+        "params": "Varies by encoder (5-100M+)",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "good",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "in_channels": 1,
+            "out_channels": 1,
+            "backbone": "efficientnet-b0",
+            "pretrained": False,
+        },
+        "vram_estimate": "~2-12 GB (encoder dependent)",
+    },
+    "DiNTS": {
+        "target": "monai.networks.nets.DiNTS",
+        "source": "MONAI",
+        "category": "Neural Architecture Search",
+        "description": (
+            "Differentiable Neural Network Topology Search — automatically discovers "
+            "optimal network architecture for your specific dataset. Uses a supernet "
+            "with searchable topology and cell structures. Can find architectures that "
+            "outperform hand-designed models on your specific data distribution."
+        ),
+        "strengths": "Auto-discovers optimal architecture, can outperform hand-designed nets",
+        "weaknesses": "Expensive search phase, complex setup, needs large dataset",
+        "params": "Variable (discovered)",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good",
+            "BF → Cell Segmentation": "good",
+            "BF → Fluorescence (label-free)": "fair",
+            "Instance Segmentation": "fair",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "in_channels": 1,
+            "num_classes": 1,
+        },
+        "vram_estimate": "~8-24 GB (search phase)",
+    },
+    # ---- CytoDL Custom Architectures ----
+    "MAE (CytoDL)": {
+        "target": "cyto_dl.nn.vits.MAE",
+        "source": "CytoDL",
+        "category": "Self-Supervised",
+        "description": (
+            "Masked Autoencoder — masks random patches of the input and learns to "
+            "reconstruct them. Excellent for self-supervised pretraining when you have "
+            "lots of unlabeled data. Pretrain on unlabeled BF images, then fine-tune "
+            "for segmentation."
+        ),
+        "strengths": "Self-supervised pretraining, works with unlabeled data, transferable",
+        "weaknesses": "Requires two-stage training (pretrain then fine-tune), ViT overhead",
+        "params": "~10-80M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good (after pretrain)",
+            "BF → Cell Segmentation": "good (after pretrain)",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "fair",
+            "Super-Resolution": "fair",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "patch_size": [4, 8, 8],
+            "emb_dim": 192,
+            "encoder_layer": 6,
+            "encoder_head": 6,
+            "decoder_layer": 4,
+            "decoder_head": 6,
+        },
+        "vram_estimate": "~6-16 GB",
+    },
+    "HieraMAE (CytoDL)": {
+        "target": "cyto_dl.nn.vits.HieraMAE",
+        "source": "CytoDL",
+        "category": "Self-Supervised",
+        "description": (
+            "Hierarchical Masked Autoencoder — extends MAE with a hierarchical "
+            "architecture that progressively increases resolution. Better at "
+            "capturing multi-scale features than standard MAE. Facebook/Meta research."
+        ),
+        "strengths": "Multi-scale features, better than vanilla MAE, hierarchical attention",
+        "weaknesses": "More complex, higher VRAM, requires careful hyperparameter tuning",
+        "params": "~15-100M",
+        "tasks": {
+            "BF → Nuclei Segmentation": "good (after pretrain)",
+            "BF → Cell Segmentation": "good (after pretrain)",
+            "BF → Fluorescence (label-free)": "good",
+            "Instance Segmentation": "fair",
+            "Super-Resolution": "good",
+        },
+        "recommended_config": {
+            "spatial_dims": 3,
+            "patch_size": [4, 8, 8],
+            "emb_dim": 192,
+            "encoder_layer": 6,
+            "encoder_head": 6,
+        },
+        "vram_estimate": "~8-20 GB",
+    },
+}
+
+# Task recommendation order (best first)
+TASK_RECOMMENDATIONS = {
+    "BF → Nuclei Segmentation": [
+        ("DynUNet", "Best all-around: fast training, proven accuracy, low VRAM. Start here."),
+        ("SwinUNETR", "Higher accuracy potential but needs more VRAM and larger patches."),
+        ("SegResNet", "Great defaults, stable training with group norm. BraTS winner."),
+        ("AttentionUnet", "Good for difficult boundaries with attention-gated skip connections."),
+    ],
+    "BF → Cell Segmentation": [
+        ("DynUNet", "Reliable baseline — good at multi-scale cell morphology."),
+        ("AttentionUnet", "Attention gates help with cell boundary detection."),
+        ("SwinUNETR", "Best accuracy when VRAM allows — captures long-range cell context."),
+        ("HighResNet", "Preserves fine spatial detail for thin cell boundaries."),
+    ],
+    "BF → Fluorescence (label-free)": [
+        ("SwinUNETR", "Best for label-free — transformer captures complex BF→fluor mapping."),
+        ("DynUNet", "Good baseline with fast iteration. Start here to establish baseline."),
+        ("UNETR", "ViT encoder captures global context well for intensity prediction."),
+        ("BasicUNet", "Fast prototyping to test if the task is learnable."),
+    ],
+    "Instance Segmentation": [
+        ("DynUNet", "Best for multi-output instance seg (semantic + boundary + centroid)."),
+        ("AttentionUnet", "Attention helps separate touching instances."),
+        ("SegResNet", "Stable training for the challenging multi-task instance loss."),
+    ],
+    "Super-Resolution": [
+        ("SwinUNETR", "Transformer captures global context for upsampling."),
+        ("HighResNet", "Maintains spatial detail — natural fit for super-resolution."),
+        ("FlexibleUNet", "Use pretrained encoder for transfer learning to SR task."),
+    ],
+}
+
+
+def _scan_installed_models() -> dict:
+    """Scan for available model architectures from MONAI and timm at runtime."""
+    results = {"monai_models": [], "timm_models": [], "monai_version": None, "timm_version": None}
+
+    try:
+        import monai
+        results["monai_version"] = monai.__version__
+        import monai.networks.nets as nets
+        all_nets = [x for x in dir(nets) if not x.startswith("_") and x[0].isupper()]
+        results["monai_models"] = sorted(all_nets)
+    except ImportError:
+        pass
+
+    try:
+        import timm
+        results["timm_version"] = timm.__version__
+        # Get segmentation-relevant models
+        all_models = timm.list_models()
+        results["timm_models"] = sorted(all_models)
+    except ImportError:
+        pass
+
+    return results
+
 
 # ---------------------------------------------------------------------------
 # Session state helpers
@@ -798,8 +1212,8 @@ def main():
     # ====================================================================
     # Tabs
     # ====================================================================
-    tab_exp, tab_data, tab_preview, tab_model, tab_heads, tab_train, tab_gpu, tab_launch, tab_trt = st.tabs(
-        ["Experiment", "Data", "Data Preview", "Model", "Task Heads", "Training", "GPU / Perf", "Launch", "TensorRT Export"]
+    tab_exp, tab_data, tab_preview, tab_zoo, tab_model, tab_heads, tab_train, tab_gpu, tab_launch, tab_trt = st.tabs(
+        ["Experiment", "Data", "Data Preview", "Model Zoo", "Model", "Task Heads", "Training", "GPU / Perf", "Launch", "TensorRT Export"]
     )
 
     # ------------------------------------------------------------------ #
@@ -996,6 +1410,182 @@ def main():
                                         st.markdown(f"**Shape:** {timg.shape}  |  **dtype:** {timg.dtype}")
                                     else:
                                         st.warning(f"Could not load target image: {terr}")
+
+    # ------------------------------------------------------------------ #
+    # TAB: Model Zoo
+    # ------------------------------------------------------------------ #
+    with tab_zoo:
+        st.subheader("Model Zoo & Architecture Explorer")
+        st.caption(
+            "Browse available architectures, compare task suitability, and get "
+            "recommendations for your specific use case. Use the live scanner to "
+            "discover all models installed in your environment."
+        )
+
+        # ---- Task-Based Recommendations ----
+        st.markdown("### Recommendations by Task")
+        selected_task = st.selectbox(
+            "What are you trying to do?",
+            list(TASK_RECOMMENDATIONS.keys()),
+            key="zoo_task",
+        )
+
+        recs = TASK_RECOMMENDATIONS[selected_task]
+        for rank, (model_name, reason) in enumerate(recs, 1):
+            medal = {1: "1st", 2: "2nd", 3: "3rd"}.get(rank, f"{rank}th")
+            zoo_entry = MODEL_ZOO.get(model_name, {})
+            vram = zoo_entry.get("vram_estimate", "?")
+            params = zoo_entry.get("params", "?")
+            st.markdown(
+                f"**{medal}: {model_name}** ({zoo_entry.get('source', '?')}) — {reason}  \n"
+                f"*VRAM: {vram} | Params: {params}*"
+            )
+
+        st.divider()
+
+        # ---- Full Catalog ----
+        st.markdown("### Full Architecture Catalog")
+
+        # Filter by category
+        categories = sorted(set(m["category"] for m in MODEL_ZOO.values()))
+        selected_cats = st.multiselect("Filter by category", categories, default=categories, key="zoo_cats")
+
+        for model_name, info in MODEL_ZOO.items():
+            if info["category"] not in selected_cats:
+                continue
+
+            with st.expander(f"{model_name}  —  {info['source']} / {info['category']}", expanded=False):
+                st.markdown(f"**{info['description']}**")
+                st.markdown(f"**Target class:** `{info['target']}`")
+
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.markdown(f"**Params:** {info['params']}")
+                with col2:
+                    st.markdown(f"**VRAM:** {info['vram_estimate']}")
+                with col3:
+                    st.markdown(f"**Source:** {info['source']}")
+
+                st.markdown(f"**Strengths:** {info['strengths']}")
+                st.markdown(f"**Weaknesses:** {info['weaknesses']}")
+
+                # Task suitability table
+                st.markdown("**Task Suitability:**")
+                task_data = []
+                for task, rating in info["tasks"].items():
+                    color = {"best": "🟢", "good": "🟡", "fair": "🟠", "poor": "🔴"}.get(
+                        rating.split()[0], "⚪"
+                    )
+                    task_data.append({"Task": task, "Rating": f"{color} {rating}"})
+                st.table(task_data)
+
+                # Show recommended config
+                if info.get("recommended_config"):
+                    st.markdown("**Recommended Config:**")
+                    st.code(yaml.dump(info["recommended_config"], default_flow_style=False), language="yaml")
+
+                # Button to use this model
+                if model_name in BACKBONE_ARCHITECTURES or info["target"] in [v["target"] for v in BACKBONE_ARCHITECTURES.values()]:
+                    st.success("This architecture is available in the Model tab dropdown.")
+                else:
+                    st.info(
+                        f"To use this model, set the backbone `_target_` to `{info['target']}` "
+                        f"in the generated YAML config, or add it to the Model tab."
+                    )
+
+        st.divider()
+
+        # ---- Live Environment Scanner ----
+        st.markdown("### Live Environment Scanner")
+        st.caption("Scan your Python environment to discover all installed model architectures.")
+
+        if st.button("Scan Installed Models", type="primary", key="zoo_scan_btn"):
+            with st.spinner("Scanning MONAI and timm installations..."):
+                scan_results = _scan_installed_models()
+                st.session_state["zoo_scan_results"] = scan_results
+
+        scan = st.session_state.get("zoo_scan_results")
+        if scan:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("#### MONAI Networks")
+                if scan["monai_version"]:
+                    st.success(f"MONAI {scan['monai_version']} installed")
+                    st.markdown(f"**{len(scan['monai_models'])} architectures available:**")
+
+                    # Categorize as known/new
+                    known_targets = {v["target"].split(".")[-1] for v in MODEL_ZOO.values() if "monai" in v["target"]}
+                    new_models = [m for m in scan["monai_models"] if m not in known_targets]
+                    known_models = [m for m in scan["monai_models"] if m in known_targets]
+
+                    if known_models:
+                        st.markdown("**In catalog (configured):** " + ", ".join(f"`{m}`" for m in known_models))
+                    if new_models:
+                        st.markdown("**Discovered (not yet in catalog):**")
+                        for m in new_models:
+                            st.markdown(f"- `monai.networks.nets.{m}` — *try adding as custom backbone*")
+                else:
+                    st.warning("MONAI not installed. Install with: `pip install monai`")
+
+            with col2:
+                st.markdown("#### timm Models")
+                if scan["timm_version"]:
+                    st.success(f"timm {scan['timm_version']} installed")
+                    st.markdown(f"**{len(scan['timm_models'])} models available**")
+
+                    # Show segmentation-relevant filters
+                    st.markdown("**Search timm models:**")
+                    timm_search = st.text_input("Filter (e.g. 'resnet', 'efficientnet', 'convnext')", key="timm_search")
+                    if timm_search:
+                        matches = [m for m in scan["timm_models"] if timm_search.lower() in m.lower()]
+                        if matches:
+                            st.markdown(f"Found {len(matches)} matches:")
+                            st.code("\n".join(matches[:50]), language="text")
+                            if len(matches) > 50:
+                                st.caption(f"...and {len(matches) - 50} more")
+                        else:
+                            st.warning("No matches found.")
+                    else:
+                        # Show curated categories
+                        st.markdown("**Popular encoder families for segmentation:**")
+                        families = {
+                            "ResNet": [m for m in scan["timm_models"] if m.startswith("resnet")],
+                            "EfficientNet": [m for m in scan["timm_models"] if m.startswith("efficientnet")],
+                            "ConvNeXt": [m for m in scan["timm_models"] if m.startswith("convnext")],
+                            "RegNet": [m for m in scan["timm_models"] if m.startswith("regnet")],
+                        }
+                        for family, models in families.items():
+                            if models:
+                                st.markdown(f"- **{family}:** {len(models)} variants")
+                else:
+                    st.warning("timm not installed. Install with: `pip install timm`")
+
+        st.divider()
+
+        # ---- Comparison table ----
+        st.markdown("### Architecture Comparison")
+        st.caption("Side-by-side comparison of all cataloged architectures.")
+
+        comparison_data = []
+        for name, info in MODEL_ZOO.items():
+            row = {
+                "Architecture": name,
+                "Source": info["source"],
+                "Category": info["category"],
+                "Params": info["params"],
+                "VRAM": info["vram_estimate"],
+            }
+            # Add task ratings
+            for task in ["BF → Nuclei Segmentation", "BF → Cell Segmentation", "BF → Fluorescence (label-free)"]:
+                rating = info["tasks"].get(task, "—")
+                icon = {"best": "🟢", "good": "🟡", "fair": "🟠", "poor": "🔴"}.get(
+                    rating.split()[0] if isinstance(rating, str) else "", "⚪"
+                )
+                row[task.replace("BF → ", "")] = f"{icon} {rating}"
+            comparison_data.append(row)
+
+        st.dataframe(comparison_data, use_container_width=True, hide_index=True)
 
     # ------------------------------------------------------------------ #
     # TAB: Model
