@@ -549,6 +549,9 @@ def _init_state():
         "trt_running": False,
         "trt_log_thread": None,
         "task_heads_config": [],
+        "eval_process": None,
+        "eval_log": [],
+        "eval_running": False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -1116,6 +1119,145 @@ def stop_training():
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         proc.wait(timeout=10)
     st.session_state.training_running = False
+
+
+def _parse_loss_from_logs(log_lines: list) -> dict:
+    """Parse training/validation loss values from Lightning log lines.
+
+    Looks for patterns like:
+      - 'train/loss': 0.1234
+      - val/loss: 0.0567
+      - epoch 5, train_loss=0.1234
+      - Epoch 5/100 ... loss=0.1234
+    Returns dict with keys 'train_loss', 'val_loss', each a list of (epoch, value).
+    """
+    import re
+
+    train_losses = []
+    val_losses = []
+    current_epoch = 0
+
+    for line in log_lines:
+        # Try to extract epoch number
+        epoch_match = re.search(r'[Ee]poch[\s:=]*(\d+)', line)
+        if epoch_match:
+            current_epoch = int(epoch_match.group(1))
+
+        # Pattern: 'train/loss': <value> or train/loss=<value> or train/loss: <value>
+        train_match = re.search(r'train[/_]loss[\'"\s:=]+([0-9.eE+-]+)', line)
+        if train_match:
+            try:
+                val = float(train_match.group(1))
+                train_losses.append((current_epoch, val))
+            except ValueError:
+                pass
+
+        # Pattern: 'val/loss': <value> or val/loss=<value> or val/loss: <value>
+        val_match = re.search(r'val[/_]loss[\'"\s:=]+([0-9.eE+-]+)', line)
+        if val_match:
+            try:
+                val = float(val_match.group(1))
+                val_losses.append((current_epoch, val))
+            except ValueError:
+                pass
+
+    return {"train_loss": train_losses, "val_loss": val_losses}
+
+
+def _load_csv_metrics(output_dir: str) -> "dict | None":
+    """Load metrics from Lightning CSVLogger output.
+
+    CSVLogger writes to <save_dir>/<name>/version_X/metrics.csv
+    """
+    try:
+        import pandas as pd
+    except ImportError:
+        return None
+
+    output_path = Path(output_dir)
+    # Search for metrics.csv in common locations
+    candidates = list(output_path.rglob("metrics.csv"))
+    if not candidates:
+        return None
+
+    # Use the most recently modified one
+    metrics_file = max(candidates, key=lambda p: p.stat().st_mtime)
+    try:
+        df = pd.read_csv(metrics_file)
+        return df
+    except Exception:
+        return None
+
+
+def _find_best_checkpoint(output_dir: str) -> "str | None":
+    """Find the best checkpoint in the output directory."""
+    ckpt_dir = Path(output_dir) / "checkpoints"
+    if not ckpt_dir.exists():
+        # Try searching more broadly
+        ckpt_dir = Path(output_dir)
+
+    candidates = list(ckpt_dir.rglob("*.ckpt"))
+    if not candidates:
+        return None
+
+    # Prefer 'last.ckpt' for mid-training eval, otherwise most recent
+    for c in candidates:
+        if c.name == "last.ckpt":
+            return str(c)
+
+    return str(max(candidates, key=lambda p: p.stat().st_mtime))
+
+
+def launch_evaluation(config_path: str, checkpoint_path: str, output_dir: str):
+    """Launch a prediction/evaluation subprocess using the current best checkpoint."""
+    env = os.environ.copy()
+    env["PROJECT_ROOT"] = str(PROJECT_ROOT)
+
+    eval_output = Path(output_dir) / "eval_preview"
+    eval_output.mkdir(parents=True, exist_ok=True)
+
+    cmd = [
+        "python",
+        "-u",
+        str(PROJECT_ROOT / "cyto_dl" / "eval.py"),
+        "--config-path",
+        str(Path(config_path).parent),
+        "--config-name",
+        Path(config_path).stem,
+        f"checkpoint.ckpt_path={checkpoint_path}",
+        f"paths.output_dir={eval_output}",
+    ]
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        cwd=str(PROJECT_ROOT),
+        env=env,
+        preexec_fn=os.setsid,
+    )
+
+    st.session_state.eval_process = process
+    st.session_state.eval_log = []
+    st.session_state.eval_running = True
+
+    t = threading.Thread(target=_stream_output, args=(process, st.session_state.eval_log), daemon=True)
+    t.start()
+
+
+def _find_prediction_images(output_dir: str) -> list:
+    """Find saved prediction images from the latest evaluation run."""
+    eval_dir = Path(output_dir) / "eval_preview"
+    if not eval_dir.exists():
+        return []
+
+    images = []
+    for ext in ("*.tif", "*.tiff", "*.png", "*.jpg"):
+        images.extend(eval_dir.rglob(ext))
+
+    return sorted(images, key=lambda p: p.stat().st_mtime, reverse=True)[:20]
 
 
 def launch_tensorrt_export(trt_params: dict):
@@ -1937,8 +2079,8 @@ def main():
 
             if st.session_state.training_running or st.session_state.training_log:
                 st.divider()
-                st.markdown("#### Training Log")
 
+                # Check if process is still alive
                 proc = st.session_state.training_process
                 if proc and proc.poll() is not None and st.session_state.training_running:
                     st.session_state.training_running = False
@@ -1947,13 +2089,229 @@ def main():
                     else:
                         st.error(f"Training exited with code {proc.returncode}")
 
-                if st.session_state.training_log:
-                    log_text = "\n".join(st.session_state.training_log[-200:])
-                    st.code(log_text, language="log")
+                # ----- Sub-tabs for monitoring -----
+                mon_tab_chart, mon_tab_eval, mon_tab_log = st.tabs(
+                    ["Loss Monitor", "Evaluate Checkpoint", "Raw Log"]
+                )
 
-                if st.session_state.training_running:
-                    if st.button("Refresh Log"):
-                        st.rerun()
+                # ----- Loss Monitor -----
+                with mon_tab_chart:
+                    st.markdown("#### Live Loss Curves")
+
+                    # Try CSV metrics first (most reliable)
+                    csv_metrics = _load_csv_metrics(output_dir)
+                    has_csv_chart = False
+
+                    if csv_metrics is not None and not csv_metrics.empty:
+                        try:
+                            import pandas as pd
+
+                            loss_cols = [c for c in csv_metrics.columns if "loss" in c.lower()]
+                            epoch_col = "epoch" if "epoch" in csv_metrics.columns else "step" if "step" in csv_metrics.columns else None
+
+                            if loss_cols and epoch_col:
+                                # Group by epoch and get mean (CSVLogger logs per-step)
+                                plot_df = csv_metrics[[epoch_col] + loss_cols].dropna(subset=loss_cols, how="all")
+
+                                if not plot_df.empty:
+                                    # Separate train and val losses for cleaner display
+                                    train_cols = [c for c in loss_cols if "train" in c.lower()]
+                                    val_cols = [c for c in loss_cols if "val" in c.lower()]
+                                    other_cols = [c for c in loss_cols if c not in train_cols and c not in val_cols]
+
+                                    if train_cols or val_cols:
+                                        chart_col1, chart_col2 = st.columns(2)
+                                        with chart_col1:
+                                            if train_cols:
+                                                train_df = plot_df[[epoch_col] + train_cols].dropna()
+                                                if not train_df.empty:
+                                                    st.markdown("**Training Loss**")
+                                                    st.line_chart(train_df.set_index(epoch_col))
+                                        with chart_col2:
+                                            if val_cols:
+                                                val_df = plot_df[[epoch_col] + val_cols].dropna()
+                                                if not val_df.empty:
+                                                    st.markdown("**Validation Loss**")
+                                                    st.line_chart(val_df.set_index(epoch_col))
+
+                                    if other_cols:
+                                        other_df = plot_df[[epoch_col] + other_cols].dropna()
+                                        if not other_df.empty:
+                                            st.line_chart(other_df.set_index(epoch_col))
+
+                                    # Show current metrics
+                                    last_row = csv_metrics.iloc[-1]
+                                    metric_cols = st.columns(min(4, len(loss_cols)))
+                                    for idx, col_name in enumerate(loss_cols[:4]):
+                                        val = last_row.get(col_name)
+                                        if pd.notna(val):
+                                            with metric_cols[idx]:
+                                                st.metric(col_name, f"{val:.6f}")
+
+                                    has_csv_chart = True
+                        except Exception:
+                            pass
+
+                    # Fallback: parse from log lines
+                    if not has_csv_chart and st.session_state.training_log:
+                        parsed = _parse_loss_from_logs(st.session_state.training_log)
+                        train_losses = parsed["train_loss"]
+                        val_losses = parsed["val_loss"]
+
+                        if train_losses or val_losses:
+                            try:
+                                import pandas as pd
+
+                                chart_col1, chart_col2 = st.columns(2)
+                                with chart_col1:
+                                    if train_losses:
+                                        tdf = pd.DataFrame(train_losses, columns=["epoch", "train/loss"])
+                                        st.markdown("**Training Loss**")
+                                        st.line_chart(tdf.set_index("epoch"))
+                                        st.metric("Latest train/loss", f"{train_losses[-1][1]:.6f}")
+                                with chart_col2:
+                                    if val_losses:
+                                        vdf = pd.DataFrame(val_losses, columns=["epoch", "val/loss"])
+                                        st.markdown("**Validation Loss**")
+                                        st.line_chart(vdf.set_index("epoch"))
+                                        st.metric("Latest val/loss", f"{val_losses[-1][1]:.6f}")
+                            except ImportError:
+                                st.warning("Install pandas for loss charts: `pip install pandas`")
+                        else:
+                            st.info("No loss values detected yet. Charts will appear as training progresses.")
+                    elif not has_csv_chart:
+                        st.info("No loss data available yet. Start training and charts will appear here.")
+
+                    if st.session_state.training_running:
+                        if st.button("Refresh Charts", key="refresh_charts"):
+                            st.rerun()
+
+                # ----- Evaluate Checkpoint -----
+                with mon_tab_eval:
+                    st.markdown("#### Mid-Training Evaluation")
+                    st.caption(
+                        "Run prediction using the current best or latest checkpoint while "
+                        "training continues. View sample outputs to assess model quality."
+                    )
+
+                    # Find available checkpoints
+                    best_ckpt = _find_best_checkpoint(output_dir)
+
+                    if best_ckpt:
+                        st.success(f"Checkpoint found: `{Path(best_ckpt).name}`")
+                        st.text(f"Full path: {best_ckpt}")
+
+                        # Show checkpoint metadata
+                        ckpt_stat = Path(best_ckpt).stat()
+                        ckpt_size_mb = ckpt_stat.st_size / (1024 * 1024)
+                        ckpt_time = datetime.datetime.fromtimestamp(ckpt_stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                        st.markdown(f"**Size:** {ckpt_size_mb:.1f} MB  |  **Modified:** {ckpt_time}")
+
+                        # Also list all available checkpoints
+                        all_ckpts = list(Path(output_dir).rglob("*.ckpt"))
+                        if len(all_ckpts) > 1:
+                            eval_ckpt_choice = st.selectbox(
+                                "Select checkpoint to evaluate",
+                                [str(c) for c in sorted(all_ckpts, key=lambda p: p.stat().st_mtime, reverse=True)],
+                                format_func=lambda x: f"{Path(x).name} ({datetime.datetime.fromtimestamp(Path(x).stat().st_mtime).strftime('%H:%M:%S')})",
+                                key="eval_ckpt_select",
+                            )
+                        else:
+                            eval_ckpt_choice = best_ckpt
+
+                        # Config path for evaluation
+                        config_candidates = list(Path(output_dir).rglob("train_gui.yaml"))
+                        eval_config = str(config_candidates[0]) if config_candidates else ""
+
+                        if not eval_config:
+                            st.warning("No training config found in output directory. Generate and launch training first.")
+
+                        # Launch evaluation
+                        eval_proc = st.session_state.get("eval_process")
+                        eval_running = st.session_state.get("eval_running", False)
+
+                        # Check if eval finished
+                        if eval_proc and eval_proc.poll() is not None and eval_running:
+                            st.session_state.eval_running = False
+                            if eval_proc.returncode == 0:
+                                st.success("Evaluation completed!")
+                            else:
+                                st.error(f"Evaluation exited with code {eval_proc.returncode}")
+
+                        col_e1, col_e2 = st.columns(2)
+                        with col_e1:
+                            if not eval_running:
+                                if st.button("Run Evaluation", type="primary", key="run_eval_btn"):
+                                    if eval_config and eval_ckpt_choice:
+                                        launch_evaluation(eval_config, eval_ckpt_choice, output_dir)
+                                        st.success("Evaluation launched!")
+                                        st.rerun()
+                                    else:
+                                        st.error("Missing config or checkpoint path.")
+                            else:
+                                st.warning("Evaluation running...")
+                        with col_e2:
+                            if eval_running:
+                                if st.button("Stop Evaluation", key="stop_eval_btn"):
+                                    eval_p = st.session_state.eval_process
+                                    if eval_p and eval_p.poll() is None:
+                                        os.killpg(os.getpgid(eval_p.pid), signal.SIGTERM)
+                                        eval_p.wait(timeout=10)
+                                    st.session_state.eval_running = False
+                                    st.rerun()
+
+                        # Show evaluation log
+                        if st.session_state.eval_log:
+                            with st.expander("Evaluation Log", expanded=False):
+                                st.code("\n".join(st.session_state.eval_log[-100:]), language="log")
+
+                        # Show prediction images
+                        pred_images = _find_prediction_images(output_dir)
+                        if pred_images:
+                            st.divider()
+                            st.markdown("#### Prediction Preview")
+                            st.caption("Sample outputs from the evaluated checkpoint.")
+
+                            # Display in a grid
+                            n_cols = min(3, len(pred_images))
+                            for row_start in range(0, min(9, len(pred_images)), n_cols):
+                                cols = st.columns(n_cols)
+                                for j in range(n_cols):
+                                    idx = row_start + j
+                                    if idx < len(pred_images):
+                                        img_path = pred_images[idx]
+                                        with cols[j]:
+                                            # Try to load and display the image
+                                            try:
+                                                img_arr, err = _try_load_image_preview(str(img_path))
+                                                if img_arr is not None:
+                                                    st.image(img_arr, caption=img_path.name, use_container_width=True, clamp=True)
+                                                else:
+                                                    st.text(f"{img_path.name}\n({err})")
+                                            except Exception as e:
+                                                st.text(f"{img_path.name}\n(load error)")
+
+                        if eval_running:
+                            if st.button("Refresh Evaluation", key="refresh_eval"):
+                                st.rerun()
+                    else:
+                        st.info(
+                            "No checkpoints found yet. Checkpoints appear after the first "
+                            "validation epoch completes."
+                        )
+
+                # ----- Raw Log -----
+                with mon_tab_log:
+                    st.markdown("#### Training Log")
+                    if st.session_state.training_log:
+                        log_text = "\n".join(st.session_state.training_log[-200:])
+                        st.code(log_text, language="log")
+                    else:
+                        st.info("No log output yet.")
+
+                    if st.session_state.training_running:
+                        if st.button("Refresh Log", key="refresh_raw_log"):
+                            st.rerun()
 
     # ------------------------------------------------------------------ #
     # TAB: TensorRT Export
