@@ -7,6 +7,7 @@ from .gaussian_nll_loss import GaussianNLLLoss
 from .threshold_loss import ThresholdLoss
 from .vic_reg import VICRegLoss
 from .weibull import WeibullLogLoss
+from .metric_loss import MetricTrackingLoss
 from .weighted_mse_loss import WeightedMSELoss
 
 try:

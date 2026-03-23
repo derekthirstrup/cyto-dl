@@ -1,0 +1,83 @@
+# @package _global_
+
+# Autoresearch experiment config for brightfield-to-fluorescence prediction.
+# Uses MetricTrackingLoss to compute SSIM/PSNR/Pearson during training.
+#
+# Usage:
+#   python -m cyto_dl.train experiment=im2im/labelfree_autoresearch
+#
+# With overrides (used by autoresearch runner):
+#   python -m cyto_dl.train experiment=im2im/labelfree_autoresearch \
+#     model.optimizer.generator.lr=0.001 \
+#     model.backbone.filters=[32,64,128]
+
+defaults:
+  - override /data: im2im/labelfree.yaml
+  - override /model: im2im/labelfree.yaml
+  - override /callbacks: default.yaml
+  - override /trainer: gpu.yaml
+  - override /logger: csv.yaml
+
+tags: ["autoresearch", "labelfree"]
+seed: 12345
+
+experiment_name: autoresearch_labelfree
+run_name: baseline
+source_col: brightfield
+target_col: signal
+spatial_dims: 3
+raw_im_channels: 1
+
+# Optimized metric for Hydra sweeper / autoresearch evaluator
+optimized_metric: "val/ssim_epoch"
+
+trainer:
+  max_epochs: 10
+  # A100 can handle bf16-mixed well
+  precision: bf16-mixed
+
+data:
+  path: ${paths.data_dir}/labelfree
+  cache_dir: ${paths.data_dir}/labelfree_cache
+  batch_size: 2
+  _aux:
+    patch_shape: [16, 64, 64]
+
+# Override the loss to use MetricTrackingLoss wrapper
+model:
+  _aux:
+    _tasks:
+      - - ${target_col}
+        - _target_: cyto_dl.nn.BaseHead
+          loss:
+            _target_: cyto_dl.nn.losses.MetricTrackingLoss
+            base_loss:
+              _target_: torch.nn.MSELoss
+          postprocess:
+            input:
+              _target_: cyto_dl.models.im2im.utils.postprocessing.ActThreshLabel
+              rescale_dtype: numpy.uint8
+            prediction:
+              _target_: cyto_dl.models.im2im.utils.postprocessing.ActThreshLabel
+              rescale_dtype: numpy.uint8
+
+callbacks:
+  # Image quality metrics (reads from MetricTrackingLoss)
+  image_quality_metrics:
+    _target_: cyto_dl.callbacks.ImageQualityMetrics
+    stages: ["val", "train"]
+
+  saving:
+    _target_: cyto_dl.callbacks.ImageSaver
+    save_dir: ${paths.output_dir}
+    save_every_n_epochs: ${model.save_images_every_n_epochs}
+    stages: ["train", "test", "val"]
+    save_input: True
+
+  early_stopping:
+    _target_: lightning.pytorch.callbacks.EarlyStopping
+    monitor: "val/loss"
+    patience: 5
+    mode: "min"
+    min_delta: 0.0
+    check_finite: True

@@ -2,6 +2,7 @@
 # from .callback_utils import GetKLDRanks
 # from .latent_walk import LatentWalk
 
+from .image_quality_metrics import ImageQualityMetrics
 from .image_saver import ImageSaver
 from .layer_freeze import LayerFreeze
 

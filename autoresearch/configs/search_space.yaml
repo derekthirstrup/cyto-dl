@@ -1,0 +1,197 @@
+# Autoresearch Hyperparameter Search Space
+#
+# Defines the parameter space for autonomous optimization of label-free
+# brightfield-to-fluorescence prediction models.
+#
+# Parameters are organized by category and phase:
+#   - early (iterations 1-15): Low-risk, high-impact parameters
+#   - mid (iterations 16-30): Moderate changes
+#   - late (iterations 30+): Structural/radical changes
+#
+# Each parameter maps to a Hydra override key in the experiment config.
+
+training:
+  learning_rate:
+    hydra_key: model.optimizer.generator.lr
+    type: log_uniform
+    min: 0.00001
+    max: 0.01
+    default: 0.0001
+    phase: early
+    notes: "Most impactful single parameter. Start here."
+
+  weight_decay:
+    hydra_key: model.optimizer.generator.weight_decay
+    type: log_uniform
+    min: 0.000001
+    max: 0.01
+    default: 0.0001
+    phase: early
+
+  optimizer_type:
+    hydra_key: model.optimizer.generator._target_
+    type: choice
+    values:
+      - torch.optim.Adam
+      - torch.optim.AdamW
+    default: torch.optim.Adam
+    phase: mid
+    notes: "AdamW often works better with weight decay"
+
+  scheduler_type:
+    hydra_key: model.lr_scheduler.generator._target_
+    type: choice
+    values:
+      - torch.optim.lr_scheduler.ExponentialLR
+      - torch.optim.lr_scheduler.CosineAnnealingLR
+      - torch.optim.lr_scheduler.StepLR
+    default: torch.optim.lr_scheduler.ExponentialLR
+    phase: mid
+    notes: "CosineAnnealing often gives better final convergence"
+
+  scheduler_gamma:
+    hydra_key: model.lr_scheduler.generator.gamma
+    type: uniform
+    min: 0.95
+    max: 0.999
+    default: 0.995
+    phase: early
+    notes: "Only applies to ExponentialLR"
+
+  loss_function:
+    hydra_key: model._aux._tasks.0.1.loss._target_
+    type: choice
+    values:
+      - cyto_dl.nn.losses.MetricTrackingLoss
+    default: cyto_dl.nn.losses.MetricTrackingLoss
+    phase: mid
+    notes: "Always use MetricTrackingLoss wrapper. Change base_loss instead."
+
+  base_loss:
+    hydra_key: model._aux._tasks.0.1.loss.base_loss._target_
+    type: choice
+    values:
+      - torch.nn.MSELoss
+      - torch.nn.L1Loss
+      - torch.nn.SmoothL1Loss
+    default: torch.nn.MSELoss
+    phase: mid
+    notes: "L1 is more robust to outliers. SmoothL1 is a compromise."
+
+architecture:
+  filters:
+    hydra_key: model.backbone.filters
+    type: choice
+    values:
+      - [16, 32, 64]
+      - [32, 64, 128]
+      - [16, 32, 64, 128]
+      - [32, 64, 128, 256]
+      - [64, 128, 256]
+      - [16, 32, 64, 128, 256]
+    default: [16, 32, 64]
+    phase: mid
+    notes: >
+      More filters = more capacity but slower. A100 can handle [32,64,128,256].
+      Adding depth (more filter stages) adds encoder/decoder levels.
+
+  dropout:
+    hydra_key: model.backbone.dropout
+    type: uniform
+    min: 0.0
+    max: 0.3
+    default: 0.0
+    phase: early
+    notes: "Light dropout can prevent overfitting on small datasets"
+
+  res_block:
+    hydra_key: model.backbone.res_block
+    type: choice
+    values: [true, false]
+    default: true
+    phase: late
+    notes: "Residual connections. Usually helps, but worth testing."
+
+  kernel_size:
+    hydra_key: model.backbone.kernel_size
+    type: choice
+    values:
+      - [3, 3, 3]
+      - [3, 5, 5]
+      - [5, 5, 5]
+    default: [3, 3, 3]
+    phase: late
+    notes: "Larger kernels = larger receptive field. Good for structure prediction."
+
+  strides:
+    hydra_key: model.backbone.strides
+    type: choice
+    values:
+      - [1, 2, 2]
+      - [2, 2, 2]
+      - [1, 2, 2, 2]
+    default: [1, 2, 2]
+    phase: late
+    notes: "Must match filter count. More strides = more downsampling."
+
+data:
+  batch_size:
+    hydra_key: data.batch_size
+    type: choice
+    values: [1, 2, 4, 8]
+    default: 2
+    phase: early
+    notes: "A100 80GB can handle batch_size=8 with small patches"
+
+  patch_shape:
+    hydra_key: data._aux.patch_shape
+    type: choice
+    values:
+      - [16, 32, 32]
+      - [16, 64, 64]
+      - [32, 64, 64]
+      - [32, 128, 128]
+      - [16, 128, 128]
+    default: [16, 64, 64]
+    phase: mid
+    notes: >
+      Larger patches give more context but use more memory.
+      Z dimension is usually smaller due to anisotropy.
+
+  zoom:
+    hydra_key: data.transforms.train.transforms.3.zoom
+    type: choice
+    values: [0.25, 0.5, 1.0]
+    default: 0.25
+    phase: late
+    notes: >
+      Higher zoom = higher resolution = more detail but much more compute.
+      1.0 = full resolution. Only try with small patches.
+
+# Strategy escalation timeline
+strategy:
+  phases:
+    early:
+      iterations: [1, 15]
+      parameters: [learning_rate, weight_decay, scheduler_gamma, dropout, batch_size]
+      approach: "Focus on training dynamics. Quick iterations."
+
+    mid:
+      iterations: [16, 30]
+      parameters: [optimizer_type, scheduler_type, base_loss, filters, patch_shape]
+      approach: "Explore architecture and loss. Medium-length training."
+
+    late:
+      iterations: [31, 999]
+      parameters: [res_block, kernel_size, strides, zoom]
+      approach: "Structural changes. Full training runs."
+
+  rules:
+    - "ONE change per experiment"
+    - "Never modify the evaluator"
+    - "If NaN loss: lr is too high, reduce by 10x"
+    - "If OOM: reduce batch_size, then patch_shape, then filters"
+    - "If loss plateaus early: increase lr or try different scheduler"
+    - "If val loss << train loss: add dropout or reduce model size"
+    - "If train loss << val loss: model is underfitting, increase capacity"
+    - "Every 10 iterations: review results.tsv and update strategy"
