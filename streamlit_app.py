@@ -6,8 +6,8 @@ model training. Optimized for CUDA 13 / Blackwell GPU workstations.
 
 import datetime
 import glob as globmod
-import json
 import os
+import re
 import signal
 import subprocess
 import threading
@@ -637,8 +637,8 @@ def _try_load_image_preview(filepath: str):
                 mid = img.shape[0] // 2
                 img = img[mid]
             return img, None
-        except Exception as e:
-            return None, str(e)
+        except Exception as exc:
+            return None, str(exc)
 
     # Try PIL for standard image formats
     if ext in (".png", ".jpg", ".jpeg", ".bmp"):
@@ -647,8 +647,8 @@ def _try_load_image_preview(filepath: str):
 
             img = Image.open(filepath)
             return np.array(img), None
-        except Exception as e:
-            return None, str(e)
+        except Exception as exc:
+            return None, str(exc)
 
     # CZI files
     if ext == ".czi":
@@ -658,8 +658,8 @@ def _try_load_image_preview(filepath: str):
             reader = BioImage(filepath)
             img = reader.get_image_data("YX", C=0, Z=reader.dims.Z // 2 if reader.dims.Z > 1 else 0, T=0)
             return img, None
-        except Exception as e:
-            return None, str(e)
+        except Exception as exc:
+            return None, str(exc)
 
     return None, f"Unsupported format: {ext}"
 
@@ -1061,16 +1061,18 @@ def build_full_config(params: dict) -> dict:
 # Process launcher helpers
 # ---------------------------------------------------------------------------
 def _stream_output(process, log_list):
-    """Read process stdout line-by-line into the session log list."""
+    """Read merged stdout+stderr line-by-line into the session log list."""
     try:
         for line in iter(process.stdout.readline, ""):
             if line:
                 log_list.append(line.rstrip("\n"))
-        for line in iter(process.stderr.readline, ""):
-            if line:
-                log_list.append(f"[STDERR] {line.rstrip()}")
     except (ValueError, OSError):
         pass
+    finally:
+        try:
+            process.stdout.close()
+        except OSError:
+            pass
 
 
 def launch_training(config: dict, config_path: Path):
@@ -1096,12 +1098,12 @@ def launch_training(config: dict, config_path: Path):
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
         cwd=str(PROJECT_ROOT),
         env=env,
-        preexec_fn=os.setsid,
+        preexec_fn=os.setsid if os.name != "nt" else None,
     )
 
     st.session_state.training_process = process
@@ -1113,11 +1115,34 @@ def launch_training(config: dict, config_path: Path):
     st.session_state.log_thread = t
 
 
-def stop_training():
-    proc = st.session_state.training_process
-    if proc and proc.poll() is None:
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+def _kill_process_group(proc):
+    """Safely terminate a process group with SIGKILL escalation."""
+    if proc is None or proc.poll() is not None:
+        return
+    try:
+        pgid = os.getpgid(proc.pid) if os.name != "nt" else proc.pid
+        if os.name != "nt":
+            os.killpg(pgid, signal.SIGTERM)
+        else:
+            proc.terminate()
         proc.wait(timeout=10)
+    except ProcessLookupError:
+        pass
+    except subprocess.TimeoutExpired:
+        try:
+            if os.name != "nt":
+                os.killpg(pgid, signal.SIGKILL)
+            else:
+                proc.kill()
+            proc.wait(timeout=5)
+        except (ProcessLookupError, subprocess.TimeoutExpired, OSError):
+            pass
+    except OSError:
+        pass
+
+
+def stop_training():
+    _kill_process_group(st.session_state.training_process)
     st.session_state.training_running = False
 
 
@@ -1131,8 +1156,6 @@ def _parse_loss_from_logs(log_lines: list) -> dict:
       - Epoch 5/100 ... loss=0.1234
     Returns dict with keys 'train_loss', 'val_loss', each a list of (epoch, value).
     """
-    import re
-
     train_losses = []
     val_losses = []
     current_epoch = 0
@@ -1231,12 +1254,12 @@ def launch_evaluation(config_path: str, checkpoint_path: str, output_dir: str):
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
         cwd=str(PROJECT_ROOT),
         env=env,
-        preexec_fn=os.setsid,
+        preexec_fn=os.setsid if os.name != "nt" else None,
     )
 
     st.session_state.eval_process = process
@@ -1300,11 +1323,11 @@ def launch_tensorrt_export(trt_params: dict):
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
         cwd=str(PROJECT_ROOT),
-        preexec_fn=os.setsid,
+        preexec_fn=os.setsid if os.name != "nt" else None,
     )
 
     st.session_state.trt_process = process
@@ -1317,10 +1340,7 @@ def launch_tensorrt_export(trt_params: dict):
 
 
 def stop_tensorrt():
-    proc = st.session_state.trt_process
-    if proc and proc.poll() is None:
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        proc.wait(timeout=10)
+    _kill_process_group(st.session_state.trt_process)
     st.session_state.trt_running = False
 
 
@@ -1747,7 +1767,11 @@ def main():
         if arch_key == "DynUNet (MONAI)":
             st.markdown("**Encoder filter sizes** (each level doubles receptive field)")
             filter_str = st.text_input("Filters (comma-separated)", value="32, 64, 128, 256")
-            filters = [int(x.strip()) for x in filter_str.split(",") if x.strip()]
+            try:
+                filters = [int(x.strip()) for x in filter_str.split(",") if x.strip()]
+            except ValueError:
+                st.warning("Invalid filter values — expected comma-separated integers.")
+                filters = [32, 64, 128, 256]
             res_block = st.checkbox("Use residual blocks", value=True)
         elif arch_key == "SwinUNETR (MONAI)":
             feature_size = st.number_input("Feature size", min_value=12, max_value=96, value=48, step=12)
@@ -1755,7 +1779,11 @@ def main():
             res_block = False
         elif arch_key == "AttentionUNet (MONAI)":
             filter_str = st.text_input("Channel sizes (comma-separated)", value="32, 64, 128, 256")
-            filters = [int(x.strip()) for x in filter_str.split(",") if x.strip()]
+            try:
+                filters = [int(x.strip()) for x in filter_str.split(",") if x.strip()]
+            except ValueError:
+                st.warning("Invalid channel sizes — expected comma-separated integers.")
+                filters = [32, 64, 128, 256]
             res_block = False
         else:
             filters = [16, 32, 64]
@@ -1797,14 +1825,14 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 task_name = st.text_input(
-                    f"Target column / task name",
+                    "Target column / task name",
                     value=target_col if i == 0 else f"task_{i + 1}",
                     key=f"head_task_name_{i}",
                     help="Column name in manifest CSV for this task's ground truth.",
                 )
             with col2:
                 head_type_key = st.selectbox(
-                    f"Head type",
+                    "Head type",
                     list(HEAD_TYPES.keys()),
                     key=f"head_type_{i}",
                 )
@@ -1815,21 +1843,21 @@ def main():
             with col1:
                 default_loss_idx = 0 if exp_type == "segmentation" else 2
                 head_loss = st.selectbox(
-                    f"Loss function",
+                    "Loss function",
                     list(LOSS_FUNCTIONS.keys()),
                     index=default_loss_idx,
                     key=f"head_loss_{i}",
                 )
             with col2:
                 pred_activation = st.selectbox(
-                    f"Prediction activation",
+                    "Prediction activation",
                     list(POSTPROCESS_ACTIVATIONS.keys()),
                     index=0 if exp_type == "segmentation" else 3,
                     key=f"head_activation_{i}",
                 )
 
             rescale_dtype = st.selectbox(
-                f"Output dtype",
+                "Output dtype",
                 ["numpy.uint8", "numpy.uint16", "numpy.float32"],
                 key=f"head_dtype_{i}",
             )
@@ -2065,7 +2093,7 @@ def main():
                         config_dir = Path(output_dir) / "configs"
                         config_path = config_dir / "train_gui.yaml"
                         launch_training(st.session_state.generated_config, config_path)
-                        st.success("Training launched!")
+                        st.toast("Training launched!")
                         st.rerun()
                 else:
                     st.warning("Training is running...")
@@ -2149,8 +2177,8 @@ def main():
                                                 st.metric(col_name, f"{val:.6f}")
 
                                     has_csv_chart = True
-                        except Exception:
-                            pass
+                        except Exception as chart_err:
+                            st.caption(f"Could not render CSV metrics chart: {chart_err}")
 
                     # Fallback: parse from log lines
                     if not has_csv_chart and st.session_state.training_log:
@@ -2244,7 +2272,7 @@ def main():
                                 if st.button("Run Evaluation", type="primary", key="run_eval_btn"):
                                     if eval_config and eval_ckpt_choice:
                                         launch_evaluation(eval_config, eval_ckpt_choice, output_dir)
-                                        st.success("Evaluation launched!")
+                                        st.toast("Evaluation launched!")
                                         st.rerun()
                                     else:
                                         st.error("Missing config or checkpoint path.")
@@ -2253,10 +2281,7 @@ def main():
                         with col_e2:
                             if eval_running:
                                 if st.button("Stop Evaluation", key="stop_eval_btn"):
-                                    eval_p = st.session_state.eval_process
-                                    if eval_p and eval_p.poll() is None:
-                                        os.killpg(os.getpgid(eval_p.pid), signal.SIGTERM)
-                                        eval_p.wait(timeout=10)
+                                    _kill_process_group(st.session_state.eval_process)
                                     st.session_state.eval_running = False
                                     st.rerun()
 
@@ -2288,7 +2313,7 @@ def main():
                                                     st.image(img_arr, caption=img_path.name, use_container_width=True, clamp=True)
                                                 else:
                                                     st.text(f"{img_path.name}\n({err})")
-                                            except Exception as e:
+                                            except Exception:
                                                 st.text(f"{img_path.name}\n(load error)")
 
                         if eval_running:
@@ -2479,7 +2504,7 @@ def main():
                                 "benchmark_iterations": trt_bench_iters,
                             }
                             launch_tensorrt_export(trt_params)
-                            st.success("TensorRT export launched!")
+                            st.toast("TensorRT export launched!")
                             st.rerun()
                 else:
                     st.warning("TensorRT export is running...")
