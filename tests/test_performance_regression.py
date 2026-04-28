@@ -275,7 +275,7 @@ def test_benchmark_suite():
     # Add models
     model1 = SimpleConv2D()
     model2 = SimpleConv2D()
-    sample_input = torch.randn(1, 256, 256)
+    sample_input = torch.randn(1, 1, 256, 256)
 
     suite.add_model("model1", model1, sample_input)
     suite.add_model("model2", model2, sample_input)
