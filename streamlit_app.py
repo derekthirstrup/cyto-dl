@@ -5,7 +5,7 @@ model training. Optimized for CUDA 13 / Blackwell GPU workstations.
 """
 
 import datetime
-import glob as globmod
+import logging
 import os
 import re
 import signal
@@ -15,6 +15,8 @@ from pathlib import Path
 
 import streamlit as st
 import yaml
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -612,7 +614,8 @@ def _load_manifest(filepath: str):
             return pd.read_csv(filepath, sep="\t")
         else:
             return pd.read_csv(filepath)
-    except Exception:
+    except (OSError, ValueError, pd.errors.ParserError) as exc:
+        logger.debug("Failed to load manifest %s: %s", filepath, exc)
         return None
 
 
@@ -645,9 +648,9 @@ def _try_load_image_preview(filepath: str):
         try:
             from PIL import Image
 
-            img = Image.open(filepath)
-            return np.array(img), None
-        except Exception as exc:
+            with Image.open(filepath) as img:
+                return np.array(img), None
+        except (OSError, ValueError) as exc:
             return None, str(exc)
 
     # CZI files
@@ -1187,7 +1190,7 @@ def _parse_loss_from_logs(log_lines: list) -> dict:
     return {"train_loss": train_losses, "val_loss": val_losses}
 
 
-def _load_csv_metrics(output_dir: str) -> "dict | None":
+def _load_csv_metrics(output_dir: str):
     """Load metrics from Lightning CSVLogger output.
 
     CSVLogger writes to <save_dir>/<name>/version_X/metrics.csv
@@ -1208,11 +1211,12 @@ def _load_csv_metrics(output_dir: str) -> "dict | None":
     try:
         df = pd.read_csv(metrics_file)
         return df
-    except Exception:
+    except (OSError, ValueError, pd.errors.ParserError) as exc:
+        logger.debug("Failed to load CSV metrics %s: %s", metrics_file, exc)
         return None
 
 
-def _find_best_checkpoint(output_dir: str) -> "str | None":
+def _find_best_checkpoint(output_dir: str):
     """Find the best checkpoint in the output directory."""
     ckpt_dir = Path(output_dir) / "checkpoints"
     if not ckpt_dir.exists():
@@ -2313,7 +2317,7 @@ def main():
                                                     st.image(img_arr, caption=img_path.name, use_container_width=True, clamp=True)
                                                 else:
                                                     st.text(f"{img_path.name}\n({err})")
-                                            except Exception:
+                                            except (OSError, ValueError):
                                                 st.text(f"{img_path.name}\n(load error)")
 
                         if eval_running:
@@ -2373,7 +2377,12 @@ def main():
             st.markdown("**Auto-detect checkpoints**")
             scan_dir = st.text_input("Scan directory for checkpoints", value=str(PROJECT_ROOT / "logs"), key="trt_scan_dir")
             if st.button("Scan for Checkpoints", key="trt_scan_btn"):
-                ckpt_files = sorted(globmod.glob(str(Path(scan_dir) / "**" / "*.ckpt"), recursive=True))
+                scan_path = Path(scan_dir).resolve()
+                if not scan_path.is_dir():
+                    st.warning(f"Directory does not exist: {scan_dir}")
+                    ckpt_files = []
+                else:
+                    ckpt_files = sorted(str(p) for p in scan_path.rglob("*.ckpt"))
                 if ckpt_files:
                     st.session_state["found_checkpoints"] = ckpt_files
                 else:
