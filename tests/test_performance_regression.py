@@ -15,9 +15,9 @@ Usage:
 """
 
 import json
-import pytest
 from pathlib import Path
 
+import pytest
 import torch
 import torch.nn as nn
 
@@ -121,14 +121,16 @@ def test_baseline_performance_2d(conv2d_model, sample_input_2d):
     results = benchmark_model(conv2d_model, sample_input_2d, device="cuda")
 
     # Check latency
-    assert results["latency_ms"] < PERFORMANCE_BASELINES["simple_conv2d"]["latency_ms"], \
-        f"Latency {results['latency_ms']:.2f}ms exceeds baseline " \
+    assert results["latency_ms"] < PERFORMANCE_BASELINES["simple_conv2d"]["latency_ms"], (
+        f"Latency {results['latency_ms']:.2f}ms exceeds baseline "
         f"{PERFORMANCE_BASELINES['simple_conv2d']['latency_ms']:.2f}ms"
+    )
 
     # Check memory
-    assert results["memory_gb"] < PERFORMANCE_BASELINES["simple_conv2d"]["memory_gb"], \
-        f"Memory {results['memory_gb']:.2f}GB exceeds baseline " \
+    assert results["memory_gb"] < PERFORMANCE_BASELINES["simple_conv2d"]["memory_gb"], (
+        f"Memory {results['memory_gb']:.2f}GB exceeds baseline "
         f"{PERFORMANCE_BASELINES['simple_conv2d']['memory_gb']:.2f}GB"
+    )
 
 
 @pytest.mark.performance
@@ -140,14 +142,16 @@ def test_baseline_performance_3d(conv3d_model, sample_input_3d):
     results = benchmark_model(conv3d_model, sample_input_3d, device="cuda")
 
     # Check latency
-    assert results["latency_ms"] < PERFORMANCE_BASELINES["simple_conv3d"]["latency_ms"], \
-        f"Latency {results['latency_ms']:.2f}ms exceeds baseline " \
+    assert results["latency_ms"] < PERFORMANCE_BASELINES["simple_conv3d"]["latency_ms"], (
+        f"Latency {results['latency_ms']:.2f}ms exceeds baseline "
         f"{PERFORMANCE_BASELINES['simple_conv3d']['latency_ms']:.2f}ms"
+    )
 
     # Check memory
-    assert results["memory_gb"] < PERFORMANCE_BASELINES["simple_conv3d"]["memory_gb"], \
-        f"Memory {results['memory_gb']:.2f}GB exceeds baseline " \
+    assert results["memory_gb"] < PERFORMANCE_BASELINES["simple_conv3d"]["memory_gb"], (
+        f"Memory {results['memory_gb']:.2f}GB exceeds baseline "
         f"{PERFORMANCE_BASELINES['simple_conv3d']['memory_gb']:.2f}GB"
+    )
 
 
 @pytest.mark.performance
@@ -175,8 +179,7 @@ def test_phase1_speedup(conv2d_model, sample_input_2d):
 
     # Phase 1 should be at least 1.2x faster (conservative estimate)
     speedup = baseline_results["latency_ms"] / phase1_results["latency_ms"]
-    assert speedup >= 1.2, \
-        f"Phase 1 speedup {speedup:.2f}x is less than expected 1.2x"
+    assert speedup >= 1.2, f"Phase 1 speedup {speedup:.2f}x is less than expected 1.2x"
 
 
 @pytest.mark.performance
@@ -199,8 +202,9 @@ def test_quantization_size_reduction(conv2d_model):
 
     # Should be at least 2x smaller (INT8 vs FP32)
     size_reduction = original_size / quantized_size
-    assert size_reduction >= 2.0, \
-        f"Size reduction {size_reduction:.2f}x is less than expected 2.0x"
+    assert (
+        size_reduction >= 2.0
+    ), f"Size reduction {size_reduction:.2f}x is less than expected 2.0x"
 
 
 @pytest.mark.performance
@@ -261,8 +265,9 @@ def test_accuracy_after_optimization(conv2d_model, sample_input_2d):
     comparison = comparator.compare(sample_optimized)
 
     # Output difference should be negligible
-    assert comparison["max_diff"] < 1e-5, \
-        f"Max output difference {comparison['max_diff']} exceeds threshold"
+    assert (
+        comparison["max_diff"] < 1e-5
+    ), f"Max output difference {comparison['max_diff']} exceeds threshold"
 
 
 @pytest.mark.performance
@@ -304,7 +309,7 @@ def load_baselines(input_path="performance_baselines.json"):
     if not Path(input_path).exists():
         return PERFORMANCE_BASELINES
 
-    with open(input_path, "r") as f:
+    with open(input_path) as f:
         return json.load(f)
 
 
@@ -333,8 +338,10 @@ def test_no_performance_regression():
             # Allow 10% performance degradation
             tolerance = 1.1
 
-            assert current["latency_ms"] <= baseline["latency_ms"] * tolerance, \
-                f"{model_name}: Latency regression detected"
+            assert (
+                current["latency_ms"] <= baseline["latency_ms"] * tolerance
+            ), f"{model_name}: Latency regression detected"
 
-            assert current["memory_gb"] <= baseline["memory_gb"] * tolerance, \
-                f"{model_name}: Memory regression detected"
+            assert (
+                current["memory_gb"] <= baseline["memory_gb"] * tolerance
+            ), f"{model_name}: Memory regression detected"

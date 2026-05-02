@@ -9,7 +9,7 @@ import logging
 import os
 import re
 import signal
-import subprocess
+import subprocess  # nosec: B404
 import threading
 from pathlib import Path
 
@@ -53,7 +53,10 @@ BACKBONE_ARCHITECTURES = {
 }
 
 LOSS_FUNCTIONS = {
-    "DiceCE Loss (segmentation)": {"target": "monai.losses.DiceCELoss", "kwargs": {"sigmoid": True}},
+    "DiceCE Loss (segmentation)": {
+        "target": "monai.losses.DiceCELoss",
+        "kwargs": {"sigmoid": True},
+    },
     "Dice Loss": {"target": "monai.losses.DiceLoss", "kwargs": {"sigmoid": True}},
     "MSE Loss (label-free)": {"target": "torch.nn.MSELoss", "kwargs": {}},
     "L1 Loss": {"target": "torch.nn.L1Loss", "kwargs": {}},
@@ -91,7 +94,10 @@ OPTIMIZERS = {
 }
 
 LR_SCHEDULERS = {
-    "ExponentialLR": {"target": "torch.optim.lr_scheduler.ExponentialLR", "params": {"gamma": 0.995}},
+    "ExponentialLR": {
+        "target": "torch.optim.lr_scheduler.ExponentialLR",
+        "params": {"gamma": 0.995},
+    },
     "CosineAnnealingLR": {
         "target": "torch.optim.lr_scheduler.CosineAnnealingLR",
         "params": {"T_max": 100},
@@ -100,7 +106,10 @@ LR_SCHEDULERS = {
         "target": "torch.optim.lr_scheduler.ReduceLROnPlateau",
         "params": {"factor": 0.5, "patience": 10},
     },
-    "StepLR": {"target": "torch.optim.lr_scheduler.StepLR", "params": {"step_size": 30, "gamma": 0.1}},
+    "StepLR": {
+        "target": "torch.optim.lr_scheduler.StepLR",
+        "params": {"step_size": 30, "gamma": 0.1},
+    },
     "None": None,
 }
 
@@ -517,8 +526,10 @@ def _scan_installed_models() -> dict:
 
     try:
         import monai
+
         results["monai_version"] = monai.__version__
         import monai.networks.nets as nets
+
         all_nets = [x for x in dir(nets) if not x.startswith("_") and x[0].isupper()]
         results["monai_models"] = sorted(all_nets)
     except ImportError:
@@ -526,6 +537,7 @@ def _scan_installed_models() -> dict:
 
     try:
         import timm
+
         results["timm_version"] = timm.__version__
         # Get segmentation-relevant models
         all_models = timm.list_models()
@@ -591,7 +603,16 @@ def _scan_data_directory(data_path: str) -> dict:
         info["subdirs"] = sorted([d.name for d in p.iterdir() if d.is_dir()])
         for ext in ("*.csv", "*.parquet", "*.tsv"):
             info["manifest_files"].extend(sorted(str(f) for f in p.glob(ext)))
-        for ext in ("*.tif", "*.tiff", "*.czi", "*.ome.tiff", "*.ome.zarr", "*.png", "*.jpg", "*.zarr"):
+        for ext in (
+            "*.tif",
+            "*.tiff",
+            "*.czi",
+            "*.ome.tiff",
+            "*.ome.zarr",
+            "*.png",
+            "*.jpg",
+            "*.zarr",
+        ):
             found = list(p.rglob(ext))
             info["image_files"].extend(str(f) for f in found[:500])
         info["total_files"] = sum(1 for _ in p.rglob("*") if _.is_file())
@@ -659,7 +680,9 @@ def _try_load_image_preview(filepath: str):
             from bioio import BioImage
 
             reader = BioImage(filepath)
-            img = reader.get_image_data("YX", C=0, Z=reader.dims.Z // 2 if reader.dims.Z > 1 else 0, T=0)
+            img = reader.get_image_data(
+                "YX", C=0, Z=reader.dims.Z // 2 if reader.dims.Z > 1 else 0, T=0
+            )
             return img, None
         except Exception as exc:
             return None, str(exc)
@@ -741,7 +764,9 @@ def _build_task_head_config(head_cfg: dict, exp_type: str) -> dict:
     loss_cfg.update(loss_info["kwargs"])
 
     # Postprocess
-    act_key = head_cfg.get("prediction_activation", "Sigmoid" if exp_type == "segmentation" else "None")
+    act_key = head_cfg.get(
+        "prediction_activation", "Sigmoid" if exp_type == "segmentation" else "None"
+    )
     activation_cfg = POSTPROCESS_ACTIVATIONS.get(act_key)
 
     pred_postprocess = {
@@ -1023,9 +1048,14 @@ def build_full_config(params: dict) -> dict:
     # ---- paths ----
     paths_cfg = {
         "root_dir": str(PROJECT_ROOT),
-        "data_dir": str(Path(params["data_path"]).parent) if params["data_path"] else str(PROJECT_ROOT / "data"),
+        "data_dir": (
+            str(Path(params["data_path"]).parent)
+            if params["data_path"]
+            else str(PROJECT_ROOT / "data")
+        ),
         "log_dir": params.get("log_dir") or str(PROJECT_ROOT / "logs"),
-        "output_dir": params.get("output_dir") or str(PROJECT_ROOT / "logs" / params["experiment_name"] / params["run_name"]),
+        "output_dir": params.get("output_dir")
+        or str(PROJECT_ROOT / "logs" / params["experiment_name"] / params["run_name"]),
     }
 
     # ---- assemble top-level ----
@@ -1098,7 +1128,7 @@ def launch_training(config: dict, config_path: Path):
         config_path.stem,
     ]
 
-    process = subprocess.Popen(
+    process = subprocess.Popen(  # nosec: B603
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -1113,7 +1143,9 @@ def launch_training(config: dict, config_path: Path):
     st.session_state.training_log = []
     st.session_state.training_running = True
 
-    t = threading.Thread(target=_stream_output, args=(process, st.session_state.training_log), daemon=True)
+    t = threading.Thread(
+        target=_stream_output, args=(process, st.session_state.training_log), daemon=True
+    )
     t.start()
     st.session_state.log_thread = t
 
@@ -1165,7 +1197,7 @@ def _parse_loss_from_logs(log_lines: list) -> dict:
 
     for line in log_lines:
         # Try to extract epoch number
-        epoch_match = re.search(r'[Ee]poch[\s:=]*(\d+)', line)
+        epoch_match = re.search(r"[Ee]poch[\s:=]*(\d+)", line)
         if epoch_match:
             current_epoch = int(epoch_match.group(1))
 
@@ -1255,7 +1287,7 @@ def launch_evaluation(config_path: str, checkpoint_path: str, output_dir: str):
         f"paths.output_dir={eval_output}",
     ]
 
-    process = subprocess.Popen(
+    process = subprocess.Popen(  # nosec: B603
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -1270,7 +1302,9 @@ def launch_evaluation(config_path: str, checkpoint_path: str, output_dir: str):
     st.session_state.eval_log = []
     st.session_state.eval_running = True
 
-    t = threading.Thread(target=_stream_output, args=(process, st.session_state.eval_log), daemon=True)
+    t = threading.Thread(
+        target=_stream_output, args=(process, st.session_state.eval_log), daemon=True
+    )
     t.start()
 
 
@@ -1324,7 +1358,7 @@ def launch_tensorrt_export(trt_params: dict):
         cmd += ["--benchmark"]
         cmd += ["--benchmark-iterations", str(trt_params.get("benchmark_iterations", 100))]
 
-    process = subprocess.Popen(
+    process = subprocess.Popen(  # nosec: B603
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -1338,7 +1372,9 @@ def launch_tensorrt_export(trt_params: dict):
     st.session_state.trt_log = []
     st.session_state.trt_running = True
 
-    t = threading.Thread(target=_stream_output, args=(process, st.session_state.trt_log), daemon=True)
+    t = threading.Thread(
+        target=_stream_output, args=(process, st.session_state.trt_log), daemon=True
+    )
     t.start()
     st.session_state.trt_log_thread = t
 
@@ -1356,7 +1392,9 @@ def main():
     _init_state()
 
     st.title("CytoDL Im2Im Training")
-    st.caption("Configure and launch model training without editing YAML files. Optimized for CUDA 13 / Blackwell GPUs.")
+    st.caption(
+        "Configure and launch model training without editing YAML files. Optimized for CUDA 13 / Blackwell GPUs."
+    )
 
     # ====================================================================
     # Sidebar
@@ -1373,13 +1411,35 @@ def main():
             "7. Export to TensorRT (optional)"
         )
         st.divider()
-        st.markdown("**Project root:** `{}`".format(PROJECT_ROOT))
+        st.markdown(f"**Project root:** `{PROJECT_ROOT}`")
 
     # ====================================================================
     # Tabs
     # ====================================================================
-    tab_exp, tab_data, tab_preview, tab_zoo, tab_model, tab_heads, tab_train, tab_gpu, tab_launch, tab_trt = st.tabs(
-        ["Experiment", "Data", "Data Preview", "Model Zoo", "Model", "Task Heads", "Training", "GPU / Perf", "Launch", "TensorRT Export"]
+    (
+        tab_exp,
+        tab_data,
+        tab_preview,
+        tab_zoo,
+        tab_model,
+        tab_heads,
+        tab_train,
+        tab_gpu,
+        tab_launch,
+        tab_trt,
+    ) = st.tabs(
+        [
+            "Experiment",
+            "Data",
+            "Data Preview",
+            "Model Zoo",
+            "Model",
+            "Task Heads",
+            "Training",
+            "GPU / Perf",
+            "Launch",
+            "TensorRT Export",
+        ]
     )
 
     # ------------------------------------------------------------------ #
@@ -1392,8 +1452,12 @@ def main():
             exp_type_label = st.selectbox("Experiment type", list(EXPERIMENT_TYPES.keys()))
             experiment_name = st.text_input("Experiment name", value="bf_to_nuclei")
         with col2:
-            run_name = st.text_input("Run name", value=datetime.datetime.now().strftime("run_%Y%m%d_%H%M"))
-            seed = st.number_input("Random seed (0 = none)", min_value=0, max_value=999999, value=12345)
+            run_name = st.text_input(
+                "Run name", value=datetime.datetime.now().strftime("run_%Y%m%d_%H%M")
+            )
+            seed = st.number_input(
+                "Random seed (0 = none)", min_value=0, max_value=999999, value=12345
+            )
 
         exp_type = EXPERIMENT_TYPES[exp_type_label]
 
@@ -1456,7 +1520,9 @@ def main():
     # ------------------------------------------------------------------ #
     with tab_preview:
         st.subheader("Data Preview")
-        st.caption("Inspect your data directory, view manifest contents, and preview sample images.")
+        st.caption(
+            "Inspect your data directory, view manifest contents, and preview sample images."
+        )
 
         if st.button("Scan Data Directory", type="primary"):
             with st.spinner("Scanning..."):
@@ -1478,13 +1544,17 @@ def main():
                     st.metric("Image files found", len(info["image_files"]))
 
                 if info["subdirs"]:
-                    st.markdown("**Subdirectories:** " + ", ".join(f"`{d}`" for d in info["subdirs"][:20]))
+                    st.markdown(
+                        "**Subdirectories:** " + ", ".join(f"`{d}`" for d in info["subdirs"][:20])
+                    )
 
                 # Manifest viewer
                 if info["manifest_files"]:
                     st.divider()
                     st.markdown("#### Manifest Viewer")
-                    selected_manifest = st.selectbox("Select manifest file", info["manifest_files"])
+                    selected_manifest = st.selectbox(
+                        "Select manifest file", info["manifest_files"]
+                    )
 
                     if selected_manifest:
                         df = _load_manifest(selected_manifest)
@@ -1496,15 +1566,23 @@ def main():
                             if source_col in df.columns:
                                 st.success(f"Source column `{source_col}` found")
                             else:
-                                st.warning(f"Source column `{source_col}` NOT found in manifest. Available: {list(df.columns)}")
+                                st.warning(
+                                    f"Source column `{source_col}` NOT found in manifest. Available: {list(df.columns)}"
+                                )
 
                             if target_col in df.columns:
                                 st.success(f"Target column `{target_col}` found")
                             else:
-                                st.warning(f"Target column `{target_col}` NOT found in manifest. Available: {list(df.columns)}")
+                                st.warning(
+                                    f"Target column `{target_col}` NOT found in manifest. Available: {list(df.columns)}"
+                                )
 
                             # Split column detection
-                            split_candidates = [c for c in df.columns if c.lower() in ("split", "fold", "set", "subset", "partition")]
+                            split_candidates = [
+                                c
+                                for c in df.columns
+                                if c.lower() in ("split", "fold", "set", "subset", "partition")
+                            ]
                             if split_candidates:
                                 for sc in split_candidates:
                                     counts = df[sc].value_counts()
@@ -1539,7 +1617,9 @@ def main():
                                     use_container_width=True,
                                     clamp=True,
                                 )
-                                st.markdown(f"**Shape:** {img_arr.shape}  |  **dtype:** {img_arr.dtype}  |  **range:** [{img_arr.min():.2f}, {img_arr.max():.2f}]")
+                                st.markdown(
+                                    f"**Shape:** {img_arr.shape}  |  **dtype:** {img_arr.dtype}  |  **range:** [{img_arr.min():.2f}, {img_arr.max():.2f}]"
+                                )
                             else:
                                 st.error(f"Could not load image: {err}")
 
@@ -1548,10 +1628,20 @@ def main():
                     st.divider()
                     st.markdown("#### Preview from Manifest Paths")
                     st.caption("Load an image referenced in the manifest CSV.")
-                    manifest_for_preview = st.selectbox("Manifest", info["manifest_files"], key="manifest_preview_select")
-                    df_preview = _load_manifest(manifest_for_preview) if manifest_for_preview else None
+                    manifest_for_preview = st.selectbox(
+                        "Manifest", info["manifest_files"], key="manifest_preview_select"
+                    )
+                    df_preview = (
+                        _load_manifest(manifest_for_preview) if manifest_for_preview else None
+                    )
                     if df_preview is not None and source_col in df_preview.columns:
-                        row_idx = st.number_input("Row index", min_value=0, max_value=max(0, len(df_preview) - 1), value=0, key="manifest_row_idx")
+                        row_idx = st.number_input(
+                            "Row index",
+                            min_value=0,
+                            max_value=max(0, len(df_preview) - 1),
+                            value=0,
+                            key="manifest_row_idx",
+                        )
                         source_path = str(df_preview.iloc[row_idx][source_col])
                         st.text(f"Source path: {source_path}")
 
@@ -1563,8 +1653,15 @@ def main():
                             with st.spinner("Loading..."):
                                 img_arr, err = _try_load_image_preview(source_path)
                                 if img_arr is not None:
-                                    st.image(img_arr, caption=f"Source: {Path(source_path).name}", use_container_width=True, clamp=True)
-                                    st.markdown(f"**Shape:** {img_arr.shape}  |  **dtype:** {img_arr.dtype}")
+                                    st.image(
+                                        img_arr,
+                                        caption=f"Source: {Path(source_path).name}",
+                                        use_container_width=True,
+                                        clamp=True,
+                                    )
+                                    st.markdown(
+                                        f"**Shape:** {img_arr.shape}  |  **dtype:** {img_arr.dtype}"
+                                    )
                                 else:
                                     st.warning(f"Could not load source image: {err}")
 
@@ -1572,8 +1669,15 @@ def main():
                                     target_path_val = str(df_preview.iloc[row_idx][target_col])
                                     timg, terr = _try_load_image_preview(target_path_val)
                                     if timg is not None:
-                                        st.image(timg, caption=f"Target: {Path(target_path_val).name}", use_container_width=True, clamp=True)
-                                        st.markdown(f"**Shape:** {timg.shape}  |  **dtype:** {timg.dtype}")
+                                        st.image(
+                                            timg,
+                                            caption=f"Target: {Path(target_path_val).name}",
+                                            use_container_width=True,
+                                            clamp=True,
+                                        )
+                                        st.markdown(
+                                            f"**Shape:** {timg.shape}  |  **dtype:** {timg.dtype}"
+                                        )
                                     else:
                                         st.warning(f"Could not load target image: {terr}")
 
@@ -1613,14 +1717,18 @@ def main():
         st.markdown("### Full Architecture Catalog")
 
         # Filter by category
-        categories = sorted(set(m["category"] for m in MODEL_ZOO.values()))
-        selected_cats = st.multiselect("Filter by category", categories, default=categories, key="zoo_cats")
+        categories = sorted({m["category"] for m in MODEL_ZOO.values()})
+        selected_cats = st.multiselect(
+            "Filter by category", categories, default=categories, key="zoo_cats"
+        )
 
         for model_name, info in MODEL_ZOO.items():
             if info["category"] not in selected_cats:
                 continue
 
-            with st.expander(f"{model_name}  —  {info['source']} / {info['category']}", expanded=False):
+            with st.expander(
+                f"{model_name}  —  {info['source']} / {info['category']}", expanded=False
+            ):
                 st.markdown(f"**{info['description']}**")
                 st.markdown(f"**Target class:** `{info['target']}`")
 
@@ -1648,10 +1756,15 @@ def main():
                 # Show recommended config
                 if info.get("recommended_config"):
                     st.markdown("**Recommended Config:**")
-                    st.code(yaml.dump(info["recommended_config"], default_flow_style=False), language="yaml")
+                    st.code(
+                        yaml.dump(info["recommended_config"], default_flow_style=False),
+                        language="yaml",
+                    )
 
                 # Button to use this model
-                if model_name in BACKBONE_ARCHITECTURES or info["target"] in [v["target"] for v in BACKBONE_ARCHITECTURES.values()]:
+                if model_name in BACKBONE_ARCHITECTURES or info["target"] in [
+                    v["target"] for v in BACKBONE_ARCHITECTURES.values()
+                ]:
                     st.success("This architecture is available in the Model tab dropdown.")
                 else:
                     st.info(
@@ -1681,16 +1794,25 @@ def main():
                     st.markdown(f"**{len(scan['monai_models'])} architectures available:**")
 
                     # Categorize as known/new
-                    known_targets = {v["target"].split(".")[-1] for v in MODEL_ZOO.values() if "monai" in v["target"]}
+                    known_targets = {
+                        v["target"].split(".")[-1]
+                        for v in MODEL_ZOO.values()
+                        if "monai" in v["target"]
+                    }
                     new_models = [m for m in scan["monai_models"] if m not in known_targets]
                     known_models = [m for m in scan["monai_models"] if m in known_targets]
 
                     if known_models:
-                        st.markdown("**In catalog (configured):** " + ", ".join(f"`{m}`" for m in known_models))
+                        st.markdown(
+                            "**In catalog (configured):** "
+                            + ", ".join(f"`{m}`" for m in known_models)
+                        )
                     if new_models:
                         st.markdown("**Discovered (not yet in catalog):**")
                         for m in new_models:
-                            st.markdown(f"- `monai.networks.nets.{m}` — *try adding as custom backbone*")
+                            st.markdown(
+                                f"- `monai.networks.nets.{m}` — *try adding as custom backbone*"
+                            )
                 else:
                     st.warning("MONAI not installed. Install with: `pip install monai`")
 
@@ -1702,9 +1824,13 @@ def main():
 
                     # Show segmentation-relevant filters
                     st.markdown("**Search timm models:**")
-                    timm_search = st.text_input("Filter (e.g. 'resnet', 'efficientnet', 'convnext')", key="timm_search")
+                    timm_search = st.text_input(
+                        "Filter (e.g. 'resnet', 'efficientnet', 'convnext')", key="timm_search"
+                    )
                     if timm_search:
-                        matches = [m for m in scan["timm_models"] if timm_search.lower() in m.lower()]
+                        matches = [
+                            m for m in scan["timm_models"] if timm_search.lower() in m.lower()
+                        ]
                         if matches:
                             st.markdown(f"Found {len(matches)} matches:")
                             st.code("\n".join(matches[:50]), language="text")
@@ -1717,8 +1843,12 @@ def main():
                         st.markdown("**Popular encoder families for segmentation:**")
                         families = {
                             "ResNet": [m for m in scan["timm_models"] if m.startswith("resnet")],
-                            "EfficientNet": [m for m in scan["timm_models"] if m.startswith("efficientnet")],
-                            "ConvNeXt": [m for m in scan["timm_models"] if m.startswith("convnext")],
+                            "EfficientNet": [
+                                m for m in scan["timm_models"] if m.startswith("efficientnet")
+                            ],
+                            "ConvNeXt": [
+                                m for m in scan["timm_models"] if m.startswith("convnext")
+                            ],
                             "RegNet": [m for m in scan["timm_models"] if m.startswith("regnet")],
                         }
                         for family, models in families.items():
@@ -1743,7 +1873,11 @@ def main():
                 "VRAM": info["vram_estimate"],
             }
             # Add task ratings
-            for task in ["BF → Nuclei Segmentation", "BF → Cell Segmentation", "BF → Fluorescence (label-free)"]:
+            for task in [
+                "BF → Nuclei Segmentation",
+                "BF → Cell Segmentation",
+                "BF → Fluorescence (label-free)",
+            ]:
                 rating = info["tasks"].get(task, "—")
                 icon = {"best": "🟢", "good": "🟡", "fair": "🟠", "poor": "🔴"}.get(
                     rating.split()[0] if isinstance(rating, str) else "", "⚪"
@@ -1778,7 +1912,9 @@ def main():
                 filters = [32, 64, 128, 256]
             res_block = st.checkbox("Use residual blocks", value=True)
         elif arch_key == "SwinUNETR (MONAI)":
-            feature_size = st.number_input("Feature size", min_value=12, max_value=96, value=48, step=12)
+            feature_size = st.number_input(
+                "Feature size", min_value=12, max_value=96, value=48, step=12
+            )
             filters = [feature_size]
             res_block = False
         elif arch_key == "AttentionUNet (MONAI)":
@@ -1799,9 +1935,13 @@ def main():
         with col1:
             optimizer_key = st.selectbox("Optimizer", list(OPTIMIZERS.keys()))
         with col2:
-            learning_rate = st.number_input("Learning rate", min_value=1e-7, max_value=1.0, value=1e-4, format="%.1e")
+            learning_rate = st.number_input(
+                "Learning rate", min_value=1e-7, max_value=1.0, value=1e-4, format="%.1e"
+            )
 
-        weight_decay = st.number_input("Weight decay", min_value=0.0, max_value=1.0, value=1e-4, format="%.1e")
+        weight_decay = st.number_input(
+            "Weight decay", min_value=0.0, max_value=1.0, value=1e-4, format="%.1e"
+        )
 
         st.divider()
         st.subheader("LR Scheduler")
@@ -1881,23 +2021,41 @@ def main():
                 rcol1, rcol2, rcol3 = st.columns(3)
                 with rcol1:
                     head_entry["in_channels"] = st.number_input(
-                        "In channels (backbone out)", min_value=1, value=filters[-1] if filters else 64,
+                        "In channels (backbone out)",
+                        min_value=1,
+                        value=filters[-1] if filters else 64,
                         key=f"head_in_ch_{i}",
                     )
                     head_entry["out_channels"] = st.number_input(
-                        "Out channels", min_value=1, value=1, key=f"head_out_ch_{i}",
+                        "Out channels",
+                        min_value=1,
+                        value=1,
+                        key=f"head_out_ch_{i}",
                     )
                 with rcol2:
                     head_entry["n_convs"] = st.number_input(
-                        "Num conv layers", min_value=1, max_value=8, value=2, key=f"head_nconvs_{i}",
+                        "Num conv layers",
+                        min_value=1,
+                        max_value=8,
+                        value=2,
+                        key=f"head_nconvs_{i}",
                     )
                     head_entry["head_dropout"] = st.slider(
-                        "Head dropout", 0.0, 0.5, 0.0, 0.05, key=f"head_dropout_{i}",
+                        "Head dropout",
+                        0.0,
+                        0.5,
+                        0.0,
+                        0.05,
+                        key=f"head_dropout_{i}",
                     )
                 with rcol3:
-                    head_entry["dense"] = st.checkbox("Dense connections", value=False, key=f"head_dense_{i}")
+                    head_entry["dense"] = st.checkbox(
+                        "Dense connections", value=False, key=f"head_dense_{i}"
+                    )
                     head_entry["resolution"] = st.selectbox(
-                        "Resolution", ["lr", "hr"], key=f"head_resolution_{i}",
+                        "Resolution",
+                        ["lr", "hr"],
+                        key=f"head_resolution_{i}",
                         help="'hr' enables upsampling for super-resolution tasks.",
                     )
 
@@ -1911,12 +2069,17 @@ def main():
                         )
                     with ucol2:
                         head_entry["upsample_ratio"] = st.number_input(
-                            "Upsample ratio", min_value=1, max_value=8, value=2,
+                            "Upsample ratio",
+                            min_value=1,
+                            max_value=8,
+                            value=2,
                             key=f"head_upsample_ratio_{i}",
                         )
 
                 head_entry["final_activation"] = st.selectbox(
-                    "Final activation", ["None", "Sigmoid", "ReLU"], key=f"head_final_act_{i}",
+                    "Final activation",
+                    ["None", "Sigmoid", "ReLU"],
+                    key=f"head_final_act_{i}",
                 )
 
             task_heads_config.append(head_entry)
@@ -1928,12 +2091,14 @@ def main():
         st.markdown("#### Task Heads Summary")
         summary_data = []
         for h in task_heads_config:
-            summary_data.append({
-                "Task": h["task_name"],
-                "Head Type": h["head_type"].split("(")[0].strip(),
-                "Loss": h["loss_function"],
-                "Activation": h.get("prediction_activation", "—"),
-            })
+            summary_data.append(
+                {
+                    "Task": h["task_name"],
+                    "Head Type": h["head_type"].split("(")[0].strip(),
+                    "Loss": h["loss_function"],
+                    "Activation": h.get("prediction_activation", "—"),
+                }
+            )
         st.table(summary_data)
 
     # ------------------------------------------------------------------ #
@@ -1945,10 +2110,16 @@ def main():
         col1, col2 = st.columns(2)
         with col1:
             max_epochs = st.number_input("Max epochs", min_value=1, max_value=10000, value=100)
-            val_every_n = st.number_input("Validate every N epochs", min_value=1, max_value=100, value=1)
-            save_images_every_n = st.number_input("Save images every N epochs", min_value=1, max_value=100, value=5)
+            val_every_n = st.number_input(
+                "Validate every N epochs", min_value=1, max_value=100, value=1
+            )
+            save_images_every_n = st.number_input(
+                "Save images every N epochs", min_value=1, max_value=100, value=5
+            )
         with col2:
-            gradient_clip = st.number_input("Gradient clip (0=off)", min_value=0.0, max_value=100.0, value=1.0)
+            gradient_clip = st.number_input(
+                "Gradient clip (0=off)", min_value=0.0, max_value=100.0, value=1.0
+            )
             num_gpus = st.number_input("Number of GPUs", min_value=1, max_value=8, value=1)
             run_test = st.checkbox("Run test after training", value=True)
 
@@ -1958,7 +2129,9 @@ def main():
         with col1:
             early_stopping = st.checkbox("Early stopping", value=True)
             if early_stopping:
-                early_stopping_patience = st.number_input("Patience (epochs)", min_value=1, max_value=1000, value=50)
+                early_stopping_patience = st.number_input(
+                    "Patience (epochs)", min_value=1, max_value=1000, value=50
+                )
             else:
                 early_stopping_patience = 50
         with col2:
@@ -1994,10 +2167,16 @@ def main():
             with col1:
                 precision_key = st.selectbox("Precision", list(PRECISION_OPTIONS.keys()))
                 precision = PRECISION_OPTIONS[precision_key]
-                matmul_precision = st.selectbox("Matrix multiply precision", ["high", "medium", "highest"], index=0)
-                channels_last = st.checkbox("Channels-last memory format", value=True, help="20-30% speedup on modern GPUs")
+                matmul_precision = st.selectbox(
+                    "Matrix multiply precision", ["high", "medium", "highest"], index=0
+                )
+                channels_last = st.checkbox(
+                    "Channels-last memory format", value=True, help="20-30% speedup on modern GPUs"
+                )
             with col2:
-                torch_compile = st.checkbox("torch.compile", value=True, help="JIT compile model for faster execution")
+                torch_compile = st.checkbox(
+                    "torch.compile", value=True, help="JIT compile model for faster execution"
+                )
                 compile_mode = st.selectbox(
                     "Compile mode",
                     ["default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"],
@@ -2005,7 +2184,9 @@ def main():
                     help="'max-autotune' is best for training (longer compile, best perf)",
                 )
                 gradient_checkpointing = st.checkbox(
-                    "Gradient checkpointing", value=False, help="Trade compute for memory — enable if OOM"
+                    "Gradient checkpointing",
+                    value=False,
+                    help="Trade compute for memory — enable if OOM",
                 )
         else:
             precision = "32-true"
@@ -2022,8 +2203,12 @@ def main():
         st.subheader("Generate Configuration & Launch Training")
 
         # Use loss_function from first task head if available, else fallback
-        fallback_loss = "DiceCE Loss (segmentation)" if exp_type == "segmentation" else "MSE Loss (label-free)"
-        loss_fn_for_params = task_heads_config[0]["loss_function"] if task_heads_config else fallback_loss
+        fallback_loss = (
+            "DiceCE Loss (segmentation)" if exp_type == "segmentation" else "MSE Loss (label-free)"
+        )
+        loss_fn_for_params = (
+            task_heads_config[0]["loss_function"] if task_heads_config else fallback_loss
+        )
 
         params = {
             "experiment_type": exp_type,
@@ -2076,7 +2261,9 @@ def main():
             st.session_state.generated_config = config
 
         if st.session_state.generated_config:
-            config_yaml = yaml.dump(st.session_state.generated_config, default_flow_style=False, sort_keys=False)
+            config_yaml = yaml.dump(
+                st.session_state.generated_config, default_flow_style=False, sort_keys=False
+            )
 
             st.markdown("#### Generated Configuration")
             st.code(config_yaml, language="yaml")
@@ -2139,23 +2326,35 @@ def main():
                             import pandas as pd
 
                             loss_cols = [c for c in csv_metrics.columns if "loss" in c.lower()]
-                            epoch_col = "epoch" if "epoch" in csv_metrics.columns else "step" if "step" in csv_metrics.columns else None
+                            epoch_col = (
+                                "epoch"
+                                if "epoch" in csv_metrics.columns
+                                else "step" if "step" in csv_metrics.columns else None
+                            )
 
                             if loss_cols and epoch_col:
                                 # Group by epoch and get mean (CSVLogger logs per-step)
-                                plot_df = csv_metrics[[epoch_col] + loss_cols].dropna(subset=loss_cols, how="all")
+                                plot_df = csv_metrics[[epoch_col] + loss_cols].dropna(
+                                    subset=loss_cols, how="all"
+                                )
 
                                 if not plot_df.empty:
                                     # Separate train and val losses for cleaner display
                                     train_cols = [c for c in loss_cols if "train" in c.lower()]
                                     val_cols = [c for c in loss_cols if "val" in c.lower()]
-                                    other_cols = [c for c in loss_cols if c not in train_cols and c not in val_cols]
+                                    other_cols = [
+                                        c
+                                        for c in loss_cols
+                                        if c not in train_cols and c not in val_cols
+                                    ]
 
                                     if train_cols or val_cols:
                                         chart_col1, chart_col2 = st.columns(2)
                                         with chart_col1:
                                             if train_cols:
-                                                train_df = plot_df[[epoch_col] + train_cols].dropna()
+                                                train_df = plot_df[
+                                                    [epoch_col] + train_cols
+                                                ].dropna()
                                                 if not train_df.empty:
                                                     st.markdown("**Training Loss**")
                                                     st.line_chart(train_df.set_index(epoch_col))
@@ -2197,22 +2396,32 @@ def main():
                                 chart_col1, chart_col2 = st.columns(2)
                                 with chart_col1:
                                     if train_losses:
-                                        tdf = pd.DataFrame(train_losses, columns=["epoch", "train/loss"])
+                                        tdf = pd.DataFrame(
+                                            train_losses, columns=["epoch", "train/loss"]
+                                        )
                                         st.markdown("**Training Loss**")
                                         st.line_chart(tdf.set_index("epoch"))
-                                        st.metric("Latest train/loss", f"{train_losses[-1][1]:.6f}")
+                                        st.metric(
+                                            "Latest train/loss", f"{train_losses[-1][1]:.6f}"
+                                        )
                                 with chart_col2:
                                     if val_losses:
-                                        vdf = pd.DataFrame(val_losses, columns=["epoch", "val/loss"])
+                                        vdf = pd.DataFrame(
+                                            val_losses, columns=["epoch", "val/loss"]
+                                        )
                                         st.markdown("**Validation Loss**")
                                         st.line_chart(vdf.set_index("epoch"))
                                         st.metric("Latest val/loss", f"{val_losses[-1][1]:.6f}")
                             except ImportError:
                                 st.warning("Install pandas for loss charts: `pip install pandas`")
                         else:
-                            st.info("No loss values detected yet. Charts will appear as training progresses.")
+                            st.info(
+                                "No loss values detected yet. Charts will appear as training progresses."
+                            )
                     elif not has_csv_chart:
-                        st.info("No loss data available yet. Start training and charts will appear here.")
+                        st.info(
+                            "No loss data available yet. Start training and charts will appear here."
+                        )
 
                     if st.session_state.training_running:
                         if st.button("Refresh Charts", key="refresh_charts"):
@@ -2236,15 +2445,24 @@ def main():
                         # Show checkpoint metadata
                         ckpt_stat = Path(best_ckpt).stat()
                         ckpt_size_mb = ckpt_stat.st_size / (1024 * 1024)
-                        ckpt_time = datetime.datetime.fromtimestamp(ckpt_stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
-                        st.markdown(f"**Size:** {ckpt_size_mb:.1f} MB  |  **Modified:** {ckpt_time}")
+                        ckpt_time = datetime.datetime.fromtimestamp(ckpt_stat.st_mtime).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        st.markdown(
+                            f"**Size:** {ckpt_size_mb:.1f} MB  |  **Modified:** {ckpt_time}"
+                        )
 
                         # Also list all available checkpoints
                         all_ckpts = list(Path(output_dir).rglob("*.ckpt"))
                         if len(all_ckpts) > 1:
                             eval_ckpt_choice = st.selectbox(
                                 "Select checkpoint to evaluate",
-                                [str(c) for c in sorted(all_ckpts, key=lambda p: p.stat().st_mtime, reverse=True)],
+                                [
+                                    str(c)
+                                    for c in sorted(
+                                        all_ckpts, key=lambda p: p.stat().st_mtime, reverse=True
+                                    )
+                                ],
                                 format_func=lambda x: f"{Path(x).name} ({datetime.datetime.fromtimestamp(Path(x).stat().st_mtime).strftime('%H:%M:%S')})",
                                 key="eval_ckpt_select",
                             )
@@ -2256,7 +2474,9 @@ def main():
                         eval_config = str(config_candidates[0]) if config_candidates else ""
 
                         if not eval_config:
-                            st.warning("No training config found in output directory. Generate and launch training first.")
+                            st.warning(
+                                "No training config found in output directory. Generate and launch training first."
+                            )
 
                         # Launch evaluation
                         eval_proc = st.session_state.get("eval_process")
@@ -2275,7 +2495,9 @@ def main():
                             if not eval_running:
                                 if st.button("Run Evaluation", type="primary", key="run_eval_btn"):
                                     if eval_config and eval_ckpt_choice:
-                                        launch_evaluation(eval_config, eval_ckpt_choice, output_dir)
+                                        launch_evaluation(
+                                            eval_config, eval_ckpt_choice, output_dir
+                                        )
                                         st.toast("Evaluation launched!")
                                         st.rerun()
                                     else:
@@ -2292,7 +2514,9 @@ def main():
                         # Show evaluation log
                         if st.session_state.eval_log:
                             with st.expander("Evaluation Log", expanded=False):
-                                st.code("\n".join(st.session_state.eval_log[-100:]), language="log")
+                                st.code(
+                                    "\n".join(st.session_state.eval_log[-100:]), language="log"
+                                )
 
                         # Show prediction images
                         pred_images = _find_prediction_images(output_dir)
@@ -2312,9 +2536,16 @@ def main():
                                         with cols[j]:
                                             # Try to load and display the image
                                             try:
-                                                img_arr, err = _try_load_image_preview(str(img_path))
+                                                img_arr, err = _try_load_image_preview(
+                                                    str(img_path)
+                                                )
                                                 if img_arr is not None:
-                                                    st.image(img_arr, caption=img_path.name, use_container_width=True, clamp=True)
+                                                    st.image(
+                                                        img_arr,
+                                                        caption=img_path.name,
+                                                        use_container_width=True,
+                                                        clamp=True,
+                                                    )
                                                 else:
                                                     st.text(f"{img_path.name}\n({err})")
                                             except (OSError, ValueError):
@@ -2375,7 +2606,11 @@ def main():
 
             # Auto-detect checkpoints
             st.markdown("**Auto-detect checkpoints**")
-            scan_dir = st.text_input("Scan directory for checkpoints", value=str(PROJECT_ROOT / "logs"), key="trt_scan_dir")
+            scan_dir = st.text_input(
+                "Scan directory for checkpoints",
+                value=str(PROJECT_ROOT / "logs"),
+                key="trt_scan_dir",
+            )
             if st.button("Scan for Checkpoints", key="trt_scan_btn"):
                 scan_path = Path(scan_dir).resolve()
                 if not scan_path.is_dir():
@@ -2411,8 +2646,12 @@ def main():
 
             col1, col2 = st.columns(2)
             with col1:
-                trt_precision = st.selectbox("TensorRT precision", TRT_PRECISION_OPTIONS, key="trt_precision")
-                trt_workspace = st.number_input("Workspace size (GB)", min_value=1, max_value=32, value=4, key="trt_workspace")
+                trt_precision = st.selectbox(
+                    "TensorRT precision", TRT_PRECISION_OPTIONS, key="trt_precision"
+                )
+                trt_workspace = st.number_input(
+                    "Workspace size (GB)", min_value=1, max_value=32, value=4, key="trt_workspace"
+                )
             with col2:
                 trt_output = st.text_input(
                     "Output path (.ts)",
@@ -2426,7 +2665,9 @@ def main():
                 with ic1:
                     trt_b = st.number_input("Batch", min_value=1, value=1, key="trt_b")
                 with ic2:
-                    trt_c = st.number_input("Channels", min_value=1, value=in_channels, key="trt_c")
+                    trt_c = st.number_input(
+                        "Channels", min_value=1, value=in_channels, key="trt_c"
+                    )
                 with ic3:
                     trt_d = st.number_input("D", min_value=1, value=patch_shape[0], key="trt_d")
                 with ic4:
@@ -2439,7 +2680,9 @@ def main():
                 with ic1:
                     trt_b = st.number_input("Batch", min_value=1, value=1, key="trt_b")
                 with ic2:
-                    trt_c = st.number_input("Channels", min_value=1, value=in_channels, key="trt_c")
+                    trt_c = st.number_input(
+                        "Channels", min_value=1, value=in_channels, key="trt_c"
+                    )
                 with ic3:
                     trt_h = st.number_input("H", min_value=1, value=patch_shape[0], key="trt_h")
                 with ic4:
@@ -2452,11 +2695,17 @@ def main():
             if trt_dynamic:
                 dcol1, dcol2, dcol3 = st.columns(3)
                 with dcol1:
-                    trt_min_batch = st.number_input("Min batch", min_value=1, value=1, key="trt_min_batch")
+                    trt_min_batch = st.number_input(
+                        "Min batch", min_value=1, value=1, key="trt_min_batch"
+                    )
                 with dcol2:
-                    trt_opt_batch = st.number_input("Optimal batch", min_value=1, value=4, key="trt_opt_batch")
+                    trt_opt_batch = st.number_input(
+                        "Optimal batch", min_value=1, value=4, key="trt_opt_batch"
+                    )
                 with dcol3:
-                    trt_max_batch = st.number_input("Max batch", min_value=1, value=16, key="trt_max_batch")
+                    trt_max_batch = st.number_input(
+                        "Max batch", min_value=1, value=16, key="trt_max_batch"
+                    )
             else:
                 trt_min_batch = trt_opt_batch = trt_max_batch = 1
 
@@ -2464,17 +2713,33 @@ def main():
             st.markdown("#### INT8 Calibration")
             if trt_precision == "int8":
                 st.warning("INT8 requires calibration data for best accuracy.")
-                trt_cal_data = st.text_input("Calibration data directory", value="", key="trt_cal_data")
-                trt_cal_samples = st.number_input("Calibration samples", min_value=10, max_value=1000, value=100, key="trt_cal_samples")
+                trt_cal_data = st.text_input(
+                    "Calibration data directory", value="", key="trt_cal_data"
+                )
+                trt_cal_samples = st.number_input(
+                    "Calibration samples",
+                    min_value=10,
+                    max_value=1000,
+                    value=100,
+                    key="trt_cal_samples",
+                )
             else:
                 trt_cal_data = ""
                 trt_cal_samples = 100
 
             st.divider()
             st.markdown("#### Benchmarking")
-            trt_benchmark = st.checkbox("Run benchmark after export (PyTorch vs TensorRT)", value=True, key="trt_benchmark")
+            trt_benchmark = st.checkbox(
+                "Run benchmark after export (PyTorch vs TensorRT)", value=True, key="trt_benchmark"
+            )
             if trt_benchmark:
-                trt_bench_iters = st.number_input("Benchmark iterations", min_value=10, max_value=1000, value=100, key="trt_bench_iters")
+                trt_bench_iters = st.number_input(
+                    "Benchmark iterations",
+                    min_value=10,
+                    max_value=1000,
+                    value=100,
+                    key="trt_bench_iters",
+                )
             else:
                 trt_bench_iters = 100
 
@@ -2484,7 +2749,12 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 if not st.session_state.trt_running:
-                    if st.button("Export to TensorRT", type="primary", use_container_width=True, key="trt_export_btn"):
+                    if st.button(
+                        "Export to TensorRT",
+                        type="primary",
+                        use_container_width=True,
+                        key="trt_export_btn",
+                    ):
                         final_ckpt = effective_ckpt or trt_ckpt_path
                         final_config = trt_config_path
 
@@ -2520,7 +2790,12 @@ def main():
 
             with col2:
                 if st.session_state.trt_running:
-                    if st.button("Stop Export", type="secondary", use_container_width=True, key="trt_stop_btn"):
+                    if st.button(
+                        "Stop Export",
+                        type="secondary",
+                        use_container_width=True,
+                        key="trt_stop_btn",
+                    ):
                         stop_tensorrt()
                         st.info("Export stopped.")
                         st.rerun()

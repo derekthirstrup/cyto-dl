@@ -140,6 +140,7 @@ filterwarnings = [
 log_cli = "True"
 markers = [
     "slow: slow tests",
+    "performance: performance regression tests",
 ]
 minversion = "6.0"
 testpaths = "tests/"
