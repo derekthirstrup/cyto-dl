@@ -20,15 +20,15 @@ microscopy image prediction by systematically exploring the hyperparameter space
 
 ### Key Files
 
-| File | Purpose |
-|------|---------|
-| `configs/experiment/im2im/labelfree_autoresearch.yaml` | Base experiment config |
-| `configs/model/im2im/labelfree.yaml` | Model architecture config |
-| `configs/data/im2im/labelfree.yaml` | Data loading config |
-| `autoresearch/evaluators/labelfree_evaluator.py` | **IMMUTABLE** ground truth evaluator |
-| `autoresearch/scripts/run_experiment.py` | Experiment execution script |
-| `autoresearch/configs/search_space.yaml` | Hyperparameter bounds & phases |
-| `autoresearch/results.tsv` | Experiment tracking (append-only) |
+| File                                                   | Purpose                              |
+| ------------------------------------------------------ | ------------------------------------ |
+| `configs/experiment/im2im/labelfree_autoresearch.yaml` | Base experiment config               |
+| `configs/model/im2im/labelfree.yaml`                   | Model architecture config            |
+| `configs/data/im2im/labelfree.yaml`                    | Data loading config                  |
+| `autoresearch/evaluators/labelfree_evaluator.py`       | **IMMUTABLE** ground truth evaluator |
+| `autoresearch/scripts/run_experiment.py`               | Experiment execution script          |
+| `autoresearch/configs/search_space.yaml`               | Hyperparameter bounds & phases       |
+| `autoresearch/results.tsv`                             | Experiment tracking (append-only)    |
 
 ### Metric
 
@@ -38,9 +38,9 @@ The evaluator computes a composite score (higher is better):
 score = 0.5 * SSIM + 0.3 * (PSNR/50) + 0.2 * Pearson
 ```
 
-- **SSIM** (Structural Similarity): Measures structural preservation [0, 1]
-- **PSNR** (Peak Signal-to-Noise Ratio): Signal fidelity, normalized to [0, 1]
-- **Pearson**: Linear correlation between prediction and ground truth [-1, 1]
+- **SSIM** (Structural Similarity): Measures structural preservation \[0, 1\]
+- **PSNR** (Peak Signal-to-Noise Ratio): Signal fidelity, normalized to \[0, 1\]
+- **Pearson**: Linear correlation between prediction and ground truth \[-1, 1\]
 
 ## Rules
 
@@ -121,6 +121,7 @@ python autoresearch/scripts/run_experiment.py --dry-run \
 ## Reading Results
 
 `results.tsv` has these columns:
+
 - `iteration`: Sequential experiment number
 - `timestamp`: When the experiment ran
 - `score`: Composite quality score (higher is better)
@@ -133,6 +134,7 @@ python autoresearch/scripts/run_experiment.py --dry-run \
 ### Analyzing Patterns
 
 Look for:
+
 - **Best score so far**: What configuration achieved it?
 - **Trends**: Does increasing X consistently improve/hurt score?
 - **Crashes**: What caused them? (usually lr too high or OOM)
@@ -196,17 +198,17 @@ AgentHub samples multiple hills. Autoresearch climbs the tallest one.
 
 ### Strategy Templates
 
-| Template | What It Explores | Experiments |
-|----------|-----------------|-------------|
-| `lr_sweep` | Learning rate regime | 5e-5, 5e-4, 1e-3, 5e-3 |
-| `architecture_sweep` | Model capacity | [16,32,64] to [64,128,256] |
-| `loss_sweep` | Loss functions | MSE, L1, SmoothL1 |
-| `data_sweep` | Data pipeline | Patch sizes + batch combos |
-| `training_dynamics` | Optimizer/scheduler | Adam, AdamW, CosineAnnealing |
+| Template             | What It Explores     | Experiments                    |
+| -------------------- | -------------------- | ------------------------------ |
+| `lr_sweep`           | Learning rate regime | 5e-5, 5e-4, 1e-3, 5e-3         |
+| `architecture_sweep` | Model capacity       | \[16,32,64\] to \[64,128,256\] |
+| `loss_sweep`         | Loss functions       | MSE, L1, SmoothL1              |
+| `data_sweep`         | Data pipeline        | Patch sizes + batch combos     |
+| `training_dynamics`  | Optimizer/scheduler  | Adam, AdamW, CosineAnnealing   |
 
 See `autoresearch/hub/scripts/hub_run.py` for full template definitions.
 
----
+______________________________________________________________________
 
 ## Iteration Workflow
 
@@ -221,10 +223,10 @@ For each iteration, follow this exact sequence:
 
 ## Training Tiers (Auto-Selected)
 
-| Phase | Iterations | Epochs | Early Stop | Purpose |
-|-------|-----------|--------|------------|---------|
-| Exploration | 1-20 | 10 | patience=5 | Quick screening |
-| Refinement | 21-40 | 30 | patience=15 | Promising configs |
-| Exploitation | 41+ | 100 | patience=30 | Best configs |
+| Phase        | Iterations | Epochs | Early Stop  | Purpose           |
+| ------------ | ---------- | ------ | ----------- | ----------------- |
+| Exploration  | 1-20       | 10     | patience=5  | Quick screening   |
+| Refinement   | 21-40      | 30     | patience=15 | Promising configs |
+| Exploitation | 41+        | 100    | patience=30 | Best configs      |
 
 The tier auto-escalates based on iteration count. Override with `--tier` flag.

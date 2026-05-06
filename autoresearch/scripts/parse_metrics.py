@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Parse metrics from cyto-dl CSV logger output.
 
-Utility for extracting training metrics from Lightning's CSV logger files.
-Used by the experiment runner and evaluator.
+Utility for extracting training metrics from Lightning's CSV logger files. Used by the experiment
+runner and evaluator.
 """
 
 import csv
@@ -34,7 +34,7 @@ def parse_csv_metrics(csv_path):
     """
     all_metrics = {}
 
-    with open(csv_path, "r") as f:
+    with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
             for key, value in row.items():
@@ -56,7 +56,7 @@ def get_metric_history(csv_path, metric_name):
     """
     history = []
 
-    with open(csv_path, "r") as f:
+    with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
             if metric_name in row and row[metric_name].strip():

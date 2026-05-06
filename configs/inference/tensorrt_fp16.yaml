@@ -4,9 +4,9 @@
 # TensorRT export settings
 tensorrt:
   enabled: True
-  precision: fp16  # FP16 precision (2-3x speedup, minimal accuracy loss)
-  workspace_size: 4  # GB
-  dynamic_shapes: False  # Fixed shapes for maximum performance
+  precision: fp16 # FP16 precision (2-3x speedup, minimal accuracy loss)
+  workspace_size: 4 # GB
+  dynamic_shapes: False # Fixed shapes for maximum performance
 
   # Batch size settings (for dynamic shapes)
   min_batch_size: 1
@@ -20,12 +20,12 @@ defaults:
 
 # Inference-specific trainer settings
 trainer:
-  precision: bf16-mixed  # Match TensorRT precision
+  precision: bf16-mixed # Match TensorRT precision
 
 # Model compilation for comparison
 model:
-  compile_model: False  # TensorRT replaces torch.compile
+  compile_model: False # TensorRT replaces torch.compile
   channels_last: True
   inference_args:
-    sw_batch_size: 4  # Increase for TensorRT (faster)
+    sw_batch_size: 4 # Increase for TensorRT (faster)
     mode: gaussian

@@ -239,7 +239,7 @@ class BaseModel(LightningModule, metaclass=BaseModelMeta):
         - torch.compile
         - Gradient checkpointing
         """
-        if hasattr(super(), 'setup'):
+        if hasattr(super(), "setup"):
             super().setup(stage)
 
         # Apply channels-last memory format
@@ -254,6 +254,7 @@ class BaseModel(LightningModule, metaclass=BaseModelMeta):
         # Apply torch.compile
         if self._compile_model and stage in ("fit", "validate", "test"):
             import sys
+
             if not sys.platform.startswith("win"):
                 try:
                     # Compile the model forward pass
@@ -273,8 +274,8 @@ class BaseModel(LightningModule, metaclass=BaseModelMeta):
     def _enable_gradient_checkpointing(self):
         """Enable gradient checkpointing for memory efficiency.
 
-        Subclasses should override this to apply checkpointing to specific layers.
-        Default implementation logs a warning if no implementation exists.
+        Subclasses should override this to apply checkpointing to specific layers. Default
+        implementation logs a warning if no implementation exists.
         """
         logger.warning(
             "Gradient checkpointing requested but not implemented for this model. "

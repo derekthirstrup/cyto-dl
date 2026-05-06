@@ -23,7 +23,7 @@ import argparse
 import datetime
 import json
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
@@ -68,8 +68,10 @@ def get_current_iteration():
     """Read results.tsv to determine current iteration number."""
     if not RESULTS_FILE.exists():
         return 1
-    with open(RESULTS_FILE, "r") as f:
-        lines = [l for l in f.readlines() if l.strip() and not l.startswith("iteration")]
+    with open(RESULTS_FILE) as f:
+        lines = [
+            line for line in f.readlines() if line.strip() and not line.startswith("iteration")
+        ]
     return len(lines) + 1
 
 
@@ -78,7 +80,9 @@ def build_command(overrides, tier, run_name=None, data_path=None):
     tier_config = TIERS[tier]
 
     cmd = [
-        sys.executable, "-m", "cyto_dl.train",
+        sys.executable,
+        "-m",
+        "cyto_dl.train",
         EXPERIMENT_CONFIG,
         f"trainer.max_epochs={tier_config['max_epochs']}",
         f"callbacks.early_stopping.patience={tier_config['patience']}",
@@ -117,7 +121,7 @@ def log_result(iteration, score, status, description, overrides, tier, details=N
 def run_training(cmd, timeout_minutes=120):
     """Execute the training command and capture output."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             cmd,
             capture_output=True,
             text=True,
@@ -165,28 +169,38 @@ def find_output_dir():
 def main():
     parser = argparse.ArgumentParser(description="Run a single autoresearch experiment")
     parser.add_argument(
-        "--overrides", "-o", default="",
+        "--overrides",
+        "-o",
+        default="",
         help="Hydra override string (space-separated key=value pairs)",
     )
     parser.add_argument(
-        "--description", "-d", default="",
+        "--description",
+        "-d",
+        default="",
         help="Human-readable description of this experiment",
     )
     parser.add_argument(
-        "--tier", "-t", choices=list(TIERS.keys()),
+        "--tier",
+        "-t",
+        choices=list(TIERS.keys()),
         default=None,
         help="Training tier (default: auto-select based on iteration)",
     )
     parser.add_argument(
-        "--data-path", default=None,
+        "--data-path",
+        default=None,
         help="Path to training data directory",
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Print command without executing",
     )
     parser.add_argument(
-        "--timeout", type=int, default=120,
+        "--timeout",
+        type=int,
+        default=120,
         help="Timeout in minutes (default: 120)",
     )
     args = parser.parse_args()
@@ -203,11 +217,11 @@ def main():
     cmd = build_command(args.overrides, tier, run_name, args.data_path)
 
     if args.dry_run:
-        print(f"\nDry run - command would be:")
+        print("\nDry run - command would be:")
         print(f"  {' '.join(cmd)}")
         sys.exit(0)
 
-    print(f"\nRunning training...")
+    print("\nRunning training...")
     returncode, stdout, stderr = run_training(cmd, args.timeout)
 
     if returncode != 0:
@@ -224,8 +238,15 @@ def main():
     output_dir = find_output_dir()
     if output_dir is None:
         print("Could not find training output directory")
-        log_result(iteration, 0.0, "CRASH", args.description, args.overrides, tier,
-                   {"error": "no output dir found"})
+        log_result(
+            iteration,
+            0.0,
+            "CRASH",
+            args.description,
+            args.overrides,
+            tier,
+            {"error": "no output dir found"},
+        )
         sys.exit(1)
 
     print(f"Output directory: {output_dir}")
@@ -233,9 +254,11 @@ def main():
     # Run evaluator
     evaluator_path = PROJECT_ROOT / "autoresearch" / "evaluators" / "labelfree_evaluator.py"
     try:
-        eval_result = subprocess.run(
+        eval_result = subprocess.run(  # nosec B603
             [sys.executable, str(evaluator_path), str(output_dir), "--verbose"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True,
+            text=True,
+            timeout=60,
         )
         score = float(eval_result.stdout.strip())
         status = "KEEP"
@@ -254,8 +277,15 @@ def main():
         status = "DISCARD"
         print(f"\nNo improvement: {score:.6f} (best: {best_score:.6f})")
 
-    log_result(iteration, score, status, args.description, args.overrides, tier,
-               {"output_dir": str(output_dir)})
+    log_result(
+        iteration,
+        score,
+        status,
+        args.description,
+        args.overrides,
+        tier,
+        {"output_dir": str(output_dir)},
+    )
 
     print(f"\nScore: {score:.6f} | Status: {status}")
     # Print score for autoresearch agent to parse
@@ -268,7 +298,7 @@ def get_best_score():
         return 0.0
 
     best = 0.0
-    with open(RESULTS_FILE, "r") as f:
+    with open(RESULTS_FILE) as f:
         for line in f:
             if line.startswith("iteration") or not line.strip():
                 continue

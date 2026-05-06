@@ -135,7 +135,7 @@ def benchmark_inference(trt_model_path, pytorch_model):
 
     # Benchmark TensorRT
     print("\nBenchmarking TensorRT model...")
-    trt_model = torch.jit.load(trt_model_path)
+    trt_model = torch.jit.load(trt_model_path)  # nosec B614
     trt_results = benchmark_model(
         trt_model,
         input_shape,

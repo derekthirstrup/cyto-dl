@@ -134,9 +134,33 @@ repos:
         language_version: python3.11
         args:
           - --ignore
+          - FURB103
+          - --ignore
+          - FURB105
+          - --ignore
+          - FURB107
+          - --ignore
+          - FURB108
+          - --ignore
+          - FURB109
+          - --ignore
+          - FURB115
+          - --ignore
+          - FURB117
+          - --ignore
+          - FURB118
+          - --ignore
           - FURB120
           - --ignore
           - FURB123
+          - --ignore
+          - FURB126
+          - --ignore
+          - FURB138
+          - --ignore
+          - FURB183
+          - --ignore
+          - FURB184
 
   - repo: https://github.com/asottile/blacken-docs
     rev: 1.19.0

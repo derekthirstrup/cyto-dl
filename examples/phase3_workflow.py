@@ -1,4 +1,4 @@
-"""Complete Phase 3 Workflow Examples
+"""Complete Phase 3 Workflow Examples.
 
 This script demonstrates how to use all Phase 3 advanced optimizations:
 1. PyTorch quantization for CPU deployment
@@ -10,14 +10,15 @@ This script demonstrates how to use all Phase 3 advanced optimizations:
 Run individual examples by uncommenting the desired section.
 """
 
-import torch
-import torch.nn as nn
 from pathlib import Path
 
+import torch
+import torch.nn as nn
 
 # ============================================================================
 # Example 1: PyTorch Quantization Workflow
 # ============================================================================
+
 
 def example_quantization():
     """Example: Quantize model for CPU deployment."""
@@ -25,13 +26,14 @@ def example_quantization():
     print("EXAMPLE 1: PyTorch Quantization")
     print("=" * 70)
 
+    from torch.utils.data import DataLoader, TensorDataset
+
     from cyto_dl.utils.quantization import (
-        quantize_model_dynamic,
-        quantize_model_static,
         QuantizationAwareTraining,
         benchmark_quantized_model,
+        quantize_model_dynamic,
+        quantize_model_static,
     )
-    from torch.utils.data import DataLoader, TensorDataset
 
     # Create dummy model
     class DummyModel(nn.Module):
@@ -57,9 +59,7 @@ def example_quantization():
 
     # Method 1: Dynamic Quantization (Easiest)
     print("\n1. Dynamic Quantization:")
-    quantized_dynamic = quantize_model_dynamic(
-        model, dtype=torch.qint8, output_path=None
-    )
+    quantized_dynamic = quantize_model_dynamic(model, dtype=torch.qint8, output_path=None)
     print("   ✓ Model quantized with dynamic quantization")
 
     # Method 2: Static Quantization (Best performance)
@@ -118,7 +118,7 @@ def example_quantization():
         device="cpu",
     )
 
-    print(f"\n   Results:")
+    print("\n   Results:")
     print(f"   - Original: {results['original_time_ms']:.2f} ms")
     print(f"   - Quantized: {results['quantized_time_ms']:.2f} ms")
     print(f"   - Speedup: {results['speedup']:.2f}x")
@@ -131,6 +131,7 @@ def example_quantization():
 # Example 2: Flash Attention for Vision Transformers
 # ============================================================================
 
+
 def example_flash_attention():
     """Example: Use Flash Attention for ViT models."""
     print("=" * 70)
@@ -140,8 +141,8 @@ def example_flash_attention():
     from cyto_dl.nn.vits.flash_attention import (
         FlashAttentionBlock,
         OptimizedTransformerBlock,
-        replace_attention_with_flash,
         benchmark_flash_attention,
+        replace_attention_with_flash,
     )
 
     # Method 1: Drop-in replacement
@@ -175,7 +176,10 @@ def example_flash_attention():
         def __init__(self):
             super().__init__()
             self.blocks = nn.ModuleList(
-                [OptimizedTransformerBlock(dim=768, num_heads=12, use_flash=False) for _ in range(4)]
+                [
+                    OptimizedTransformerBlock(dim=768, num_heads=12, use_flash=False)
+                    for _ in range(4)
+                ]
             )
 
         def forward(self, x):
@@ -184,11 +188,11 @@ def example_flash_attention():
             return x
 
     model = SimpleViT()
-    print(f"   Original model has Flash Attention: No")
+    print("   Original model has Flash Attention: No")
 
     # Replace with Flash Attention
     model = replace_attention_with_flash(model)
-    print(f"   ✓ Model updated with Flash Attention")
+    print("   ✓ Model updated with Flash Attention")
 
     # Benchmark (if CUDA available)
     if torch.cuda.is_available():
@@ -208,23 +212,31 @@ def example_flash_attention():
 # Example 3: Advanced Profiling
 # ============================================================================
 
+
 def example_profiling():
     """Example: Use advanced profiling tools."""
     print("=" * 70)
     print("EXAMPLE 3: Advanced Profiling")
     print("=" * 70)
 
+    from torch.utils.data import DataLoader, TensorDataset
+
     from cyto_dl.utils.advanced_profiling import (
+        BottleneckDetector,
         MemoryProfiler,
         ProfilerContext,
-        BottleneckDetector,
         memory_snapshot,
     )
-    from torch.utils.data import DataLoader, TensorDataset
 
     # Create dummy model and data
     model = nn.Sequential(
-        nn.Conv2d(1, 32, 3), nn.ReLU(), nn.Conv2d(32, 64, 3), nn.ReLU(), nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(64, 10)
+        nn.Conv2d(1, 32, 3),
+        nn.ReLU(),
+        nn.Conv2d(32, 64, 3),
+        nn.ReLU(),
+        nn.AdaptiveAvgPool2d(1),
+        nn.Flatten(),
+        nn.Linear(64, 10),
     )
 
     dataset = TensorDataset(torch.randn(100, 1, 28, 28))
@@ -269,7 +281,10 @@ def example_profiling():
                 _ = model(batch)
 
     if prof.enabled:
-        prof.print_summary(sort_by="cpu_time_total" if not torch.cuda.is_available() else "cuda_time_total", top_k=10)
+        prof.print_summary(
+            sort_by="cpu_time_total" if not torch.cuda.is_available() else "cuda_time_total",
+            top_k=10,
+        )
 
     # Tool 3: Bottleneck Detector
     print("\n3. Bottleneck Detector:")
@@ -308,6 +323,7 @@ def example_profiling():
 # Example 4: Multi-GPU DDP Optimizations
 # ============================================================================
 
+
 def example_ddp():
     """Example: Multi-GPU DDP optimizations."""
     print("=" * 70)
@@ -315,11 +331,11 @@ def example_ddp():
     print("=" * 70)
 
     from cyto_dl.utils.distributed import (
-        setup_ddp_optimizations,
         DDPOptimizer,
-        GradientCompression,
         DistributedMetrics,
+        GradientCompression,
         is_dist_available_and_initialized,
+        setup_ddp_optimizations,
     )
 
     if not torch.cuda.is_available():
@@ -384,6 +400,7 @@ def example_ddp():
 # Example 5: Automated Performance Tuning
 # ============================================================================
 
+
 def example_auto_tune():
     """Example: Automated performance tuning."""
     print("=" * 70)
@@ -424,9 +441,7 @@ def example_auto_tune():
     # Method 2: Save config
     print("\n2. Save Auto-Tuned Config:")
     output_path = "auto_tuned_config.yaml"
-    config = auto_tune_model(
-        model, sample_input, device="cuda", save_config=output_path
-    )
+    config = auto_tune_model(model, sample_input, device="cuda", save_config=output_path)
     print(f"   ✓ Config saved to {output_path}")
 
     print("\n✓ Auto-tuning workflow complete!\n")
@@ -435,6 +450,7 @@ def example_auto_tune():
 # ============================================================================
 # Example 6: Complete End-to-End Workflow
 # ============================================================================
+
 
 def example_complete_workflow():
     """Example: Complete workflow with all Phase 3 optimizations."""
@@ -446,10 +462,10 @@ def example_complete_workflow():
         print("   Skipping: Requires CUDA")
         return
 
-    from cyto_dl.utils.performance import setup_gpu_optimizations
     from cyto_dl.nn.vits.flash_attention import replace_attention_with_flash
-    from cyto_dl.utils.auto_tune import auto_tune_model
     from cyto_dl.utils.advanced_profiling import ProfilerContext
+    from cyto_dl.utils.auto_tune import auto_tune_model
+    from cyto_dl.utils.performance import setup_gpu_optimizations
 
     print("\nWorkflow: Label-Free Model Optimization")
     print("-" * 70)
@@ -472,7 +488,10 @@ def example_complete_workflow():
             super().__init__()
             self.patch_embed = nn.Conv2d(1, 768, kernel_size=16, stride=16)
             self.blocks = nn.ModuleList(
-                [OptimizedTransformerBlock(dim=768, num_heads=12, use_flash=False) for _ in range(6)]
+                [
+                    OptimizedTransformerBlock(dim=768, num_heads=12, use_flash=False)
+                    for _ in range(6)
+                ]
             )
             self.head = nn.Linear(768, 1)
 
@@ -492,7 +511,9 @@ def example_complete_workflow():
             return x
 
     model = SimpleViT().cuda()
-    print(f"   ✓ Model created with {sum(p.numel() for p in model.parameters())/1e6:.1f}M parameters")
+    print(
+        f"   ✓ Model created with {sum(p.numel() for p in model.parameters())/1e6:.1f}M parameters"
+    )
 
     # Step 3: Apply Flash Attention (Phase 3)
     print("\n3. Apply Flash Attention...")
@@ -518,7 +539,7 @@ def example_complete_workflow():
     # Step 7: Profile inference
     print("\n7. Profile optimized model...")
     with ProfilerContext("optimized_inference", enabled=True, use_cuda=True) as prof:
-        batch_size = optimal_config['batch_size']
+        batch_size = optimal_config["batch_size"]
         batch_input = torch.randn(batch_size, 1, 256, 256).cuda()
         batch_input = batch_input.to(memory_format=torch.channels_last)
 

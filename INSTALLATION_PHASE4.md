@@ -13,6 +13,7 @@ python -c "from cyto_dl.utils.accuracy_validation import AccuracyValidator; prin
 ```
 
 **Expected output:**
+
 ```
 ✓ Phase 4 ready!
 ✓ Accuracy validation ready!
@@ -22,12 +23,12 @@ python -c "from cyto_dl.utils.accuracy_validation import AccuracyValidator; prin
 
 Phase 4 includes (all built into existing dependencies):
 
-| Tool | File | Dependencies |
-|------|------|--------------|
-| **Benchmarking Framework** | `cyto_dl/utils/benchmark.py` | PyTorch (already installed) |
-| **Accuracy Validation** | `cyto_dl/utils/accuracy_validation.py` | PyTorch (already installed) |
-| **Benchmark Script** | `scripts/benchmark_performance.py` | PyTorch (already installed) |
-| **Regression Tests** | `tests/test_performance_regression.py` | pytest (dev dependency) |
+| Tool                       | File                                   | Dependencies                |
+| -------------------------- | -------------------------------------- | --------------------------- |
+| **Benchmarking Framework** | `cyto_dl/utils/benchmark.py`           | PyTorch (already installed) |
+| **Accuracy Validation**    | `cyto_dl/utils/accuracy_validation.py` | PyTorch (already installed) |
+| **Benchmark Script**       | `scripts/benchmark_performance.py`     | PyTorch (already installed) |
+| **Regression Tests**       | `tests/test_performance_regression.py` | pytest (dev dependency)     |
 
 ## Installation
 
@@ -86,6 +87,7 @@ print("=" * 60)
 # 1. Benchmarking Framework
 try:
     from cyto_dl.utils.benchmark import BenchmarkSuite, ModelBenchmark, quick_benchmark
+
     print("✓ Benchmarking Framework: Available")
 except ImportError as e:
     print(f"✗ Benchmarking Framework: Failed - {e}")
@@ -93,6 +95,7 @@ except ImportError as e:
 # 2. Accuracy Validation
 try:
     from cyto_dl.utils.accuracy_validation import AccuracyValidator, OutputComparator
+
     print("✓ Accuracy Validation: Available")
 except ImportError as e:
     print(f"✗ Accuracy Validation: Failed - {e}")
@@ -100,6 +103,7 @@ except ImportError as e:
 # 3. Benchmark Script
 try:
     from pathlib import Path
+
     script_path = Path("scripts/benchmark_performance.py")
     if script_path.exists():
         print("✓ Benchmark Script: Available")
@@ -128,11 +132,13 @@ print("\nPhase 4 Verification Complete!")
 ```
 
 Run verification:
+
 ```bash
 python verify_phase4.py
 ```
 
 **Expected output:**
+
 ```
 Verifying Phase 4 Installation...
 ============================================================
@@ -188,11 +194,13 @@ python test_phase4.py
 ### Issue: Import Errors
 
 **Error:**
+
 ```
 ImportError: cannot import name 'BenchmarkSuite'
 ```
 
 **Solution:**
+
 ```bash
 # Ensure you're on the correct branch
 git checkout claude/benchmarking-phase4-014viXtwt7gNsiG4xedaMKNA
@@ -207,11 +215,13 @@ python -c "from cyto_dl.utils.benchmark import BenchmarkSuite"
 ### Issue: Pytest Not Found
 
 **Error:**
+
 ```
 bash: pytest: command not found
 ```
 
 **Solution:**
+
 ```bash
 # Install pytest
 pip install pytest
@@ -226,11 +236,13 @@ pytest --version
 ### Issue: Performance Tests Fail
 
 **Error:**
+
 ```
 test_baseline_performance_2d FAILED - CUDA not available
 ```
 
 **Solution:**
+
 ```bash
 # Skip CUDA-dependent tests
 pytest tests/test_performance_regression.py -v -k "not cuda"
@@ -296,7 +308,7 @@ No new packages to install! 🎉
 3. **Run tests**: `pytest tests/test_performance_regression.py -v`
 4. **Read docs**: See `docs/PHASE4_BENCHMARKING.md`
 
----
+______________________________________________________________________
 
 ## Summary
 

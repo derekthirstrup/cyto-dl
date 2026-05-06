@@ -4,14 +4,14 @@
 # TensorRT export settings
 tensorrt:
   enabled: True
-  precision: int8  # INT8 quantization (4x speedup)
-  workspace_size: 4  # GB
-  dynamic_shapes: False  # Fixed shapes for maximum performance
+  precision: int8 # INT8 quantization (4x speedup)
+  workspace_size: 4 # GB
+  dynamic_shapes: False # Fixed shapes for maximum performance
 
   # INT8 calibration settings
   calibration:
     enabled: True
-    num_samples: 100  # Number of calibration samples
+    num_samples: 100 # Number of calibration samples
     cache_file: calibration.cache
 
   # Batch size settings
@@ -30,8 +30,8 @@ trainer:
 
 # Model settings
 model:
-  compile_model: False  # TensorRT replaces torch.compile
+  compile_model: False # TensorRT replaces torch.compile
   channels_last: True
   inference_args:
-    sw_batch_size: 8  # INT8 allows larger batches
+    sw_batch_size: 8 # INT8 allows larger batches
     mode: gaussian

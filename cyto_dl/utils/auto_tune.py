@@ -22,7 +22,7 @@ Usage:
 import logging
 import time
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, Any
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -349,7 +349,9 @@ class AutoTuner:
             compiled_model = torch.compile(self.model, mode="default")
 
             # Measure compiled
-            batch_input = self.sample_input.repeat(batch_size, *([1] * (self.sample_input.ndim - 1)))
+            batch_input = self.sample_input.repeat(
+                batch_size, *([1] * (self.sample_input.ndim - 1))
+            )
             batch_input = batch_input.to(self.device)
 
             # Warmup (compilation happens here)
@@ -455,7 +457,9 @@ class AutoTuner:
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
 
-            batch_input = self.sample_input.repeat(batch_size, *([1] * (self.sample_input.ndim - 1)))
+            batch_input = self.sample_input.repeat(
+                batch_size, *([1] * (self.sample_input.ndim - 1))
+            )
             batch_input = batch_input.to(self.device)
 
             # Measure without checkpointing

@@ -19,12 +19,12 @@ Usage:
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Callable
+from typing import Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +108,7 @@ class AccuracyValidator:
         self.tolerance = tolerance
         self.metrics: Optional[AccuracyMetrics] = None
 
-    def validate(
-        self, custom_metrics: Optional[Dict[str, Callable]] = None
-    ) -> Dict[str, any]:
+    def validate(self, custom_metrics: Optional[Dict[str, Callable]] = None) -> Dict[str, any]:
         """Run validation.
 
         Parameters
@@ -192,7 +190,7 @@ class AccuracyValidator:
         mae = diff.mean().item()
 
         # Mean Squared Error
-        mse = (diff ** 2).mean().item()
+        mse = (diff**2).mean().item()
 
         # RMSE
         rmse = np.sqrt(mse)
@@ -209,7 +207,7 @@ class AccuracyValidator:
             max_val = max(baseline.max().item(), optimized.max().item())
             psnr = 20 * np.log10(max_val / np.sqrt(mse)) if max_val > 0 else 0.0
         else:
-            psnr = float('inf')
+            psnr = float("inf")
 
         # Cosine similarity
         baseline_flat = baseline.flatten()
@@ -223,7 +221,7 @@ class AccuracyValidator:
         if baseline.ndim >= 4:  # Batch of images
             try:
                 ssim = self._compute_ssim(baseline, optimized)
-            except:
+            except Exception:  # nosec B110
                 pass
 
         # Custom metrics
@@ -278,12 +276,12 @@ class AccuracyValidator:
         sigma12 = ((img1 - mu1) * (img2 - mu2)).mean()
 
         # SSIM constants
-        C1 = 0.01 ** 2
-        C2 = 0.03 ** 2
+        C1 = 0.01**2
+        C2 = 0.03**2
 
         # SSIM formula
         numerator = (2 * mu1 * mu2 + C1) * (2 * sigma12 + C2)
-        denominator = (mu1 ** 2 + mu2 ** 2 + C1) * (sigma1_sq + sigma2_sq + C2)
+        denominator = (mu1**2 + mu2**2 + C1) * (sigma1_sq + sigma2_sq + C2)
 
         ssim = (numerator / denominator).item()
 
@@ -376,9 +374,7 @@ class OutputComparator:
         self.model_b = model_b.to(device).eval()
         self.device = device
 
-    def compare(
-        self, input_tensor: torch.Tensor
-    ) -> Dict[str, torch.Tensor]:
+    def compare(self, input_tensor: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Compare outputs.
 
         Parameters
@@ -423,10 +419,14 @@ class OutputComparator:
         print(f"Max Absolute Diff:  {comparison['max_diff']:.6f}")
         print(f"Mean Absolute Diff: {comparison['mean_diff']:.6f}")
         print("\nOutput Statistics:")
-        print(f"  Model A - Mean: {comparison['output_a'].mean():.6f}, "
-              f"Std: {comparison['output_a'].std():.6f}")
-        print(f"  Model B - Mean: {comparison['output_b'].mean():.6f}, "
-              f"Std: {comparison['output_b'].std():.6f}")
+        print(
+            f"  Model A - Mean: {comparison['output_a'].mean():.6f}, "
+            f"Std: {comparison['output_a'].std():.6f}"
+        )
+        print(
+            f"  Model B - Mean: {comparison['output_b'].mean():.6f}, "
+            f"Std: {comparison['output_b'].std():.6f}"
+        )
         print("=" * 70 + "\n")
 
 

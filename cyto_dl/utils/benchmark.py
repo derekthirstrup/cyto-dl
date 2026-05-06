@@ -28,7 +28,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -231,9 +231,7 @@ class ModelBenchmark:
         size_mb = (param_size + buffer_size) / 1024 / 1024
         return size_mb
 
-    def validate_accuracy(
-        self, dataloader: DataLoader, metric_fn: callable
-    ) -> float:
+    def validate_accuracy(self, dataloader: DataLoader, metric_fn: callable) -> float:
         """Validate model accuracy.
 
         Parameters
@@ -302,9 +300,7 @@ class ModelBenchmark:
 
         # Measure latency
         logger.info("  Measuring latency...")
-        latency_ms, throughput_fps = self.measure_latency(
-            batch_size, num_iterations
-        )
+        latency_ms, throughput_fps = self.measure_latency(batch_size, num_iterations)
 
         # Measure memory
         logger.info("  Measuring memory...")
@@ -397,9 +393,7 @@ class BenchmarkSuite:
         self.benchmarks: Dict[str, ModelBenchmark] = {}
         self.results: Dict[str, BenchmarkResult] = {}
 
-    def add_model(
-        self, name: str, model: nn.Module, sample_input: torch.Tensor
-    ):
+    def add_model(self, name: str, model: nn.Module, sample_input: torch.Tensor):
         """Add model to benchmark suite.
 
         Parameters
@@ -411,9 +405,7 @@ class BenchmarkSuite:
         sample_input : torch.Tensor
             Sample input
         """
-        self.benchmarks[name] = ModelBenchmark(
-            model, sample_input, device=self.device, name=name
-        )
+        self.benchmarks[name] = ModelBenchmark(model, sample_input, device=self.device, name=name)
         logger.info(f"✓ Added model: {name}")
 
     def run_comparison(
@@ -482,9 +474,7 @@ class BenchmarkSuite:
             speedup = baseline_latency / result.latency_ms
             speedup_str = f"{speedup:.2f}x" if name != baseline_name else "baseline"
 
-            accuracy_str = (
-                f"{result.accuracy:.4f}" if result.accuracy is not None else "N/A"
-            )
+            accuracy_str = f"{result.accuracy:.4f}" if result.accuracy is not None else "N/A"
 
             print(
                 f"{name:<20} {result.latency_ms:<7.2f} ({speedup_str:<6}) "
@@ -510,9 +500,7 @@ class BenchmarkSuite:
 
         for name, result in list(self.results.items())[1:]:
             speedup = baseline.latency_ms / result.latency_ms
-            memory_savings = (
-                baseline.memory_allocated_gb - result.memory_allocated_gb
-            )
+            memory_savings = baseline.memory_allocated_gb - result.memory_allocated_gb
             size_reduction = baseline.model_size_mb / result.model_size_mb
 
             print(f"\n{name}:")
@@ -562,13 +550,9 @@ class BenchmarkSuite:
         rows = []
         for name, result in self.results.items():
             speedup = baseline.latency_ms / result.latency_ms
-            speedup_str = (
-                f"{speedup:.2f}x" if name != baseline_name else "baseline"
-            )
+            speedup_str = f"{speedup:.2f}x" if name != baseline_name else "baseline"
 
-            accuracy_str = (
-                f"{result.accuracy:.4f}" if result.accuracy is not None else "N/A"
-            )
+            accuracy_str = f"{result.accuracy:.4f}" if result.accuracy is not None else "N/A"
 
             row = f"""
             <tr>
@@ -667,9 +651,7 @@ class BenchmarkSuite:
             logger.warning("No results to save")
             return
 
-        results_dict = {
-            name: result.to_dict() for name, result in self.results.items()
-        }
+        results_dict = {name: result.to_dict() for name, result in self.results.items()}
 
         with open(output_path, "w") as f:
             json.dump(results_dict, f, indent=2)

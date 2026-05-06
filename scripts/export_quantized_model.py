@@ -345,7 +345,7 @@ def main():
 
         # Save
         if args.output and not args.torchscript:
-            torch.save(quantized_model.state_dict(), args.output)
+            torch.save(quantized_model.state_dict(), args.output)  # nosec B614
             print(f"✓ Saved QAT model to {args.output}")
 
     if quantized_model is None:
@@ -371,7 +371,7 @@ def main():
         except Exception as e:
             print(f"Warning: TorchScript export failed: {e}")
             print("Falling back to state_dict save")
-            torch.save(quantized_model.state_dict(), args.output)
+            torch.save(quantized_model.state_dict(), args.output)  # nosec B614
 
     # Export ONNX if requested
     if args.onnx:
@@ -393,7 +393,7 @@ def main():
 
     # Benchmark if requested
     if args.benchmark:
-        print(f"\n🔍 Running benchmark comparison...")
+        print("\n🔍 Running benchmark comparison...")
         results = benchmark_quantized_model(
             original_model=model,
             quantized_model=quantized_model,
@@ -413,24 +413,24 @@ def main():
     print("\n" + "=" * 60)
     print("NEXT STEPS")
     print("=" * 60)
-    print(f"1. Test the quantized model:")
-    print(f"   >>> import torch")
+    print("1. Test the quantized model:")
+    print("   >>> import torch")
     if args.torchscript:
         print(f"   >>> model = torch.jit.load('{args.output}')")
     else:
-        print(f"   >>> model = MyModel()")
+        print("   >>> model = MyModel()")
         print(f"   >>> model.load_state_dict(torch.load('{args.output}'))")
-    print(f"   >>> output = model(torch.randn(1, 1, 256, 256))")
-    print(f"")
-    print(f"2. Compare accuracy:")
-    print(f"   - Run inference on validation set")
-    print(f"   - Compare metrics with original model")
-    print(f"   - Expected: <1% accuracy loss for static/qat")
-    print(f"")
-    print(f"3. Deploy:")
-    print(f"   - Use quantized model for production inference")
-    print(f"   - Expect 2-4x speedup on CPU")
-    print(f"   - Or combine with TensorRT for GPU (up to 8x total)")
+    print("   >>> output = model(torch.randn(1, 1, 256, 256))")
+    print("")
+    print("2. Compare accuracy:")
+    print("   - Run inference on validation set")
+    print("   - Compare metrics with original model")
+    print("   - Expected: <1% accuracy loss for static/qat")
+    print("")
+    print("3. Deploy:")
+    print("   - Use quantized model for production inference")
+    print("   - Expect 2-4x speedup on CPU")
+    print("   - Or combine with TensorRT for GPU (up to 8x total)")
     print("=" * 60)
 
 

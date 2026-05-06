@@ -54,7 +54,7 @@ def parse_metrics(csv_path):
     metrics = {}
     last_epoch_rows = []
 
-    with open(csv_path, "r") as f:
+    with open(csv_path) as f:
         reader = csv.DictReader(f)
         rows = list(reader)
 
@@ -81,8 +81,7 @@ def compute_composite_score(metrics):
 
     Score = 0.5 * SSIM + 0.3 * (PSNR/50) + 0.2 * Pearson
 
-    All components normalized to roughly [0, 1] range.
-    Higher is better.
+    All components normalized to roughly [0, 1] range. Higher is better.
 
     Returns (score, details_dict)
     """
@@ -195,9 +194,7 @@ def main():
         description="Evaluate label-free fluorescence prediction quality"
     )
     parser.add_argument("log_dir", help="Path to training run output directory")
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Print detailed metrics"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Print detailed metrics")
     args = parser.parse_args()
 
     try:

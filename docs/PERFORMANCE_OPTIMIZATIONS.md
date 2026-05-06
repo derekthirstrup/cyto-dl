@@ -10,7 +10,7 @@ This branch adds comprehensive GPU performance optimizations for CytoDL, targeti
 - **Inference: 1.8-3.0x faster** depending on model and configuration
 - **Memory: 40-60% reduction** with gradient checkpointing (when needed)
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -34,51 +34,60 @@ python cyto_dl/eval.py \
   ckpt_path=path/to/checkpoint.ckpt
 ```
 
----
+______________________________________________________________________
 
 ## Key Optimizations Implemented
 
 ### 1. **BF16 Mixed Precision** (30-50% speedup)
+
 - Automatic on Ampere+ GPUs (4090, 5080, A100)
 - Better numerical stability than FP16
 - Config: `trainer=gpu_optimized` or `trainer.precision=bf16-mixed`
 
 ### 2. **Channels-Last Memory Format** (20-30% speedup)
+
 - Optimizes memory layout for modern GPUs
 - Enabled per-model with `model.channels_last=True` and `model.spatial_dims=3`
 
 ### 3. **torch.compile** (20-50% speedup)
+
 - PyTorch 2.0+ graph optimization
 - Enabled with `model.compile_model=True`
 - Modes: `default`, `max-autotune` (training), `reduce-overhead` (inference)
 
 ### 4. **Fused Optimizers** (10-20% speedup)
+
 - GPU-fused AdamW/Adam kernels
 - Config: `optimizer=adamw_fused`
 
 ### 5. **cudnn Benchmarking** (5-10% speedup)
+
 - Auto-selects fastest conv algorithms
 - Enabled with `performance=gpu_optimized`
 
 ### 6. **TF32 Tensor Cores** (10-20% speedup on Ampere+)
+
 - Automatic on compatible GPUs
 - Enabled with `performance=gpu_optimized`
 
 ### 7. **Optimal Data Loading** (20-40% speedup)
+
 - Parallel workers prevent GPU starvation
 - Updated all configs to `num_workers=4` (from 0)
 - Added `persistent_workers=True`
 
 ### 8. **Gradient Checkpointing** (40-60% memory reduction)
+
 - Trade 20% speed for memory
 - Enables larger batch sizes
 - Enabled with `model.gradient_checkpointing=True`
 
----
+______________________________________________________________________
 
 ## New Files
 
 ### Configuration Files
+
 - `configs/performance/gpu_optimized.yaml` - GPU performance settings
 - `configs/performance/default.yaml` - Conservative defaults
 - `configs/trainer/gpu_optimized.yaml` - Optimized trainer with BF16
@@ -88,6 +97,7 @@ python cyto_dl/eval.py \
 - `configs/debug/profile_memory.yaml` - Memory profiling config
 
 ### Python Modules
+
 - `cyto_dl/utils/performance.py` - Performance utilities
   - `setup_gpu_optimizations()` - Initialize GPU settings
   - `convert_to_channels_last()` - Memory format conversion
@@ -96,43 +106,52 @@ python cyto_dl/eval.py \
   - `benchmark_model()` - Performance benchmarking
 
 ### Scripts
+
 - `scripts/benchmark_performance.py` - Comprehensive benchmarking tool
 
 ### Documentation
+
 - `docs/GPU_OPTIMIZATION_GUIDE.md` - Complete optimization guide
 - `docs/PERFORMANCE_OPTIMIZATIONS.md` - This file
 
----
+______________________________________________________________________
 
 ## Modified Files
 
 ### Core Files
+
 - `cyto_dl/models/base_model.py`
+
   - Added `channels_last`, `compile_model`, `gradient_checkpointing` parameters
   - Added `setup()` hook for applying optimizations
   - Added `_enable_gradient_checkpointing()` method
 
 - `cyto_dl/train.py`
+
   - Added GPU optimization initialization
   - Calls `setup_gpu_optimizations()` when performance config present
 
 - `cyto_dl/nn/vits/encoder.py`
+
   - Added gradient checkpointing support to MAE_Encoder
   - Memory-efficient training for ViT models
 
 ### Configuration Files
+
 - Updated trainer configs:
+
   - `configs/trainer/gpu.yaml` - Added BF16 precision
   - `configs/trainer/gpu_optimized.yaml` - New optimized config
 
 - Updated data configs (all set `num_workers=4` and `persistent_workers=True`):
+
   - `configs/data/im2im/segmentation.yaml`
   - `configs/data/im2im/mae.yaml`
   - `configs/data/im2im/labelfree.yaml`
   - `configs/data/im2im/gan_superres.yaml`
   - `configs/data/im2im/iwm.yaml`
 
----
+______________________________________________________________________
 
 ## Usage Examples
 
@@ -204,13 +223,14 @@ python scripts/benchmark_performance.py \
   --output batch_size_results.json
 ```
 
----
+______________________________________________________________________
 
 ## Migration Guide
 
 ### For Existing Configs
 
 1. **Update trainer:**
+
    ```yaml
    # Before
    trainer=gpu
@@ -220,6 +240,7 @@ python scripts/benchmark_performance.py \
    ```
 
 2. **Add performance config:**
+
    ```yaml
    # Add to experiment config
    defaults:
@@ -227,6 +248,7 @@ python scripts/benchmark_performance.py \
    ```
 
 3. **Enable model optimizations:**
+
    ```yaml
    model:
      spatial_dims: 3  # or 2 for 2D
@@ -235,6 +257,7 @@ python scripts/benchmark_performance.py \
    ```
 
 4. **Update optimizer:**
+
    ```yaml
    # Before
    optimizer:
@@ -264,31 +287,34 @@ model.load_default_experiment(
         "model.channels_last=True",
         "model.spatial_dims=3",
         "model.compile_model=True",
-    ]
+    ],
 )
 model.train()
 ```
 
----
+______________________________________________________________________
 
 ## Compatibility
 
 ### Requirements
+
 - PyTorch >= 2.0 (for torch.compile)
 - CUDA >= 11.8 (for BF16 on Ampere+ GPUs)
 - NVIDIA GPU with compute capability >= 7.0
 
 ### GPU Support
+
 - ✅ **Full Support:** RTX 4090, 5080, 3090, A100, H100
 - ✅ **Good Support:** RTX 2080 Ti, V100 (no TF32)
 - ⚠️ **Limited:** GTX 1080 Ti (no mixed precision benefits)
 
 ### Platform Support
+
 - ✅ Linux: All features
 - ⚠️ Windows: All except torch.compile
 - ⚠️ macOS: CPU only
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -301,24 +327,24 @@ See the [GPU Optimization Guide](GPU_OPTIMIZATION_GUIDE.md#troubleshooting) for 
 3. **Compilation Errors:** Disable torch.compile or update PyTorch
 4. **NaN/Inf:** Use higher precision or gradient clipping
 
----
+______________________________________________________________________
 
 ## Benchmarks
 
 ### RTX 4090 Performance
 
-| Configuration | Training FPS | Inference FPS | Memory Usage |
-|---------------|--------------|---------------|--------------|
-| Baseline | 2.1 | 8.2 | 18.4 GB |
-| + Mixed Precision | 3.2 (+52%) | 12.8 (+56%) | 14.2 GB |
-| + Channels-Last | 3.9 (+22%) | 15.1 (+18%) | 14.2 GB |
-| + torch.compile | 4.8 (+23%) | 18.9 (+25%) | 14.2 GB |
-| + Fused Optimizer | 5.1 (+6%) | 18.9 | 14.2 GB |
-| **All Optimizations** | **5.3 (+152%)** | **19.7 (+140%)** | **14.2 GB** |
+| Configuration         | Training FPS    | Inference FPS    | Memory Usage |
+| --------------------- | --------------- | ---------------- | ------------ |
+| Baseline              | 2.1             | 8.2              | 18.4 GB      |
+| + Mixed Precision     | 3.2 (+52%)      | 12.8 (+56%)      | 14.2 GB      |
+| + Channels-Last       | 3.9 (+22%)      | 15.1 (+18%)      | 14.2 GB      |
+| + torch.compile       | 4.8 (+23%)      | 18.9 (+25%)      | 14.2 GB      |
+| + Fused Optimizer     | 5.1 (+6%)       | 18.9             | 14.2 GB      |
+| **All Optimizations** | **5.3 (+152%)** | **19.7 (+140%)** | **14.2 GB**  |
 
 *Segmentation model, batch_size=8, 64³ patches*
 
----
+______________________________________________________________________
 
 ## Future Enhancements
 
@@ -330,11 +356,12 @@ Planned for future releases:
 4. **Custom CUDA Kernels** - Specialized operations
 5. **Multi-GPU Training** - Automatic DDP optimization
 
----
+______________________________________________________________________
 
 ## Credits
 
 Performance optimizations implemented based on:
+
 - PyTorch 2.x performance best practices
 - NVIDIA Deep Learning Performance Guide
 - Community feedback on label-free imaging workflows

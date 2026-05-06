@@ -20,10 +20,10 @@ Usage:
 
 import logging
 import time
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List, Optional
-import warnings
 
 import torch
 import torch.nn as nn
@@ -81,13 +81,15 @@ class MemoryProfiler:
         else:
             allocated = reserved = peak = 0.0
 
-        self.snapshots.append({
-            "name": name,
-            "time": time.time() - self.start_time,
-            "allocated_gb": allocated,
-            "reserved_gb": reserved,
-            "peak_gb": peak,
-        })
+        self.snapshots.append(
+            {
+                "name": name,
+                "time": time.time() - self.start_time,
+                "allocated_gb": allocated,
+                "reserved_gb": reserved,
+                "peak_gb": peak,
+            }
+        )
 
     def print_summary(self):
         """Print memory usage summary."""
@@ -95,21 +97,25 @@ class MemoryProfiler:
             logger.warning("No snapshots taken")
             return
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("MEMORY PROFILING SUMMARY")
-        print("="*80)
-        print(f"{'Snapshot':<30} {'Time (s)':<12} {'Allocated (GB)':<15} {'Reserved (GB)':<15} {'Peak (GB)':<15}")
-        print("-"*80)
+        print("=" * 80)
+        print(
+            f"{'Snapshot':<30} {'Time (s)':<12} {'Allocated (GB)':<15} {'Reserved (GB)':<15} {'Peak (GB)':<15}"
+        )
+        print("-" * 80)
 
         for snap in self.snapshots:
-            print(f"{snap['name']:<30} {snap['time']:<12.2f} {snap['allocated_gb']:<15.2f} "
-                  f"{snap['reserved_gb']:<15.2f} {snap['peak_gb']:<15.2f}")
+            print(
+                f"{snap['name']:<30} {snap['time']:<12.2f} {snap['allocated_gb']:<15.2f} "
+                f"{snap['reserved_gb']:<15.2f} {snap['peak_gb']:<15.2f}"
+            )
 
-        print("="*80)
+        print("=" * 80)
 
         # Show memory growth
         if len(self.snapshots) > 1:
-            growth = self.snapshots[-1]['allocated_gb'] - self.snapshots[0]['allocated_gb']
+            growth = self.snapshots[-1]["allocated_gb"] - self.snapshots[0]["allocated_gb"]
             print(f"\nMemory Growth: {growth:.2f} GB")
 
             if growth > 1.0:
@@ -132,7 +138,7 @@ class MemoryProfiler:
         leaks = []
 
         for i in range(1, len(self.snapshots)):
-            growth = self.snapshots[i]['allocated_gb'] - self.snapshots[i-1]['allocated_gb']
+            growth = self.snapshots[i]["allocated_gb"] - self.snapshots[i - 1]["allocated_gb"]
 
             if growth > threshold_gb:
                 leaks.append(
@@ -157,6 +163,7 @@ class MemoryProfiler:
             Output file path (.json or .csv)
         """
         import json
+
         output_path = Path(output_path)
 
         if output_path.suffix == ".json":
@@ -164,6 +171,7 @@ class MemoryProfiler:
                 json.dump(self.snapshots, f, indent=2)
         elif output_path.suffix == ".csv":
             import csv
+
             with open(output_path, "w", newline="") as f:
                 if self.snapshots:
                     writer = csv.DictWriter(f, fieldnames=self.snapshots[0].keys())
@@ -244,7 +252,9 @@ class ProfilerContext:
         if self.enabled:
             self.profiler.__exit__(*args)
             self.end_time = time.time()
-            logger.info(f"✓ Profiling '{self.name}' complete ({self.end_time - self.start_time:.2f}s)")
+            logger.info(
+                f"✓ Profiling '{self.name}' complete ({self.end_time - self.start_time:.2f}s)"
+            )
 
     def print_summary(self, sort_by: str = "cuda_time_total", top_k: int = 20):
         """Print profiling summary.
@@ -260,14 +270,14 @@ class ProfilerContext:
             logger.warning("Profiler not enabled")
             return
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print(f"PROFILING SUMMARY: {self.name}")
-        print("="*80)
+        print("=" * 80)
         print(f"Total time: {self.end_time - self.start_time:.2f}s\n")
 
         print(f"Top {top_k} operations by {sort_by}:")
         print(self.profiler.key_averages().table(sort_by=sort_by, row_limit=top_k))
-        print("="*80)
+        print("=" * 80)
 
     def export_chrome_trace(self, output_path: str):
         """Export Chrome trace for visualization.
@@ -283,7 +293,7 @@ class ProfilerContext:
 
         self.profiler.export_chrome_trace(output_path)
         logger.info(f"✓ Chrome trace exported to {output_path}")
-        logger.info(f"   View at: chrome://tracing")
+        logger.info("   View at: chrome://tracing")
 
     def export_stacks(self, output_path: str):
         """Export stack traces.
@@ -351,18 +361,21 @@ class BottleneckDetector:
         if torch.cuda.is_available():
             try:
                 import pynvml
+
                 pynvml.nvmlInit()
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
                 util = pynvml.nvmlDeviceGetUtilizationRates(handle)
                 gpu_util = util.gpu
-            except:
+            except Exception:  # nosec B110
                 pass
 
-        self.marks.append({
-            "name": name,
-            "time": current_time,
-            "gpu_util": gpu_util,
-        })
+        self.marks.append(
+            {
+                "name": name,
+                "time": current_time,
+                "gpu_util": gpu_util,
+            }
+        )
 
     def analyze(self) -> Dict[str, float]:
         """Analyze bottlenecks.
@@ -379,7 +392,7 @@ class BottleneckDetector:
         phases = {}
         for i in range(1, len(self.marks)):
             phase_name = f"{self.marks[i-1]['name']} → {self.marks[i]['name']}"
-            duration = self.marks[i]['time'] - self.marks[i-1]['time']
+            duration = self.marks[i]["time"] - self.marks[i - 1]["time"]
             phases[phase_name] = duration
 
         return phases
@@ -391,9 +404,9 @@ class BottleneckDetector:
         if not phases:
             return
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("BOTTLENECK ANALYSIS & RECOMMENDATIONS")
-        print("="*80)
+        print("=" * 80)
 
         # Calculate total time
         total_time = sum(phases.values())
@@ -418,7 +431,7 @@ class BottleneckDetector:
             print("     → Consider data caching/prefetching")
 
         # Check GPU utilization
-        avg_gpu_util = sum(m['gpu_util'] for m in self.marks) / len(self.marks)
+        avg_gpu_util = sum(m["gpu_util"] for m in self.marks) / len(self.marks)
         if avg_gpu_util < 70:
             print(f"  ⚠️  Low GPU utilization ({avg_gpu_util:.1f}%)")
             print("     → Increase batch size")
@@ -426,7 +439,7 @@ class BottleneckDetector:
             print("     → Enable mixed precision training")
             print("     → Use torch.compile")
 
-        print("="*80)
+        print("=" * 80)
 
 
 @contextmanager

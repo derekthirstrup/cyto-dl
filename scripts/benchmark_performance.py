@@ -155,7 +155,7 @@ def benchmark_batch_sizes(
             print(f"  ✓ {result['avg_latency_ms']:.2f}ms/iter, {result['throughput_fps']:.2f} FPS")
         except RuntimeError as e:
             if "out of memory" in str(e):
-                print(f"  ✗ OOM (Out of Memory)")
+                print("  ✗ OOM (Out of Memory)")
                 torch.cuda.empty_cache()
                 break
             else:

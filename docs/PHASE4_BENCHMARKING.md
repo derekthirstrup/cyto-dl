@@ -5,6 +5,7 @@ This guide covers Phase 4: comprehensive benchmarking, testing, and performance 
 ## Overview
 
 Phase 4 provides tools to:
+
 - **Benchmark models** across all optimization phases
 - **Validate accuracy** after optimizations
 - **Compare performance** of different configurations
@@ -32,7 +33,7 @@ passed = validate_optimization(
     baseline_model=model_fp32,
     optimized_model=model_quantized,
     validation_loader=val_loader,
-    tolerance=0.01  # 1% acceptable degradation
+    tolerance=0.01,  # 1% acceptable degradation
 )
 
 if passed:
@@ -104,7 +105,7 @@ validator = AccuracyValidator(
     baseline_model=model_baseline,
     optimized_model=model_optimized,
     validation_loader=val_loader,
-    tolerance=0.01  # 1% tolerance
+    tolerance=0.01,  # 1% tolerance
 )
 
 results = validator.validate()
@@ -125,6 +126,7 @@ comparator.visualize_diff(comparison)
 ```
 
 **Metrics Computed:**
+
 - Mean Absolute Error (MAE)
 - Mean Squared Error (MSE)
 - Peak Signal-to-Noise Ratio (PSNR)
@@ -172,6 +174,7 @@ pytest tests/test_performance_regression.py -v -m "not slow"
 ```
 
 **Available Tests:**
+
 - `test_baseline_performance_2d` - 2D model baseline
 - `test_baseline_performance_3d` - 3D model baseline
 - `test_phase1_speedup` - Phase 1 improvements
@@ -218,10 +221,7 @@ benchmark_opt.print_report()
 from cyto_dl.utils.accuracy_validation import validate_optimization
 
 passed = validate_optimization(
-    baseline_model=model_baseline,
-    optimized_model=model_optimized,
-    validation_loader=val_loader,
-    tolerance=0.01
+    baseline_model=model_baseline, optimized_model=model_optimized, validation_loader=val_loader, tolerance=0.01
 )
 ```
 
@@ -277,6 +277,7 @@ phase3_quantized:
 ### HTML Report
 
 Generates interactive HTML with:
+
 - Performance comparison table
 - Charts and visualizations
 - Metadata (device, batch size, iterations)
@@ -383,6 +384,7 @@ jobs:
 ### Issue: Inconsistent Results
 
 **Solution:**
+
 ```python
 # Fix random seeds
 torch.manual_seed(42)
@@ -396,6 +398,7 @@ benchmark.run_all(num_iterations=500)
 ### Issue: Accuracy Degradation
 
 **Solution:**
+
 ```python
 # Check tolerance
 validator = AccuracyValidator(tolerance=0.02)  # Allow 2%
@@ -413,6 +416,7 @@ comparison = comparator.compare(input_tensor)
 ### Issue: OOM During Benchmarking
 
 **Solution:**
+
 ```bash
 # Reduce batch size
 python scripts/benchmark_performance.py --batch-sizes 1 2
@@ -457,6 +461,7 @@ pytest tests/test_performance_regression.py -v
 ```
 
 For more information, see:
+
 - [Phase 1: GPU Optimizations](GPU_OPTIMIZATION_GUIDE.md)
 - [Phase 2: TensorRT](TENSORRT_GUIDE.md)
 - [Phase 3: Advanced Optimizations](PHASE3_ADVANCED_OPTIMIZATIONS.md)

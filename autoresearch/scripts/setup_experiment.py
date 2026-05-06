@@ -11,7 +11,7 @@ Usage:
 """
 
 import argparse
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
@@ -26,6 +26,7 @@ def validate_environment():
     # Check cyto_dl is importable
     try:
         import cyto_dl
+
         checks.append(("cyto_dl import", True, "OK"))
     except ImportError as e:
         checks.append(("cyto_dl import", False, str(e)))
@@ -45,6 +46,7 @@ def validate_environment():
     # Check torch and CUDA
     try:
         import torch
+
         cuda_available = torch.cuda.is_available()
         if cuda_available:
             gpu_name = torch.cuda.get_device_name(0)
@@ -67,8 +69,11 @@ def validate_data(data_path):
 
     # Check for CSV manifest or image files
     csv_files = list(data_path.glob("*.csv"))
-    image_files = list(data_path.rglob("*.tif")) + list(data_path.rglob("*.czi")) + \
-                  list(data_path.rglob("*.ome.zarr"))
+    image_files = (
+        list(data_path.rglob("*.tif"))
+        + list(data_path.rglob("*.czi"))
+        + list(data_path.rglob("*.ome.zarr"))
+    )
 
     if csv_files:
         return True, f"Found {len(csv_files)} CSV manifest(s), {len(image_files)} image file(s)"
@@ -83,25 +88,30 @@ def run_baseline(data_path):
     runner = PROJECT_ROOT / "autoresearch" / "scripts" / "run_experiment.py"
 
     cmd = [
-        sys.executable, str(runner),
-        "--tier", "exploration",
-        "--description", "baseline",
-        "--overrides", "",
+        sys.executable,
+        str(runner),
+        "--tier",
+        "exploration",
+        "--description",
+        "baseline",
+        "--overrides",
+        "",
     ]
 
     if data_path:
         cmd.extend(["--data-path", str(data_path)])
 
     print("\nRunning baseline training...")
-    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT))
+    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT))  # nosec B603
     return result.returncode == 0
 
 
 def main():
     parser = argparse.ArgumentParser(description="Set up autoresearch experiment")
     parser.add_argument("--data-path", required=True, help="Path to training data")
-    parser.add_argument("--validate-only", action="store_true",
-                       help="Only validate, don't run baseline")
+    parser.add_argument(
+        "--validate-only", action="store_true", help="Only validate, don't run baseline"
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -136,9 +146,9 @@ def main():
 
     if args.validate_only:
         print("\nValidation complete. Ready to run experiments.")
-        print(f"\nNext step: python autoresearch/scripts/run_experiment.py \\")
+        print("\nNext step: python autoresearch/scripts/run_experiment.py \\")
         print(f"  --data-path {args.data_path} \\")
-        print(f'  --description "baseline"')
+        print('  --description "baseline"')
         sys.exit(0)
 
     # Run baseline

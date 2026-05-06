@@ -11,7 +11,6 @@ amsgrad: False
 
 # Enable fused kernels for GPU acceleration
 fused: True
-
 # Note: fused=True requires:
 # 1. CUDA tensors
 # 2. PyTorch >= 2.0

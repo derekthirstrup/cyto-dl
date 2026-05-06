@@ -2,8 +2,9 @@
 
 import logging
 import os
-import torch
 from typing import Optional
+
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -154,9 +155,7 @@ def enable_compile_if_available(
 
     if hasattr(torch, "compile"):
         try:
-            compiled_model = torch.compile(
-                model, mode=mode, fullgraph=fullgraph, dynamic=dynamic
-            )
+            compiled_model = torch.compile(model, mode=mode, fullgraph=fullgraph, dynamic=dynamic)
             logger.info(f"✓ Applied torch.compile with mode='{mode}'")
             return compiled_model
         except Exception as e:

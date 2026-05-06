@@ -33,8 +33,9 @@ logger = logging.getLogger(__name__)
 
 # Check for Flash Attention availability
 try:
-    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
+    from flash_attn import flash_attn_func, flash_attn_qkvpacked_func
     from flash_attn.flash_attention import FlashAttention
+
     FLASH_ATTENTION_AVAILABLE = True
     logger.info("✓ Flash Attention available")
 except ImportError:
@@ -83,7 +84,7 @@ class FlashAttentionBlock(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
+        self.scale = head_dim**-0.5
         self.use_flash = use_flash and FLASH_ATTENTION_AVAILABLE
 
         # QKV projection
@@ -129,7 +130,9 @@ class FlashAttentionBlock(nn.Module):
 
             # Apply Flash Attention
             x = flash_attn_func(
-                q, k, v,
+                q,
+                k,
+                v,
                 dropout_p=self.attn_drop.p if self.training else 0.0,
                 softmax_scale=self.scale,
                 causal=False,
@@ -144,7 +147,9 @@ class FlashAttentionBlock(nn.Module):
 
             # PyTorch's optimized attention
             x = F.scaled_dot_product_attention(
-                q, k, v,
+                q,
+                k,
+                v,
                 attn_mask=None,
                 dropout_p=self.attn_drop.p if self.training else 0.0,
                 scale=self.scale,
@@ -203,8 +208,12 @@ class OptimizedTransformerBlock(nn.Module):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.attn = FlashAttentionBlock(
-            dim, num_heads=num_heads, qkv_bias=qkv_bias,
-            attn_drop=attn_drop, proj_drop=drop, use_flash=use_flash
+            dim,
+            num_heads=num_heads,
+            qkv_bias=qkv_bias,
+            attn_drop=attn_drop,
+            proj_drop=drop,
+            use_flash=use_flash,
         )
 
         self.norm2 = nn.LayerNorm(dim)
@@ -265,11 +274,11 @@ def replace_attention_with_flash(model: nn.Module) -> nn.Module:
     count = 0
     for name, module in model.named_modules():
         # Look for standard attention patterns
-        if hasattr(module, 'attn') and isinstance(module.attn, nn.Module):
+        if hasattr(module, "attn") and isinstance(module.attn, nn.Module):
             # Check if it has num_heads attribute (standard attention)
-            if hasattr(module.attn, 'num_heads'):
+            if hasattr(module.attn, "num_heads"):
                 original_attn = module.attn
-                dim = original_attn.qkv.in_features if hasattr(original_attn, 'qkv') else None
+                dim = original_attn.qkv.in_features if hasattr(original_attn, "qkv") else None
 
                 if dim is not None:
                     # Replace with Flash Attention
@@ -336,6 +345,7 @@ def benchmark_flash_attention(
     if device == "cuda":
         torch.cuda.synchronize()
     import time
+
     start = time.time()
     for _ in range(num_iterations):
         with torch.no_grad():
@@ -365,13 +375,13 @@ def benchmark_flash_attention(
         "batch_size": batch_size,
     }
 
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info("FLASH ATTENTION BENCHMARK")
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info(f"Sequence length: {seq_length}")
     logger.info(f"Standard:        {results['standard_time_ms']:.2f} ms")
     logger.info(f"Flash Attention: {results['flash_time_ms']:.2f} ms")
     logger.info(f"Speedup:         {speedup:.2f}x faster")
-    logger.info("="*60)
+    logger.info("=" * 60)
 
     return results

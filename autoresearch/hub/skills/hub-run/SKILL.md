@@ -39,6 +39,7 @@ Uses Claude Code's Agent tool with `isolation: "worktree"` for true parallel
 execution in isolated repository copies.
 
 Alternatively, runs sequentially via:
+
 ```bash
 python autoresearch/hub/scripts/hub_run.py \
   --strategies lr_sweep architecture_sweep loss_sweep \

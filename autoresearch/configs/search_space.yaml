@@ -173,12 +173,14 @@ strategy:
   phases:
     early:
       iterations: [1, 15]
-      parameters: [learning_rate, weight_decay, scheduler_gamma, dropout, batch_size]
+      parameters:
+        [learning_rate, weight_decay, scheduler_gamma, dropout, batch_size]
       approach: "Focus on training dynamics. Quick iterations."
 
     mid:
       iterations: [16, 30]
-      parameters: [optimizer_type, scheduler_type, base_loss, filters, patch_shape]
+      parameters:
+        [optimizer_type, scheduler_type, base_loss, filters, patch_shape]
       approach: "Explore architecture and loss. Medium-length training."
 
     late:

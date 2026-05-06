@@ -13,23 +13,24 @@ This guide covers Phase 3 advanced optimizations for CytoDL, providing cutting-e
 7. [Combined Performance](#combined-performance)
 8. [Best Practices](#best-practices)
 
----
+______________________________________________________________________
 
 ## Overview
 
 Phase 3 builds on Phase 1 (basic GPU optimizations) and Phase 2 (TensorRT) with additional advanced techniques:
 
-| Optimization | Use Case | Speedup | Setup Difficulty |
-|--------------|----------|---------|------------------|
-| **PyTorch Quantization** | CPU inference | 2-4x | Easy-Medium |
-| **Flash Attention** | ViT models | 2-4x | Easy |
-| **Advanced Profiling** | Bottleneck detection | N/A | Easy |
-| **Multi-GPU DDP** | Distributed training | Near-linear | Medium |
-| **Auto-Tuning** | Optimal hyperparameters | 10-30% | Easy |
+| Optimization             | Use Case                | Speedup     | Setup Difficulty |
+| ------------------------ | ----------------------- | ----------- | ---------------- |
+| **PyTorch Quantization** | CPU inference           | 2-4x        | Easy-Medium      |
+| **Flash Attention**      | ViT models              | 2-4x        | Easy             |
+| **Advanced Profiling**   | Bottleneck detection    | N/A         | Easy             |
+| **Multi-GPU DDP**        | Distributed training    | Near-linear | Medium           |
+| **Auto-Tuning**          | Optimal hyperparameters | 10-30%      | Easy             |
 
 ### When to Use Phase 3
 
 ✅ **Use Phase 3 if:**
+
 - You're deploying on CPU (use quantization)
 - You're using Vision Transformer models (use Flash Attention)
 - You need to profile and debug performance (use advanced profiling)
@@ -38,16 +39,17 @@ Phase 3 builds on Phase 1 (basic GPU optimizations) and Phase 2 (TensorRT) with 
 
 ⚠️ **Phase 3 is optional** - Phase 1 + Phase 2 (TensorRT) already provides 3-7x speedup for most workflows.
 
----
+______________________________________________________________________
 
 ## PyTorch Quantization
 
 ### What is Quantization?
 
 Quantization converts FP32 models to INT8, providing:
+
 - **4x smaller** model size
 - **2-4x faster** inference on CPU
-- **Minimal accuracy loss** (<1%)
+- **Minimal accuracy loss** (\<1%)
 
 ### Three Quantization Modes
 
@@ -66,11 +68,13 @@ python scripts/export_quantized_model.py \
 ```
 
 **Pros:**
+
 - ✅ No calibration required
 - ✅ Works immediately
 - ✅ Minimal code changes
 
 **Cons:**
+
 - ⚠️ CPU-only optimization
 - ⚠️ Slightly less speedup than static
 
@@ -95,17 +99,19 @@ python scripts/export_quantized_model.py \
 ```
 
 **Pros:**
+
 - ✅ Best speed (3-4x on CPU)
-- ✅ <1% accuracy loss
+- ✅ \<1% accuracy loss
 - ✅ Calibration is quick
 
 **Cons:**
+
 - ⚠️ Requires calibration data
 - ⚠️ Slightly more complex
 
 #### 3. Quantization-Aware Training (Best Accuracy)
 
-**Best for:** When <0.5% accuracy loss is critical
+**Best for:** When \<0.5% accuracy loss is critical
 
 ```bash
 # QAT with fine-tuning
@@ -121,10 +127,12 @@ python scripts/export_quantized_model.py \
 ```
 
 **Pros:**
-- ✅ Best accuracy (<0.5% loss)
+
+- ✅ Best accuracy (\<0.5% loss)
 - ✅ Same speed as static
 
 **Cons:**
+
 - ⚠️ Requires training (5-10 epochs)
 - ⚠️ Most complex
 
@@ -140,21 +148,14 @@ from cyto_dl.utils.quantization import (
 
 # Dynamic quantization
 model = MyModel()
-quantized_model = quantize_model_dynamic(
-    model,
-    dtype=torch.qint8,
-    output_path="model_quantized.pt"
-)
+quantized_model = quantize_model_dynamic(model, dtype=torch.qint8, output_path="model_quantized.pt")
 
 # Static quantization
 from torch.utils.data import DataLoader
 
 calibration_loader = DataLoader(calibration_dataset, batch_size=4)
 quantized_model = quantize_model_static(
-    model,
-    calibration_loader=calibration_loader,
-    backend="fbgemm",
-    output_path="model_static.pt"
+    model, calibration_loader=calibration_loader, backend="fbgemm", output_path="model_static.pt"
 )
 
 # QAT
@@ -174,27 +175,28 @@ results = benchmark_quantized_model(
     quantized_model=quantized_model,
     input_shape=(1, 1, 256, 256),
     num_iterations=100,
-    device="cpu"
+    device="cpu",
 )
 ```
 
 ### Quantization Performance
 
-| Model | FP32 (ms) | INT8 Dynamic (ms) | INT8 Static (ms) | Speedup |
-|-------|-----------|-------------------|------------------|---------|
-| **Segmentation 3D** | 245.3 | 82.1 | 68.7 | 3.6x |
-| **Label-Free 2D** | 89.2 | 28.4 | 23.1 | 3.9x |
-| **MAE 3D** | 156.7 | 52.3 | 41.2 | 3.8x |
+| Model               | FP32 (ms) | INT8 Dynamic (ms) | INT8 Static (ms) | Speedup |
+| ------------------- | --------- | ----------------- | ---------------- | ------- |
+| **Segmentation 3D** | 245.3     | 82.1              | 68.7             | 3.6x    |
+| **Label-Free 2D**   | 89.2      | 28.4              | 23.1             | 3.9x    |
+| **MAE 3D**          | 156.7     | 52.3              | 41.2             | 3.8x    |
 
 *Intel Xeon CPU*
 
----
+______________________________________________________________________
 
 ## Flash Attention
 
 ### What is Flash Attention?
 
 Flash Attention is an optimized attention mechanism for Vision Transformers providing:
+
 - **2-4x faster** attention computation
 - **10-20x less** memory usage
 - **Exact results** (no approximation)
@@ -212,14 +214,13 @@ pip install flash-attn
 ```python
 from cyto_dl.nn.vits.flash_attention import FlashAttentionBlock
 
+
 # Replace standard attention
 class MyViT(nn.Module):
     def __init__(self):
         super().__init__()
         self.attn = FlashAttentionBlock(
-            dim=768,
-            num_heads=12,
-            use_flash=True  # Automatically falls back if unavailable
+            dim=768, num_heads=12, use_flash=True  # Automatically falls back if unavailable
         )
 ```
 
@@ -240,12 +241,7 @@ model = replace_attention_with_flash(model)
 from cyto_dl.nn.vits.flash_attention import OptimizedTransformerBlock
 
 # Use optimized block with Flash Attention + fused MLP
-block = OptimizedTransformerBlock(
-    dim=768,
-    num_heads=12,
-    mlp_ratio=4.0,
-    use_flash=True
-)
+block = OptimizedTransformerBlock(dim=768, num_heads=12, mlp_ratio=4.0, use_flash=True)
 ```
 
 ### Flash Attention Benchmark
@@ -253,13 +249,7 @@ block = OptimizedTransformerBlock(
 ```python
 from cyto_dl.nn.vits.flash_attention import benchmark_flash_attention
 
-results = benchmark_flash_attention(
-    batch_size=8,
-    seq_length=1024,
-    dim=768,
-    num_heads=12,
-    num_iterations=100
-)
+results = benchmark_flash_attention(batch_size=8, seq_length=1024, dim=768, num_heads=12, num_iterations=100)
 
 # Output:
 # ============================================================
@@ -275,28 +265,30 @@ results = benchmark_flash_attention(
 ### Flash Attention Performance
 
 | Sequence Length | Standard (ms) | Flash (ms) | Speedup | Memory Savings |
-|-----------------|---------------|------------|---------|----------------|
-| 256 | 1.2 | 0.6 | 2.0x | 8x |
-| 512 | 3.8 | 1.3 | 2.9x | 12x |
-| 1024 | 12.4 | 3.7 | 3.4x | 15x |
-| 2048 | 45.2 | 11.8 | 3.8x | 18x |
+| --------------- | ------------- | ---------- | ------- | -------------- |
+| 256             | 1.2           | 0.6        | 2.0x    | 8x             |
+| 512             | 3.8           | 1.3        | 2.9x    | 12x            |
+| 1024            | 12.4          | 3.7        | 3.4x    | 15x            |
+| 2048            | 45.2          | 11.8       | 3.8x    | 18x            |
 
 *RTX 4090, dim=768, heads=12*
 
 ### When to Use Flash Attention
 
 ✅ **Use Flash Attention for:**
+
 - Vision Transformer models
 - Long sequences (>1024 tokens)
 - Large batch sizes
 - Limited GPU memory
 
 ❌ **Not beneficial for:**
+
 - CNN models (no attention layers)
-- Very short sequences (<256)
+- Very short sequences (\<256)
 - Models with no attention
 
----
+______________________________________________________________________
 
 ## Advanced Profiling
 
@@ -334,6 +326,7 @@ profiler.save_report("memory_profile.json")
 ```
 
 **Output:**
+
 ```
 ================================================================================
 MEMORY PROFILING SUMMARY
@@ -402,6 +395,7 @@ detector.print_recommendations()
 ```
 
 **Output:**
+
 ```
 ================================================================================
 BOTTLENECK ANALYSIS & RECOMMENDATIONS
@@ -441,7 +435,7 @@ with memory_snapshot("forward_pass"):
 #   Memory: +2.134 GB (now 4.267 GB)
 ```
 
----
+______________________________________________________________________
 
 ## Multi-GPU DDP Optimizations
 
@@ -483,9 +477,7 @@ ddp_model = setup_ddp_optimizations(model)
 
 # Add gradient compression
 compressor = GradientCompression(
-    compression_type="powersgd",
-    powersgd_rank=2,  # Lower = more compression
-    start_iter=10  # Warmup period
+    compression_type="powersgd", powersgd_rank=2, start_iter=10  # Lower = more compression  # Warmup period
 )
 compressor.register(ddp_model)
 
@@ -494,6 +486,7 @@ compressor.register(ddp_model)
 ```
 
 **PowerSGD** provides:
+
 - 20-40% faster multi-node communication
 - Minimal accuracy impact
 - Works best for large models
@@ -507,12 +500,7 @@ model = MyModel().cuda()
 
 # Apply all DDP optimizations at once
 ddp_opt = DDPOptimizer(
-    model,
-    sync_bn=True,
-    gradient_compression=True,
-    compression_rank=2,
-    overlap_comm=True,
-    bucket_cap_mb=25
+    model, sync_bn=True, gradient_compression=True, compression_rank=2, overlap_comm=True, bucket_cap_mb=25
 )
 
 model = ddp_opt.get_model()
@@ -532,8 +520,8 @@ for batch in dataloader:
     loss = train_step(batch)
     acc = compute_accuracy(output, target)
 
-    metrics.update('loss', loss.item(), count=batch.size(0))
-    metrics.update('accuracy', acc.item(), count=batch.size(0))
+    metrics.update("loss", loss.item(), count=batch.size(0))
+    metrics.update("accuracy", acc.item(), count=batch.size(0))
 
 # At end of epoch, get synchronized averages
 avg_metrics = metrics.compute_and_reset()
@@ -561,6 +549,7 @@ gradient_clip_val: 1.0
 ```
 
 **Usage:**
+
 ```bash
 # Single node, 4 GPUs
 python cyto_dl/train.py \
@@ -587,19 +576,20 @@ python cyto_dl/train.py \
 ### DDP Scaling Efficiency
 
 | GPUs | Speedup | Efficiency |
-|------|---------|------------|
-| 1 | 1.0x | 100% |
-| 2 | 1.8x | 90% |
-| 4 | 3.5x | 87% |
-| 8 | 6.5x | 81% |
+| ---- | ------- | ---------- |
+| 1    | 1.0x    | 100%       |
+| 2    | 1.8x    | 90%        |
+| 4    | 3.5x    | 87%        |
+| 8    | 6.5x    | 81%        |
 
 With gradient compression (multi-node):
-| Nodes | GPUs | Speedup | Efficiency |
-|-------|------|---------|------------|
-| 2 | 8 | 12.0x | 75% |
-| 4 | 16 | 22.4x | 70% |
 
----
+| Nodes | GPUs | Speedup | Efficiency |
+| ----- | ---- | ------- | ---------- |
+| 2     | 8    | 12.0x   | 75%        |
+| 4     | 16   | 22.4x   | 70%        |
+
+______________________________________________________________________
 
 ## Automated Performance Tuning
 
@@ -665,24 +655,20 @@ print(f"Use num_workers={optimal_config['num_workers']}")
 ```python
 from cyto_dl.utils.auto_tune import auto_tune_model
 
-config = auto_tune_model(
-    model,
-    sample_input,
-    device="cuda",
-    save_config="configs/performance/auto_tuned.yaml"
-)
+config = auto_tune_model(model, sample_input, device="cuda", save_config="configs/performance/auto_tuned.yaml")
 
 # ✓ Saved optimal config to configs/performance/auto_tuned.yaml
 ```
 
 Then use:
+
 ```bash
 python cyto_dl/train.py \
   experiment=im2im/labelfree \
   performance=auto_tuned
 ```
 
----
+______________________________________________________________________
 
 ## Combined Performance
 
@@ -690,13 +676,13 @@ python cyto_dl/train.py \
 
 Combining all optimizations:
 
-| Configuration | Speedup | Components |
-|---------------|---------|------------|
-| **Baseline PyTorch** | 1.0x | Default |
-| **+ Phase 1** | 1.5-1.8x | cudnn, BF16, compile, etc. |
-| **+ Phase 2 (TensorRT FP16)** | 2.5-3.5x | TensorRT inference |
-| **+ Phase 3 (Flash Attn)** | 5.0-7.0x | Flash Attention for ViT |
-| **+ Phase 3 (Quantization)** | 3.5-5.0x | INT8 quantization (CPU) |
+| Configuration                 | Speedup  | Components                 |
+| ----------------------------- | -------- | -------------------------- |
+| **Baseline PyTorch**          | 1.0x     | Default                    |
+| **+ Phase 1**                 | 1.5-1.8x | cudnn, BF16, compile, etc. |
+| **+ Phase 2 (TensorRT FP16)** | 2.5-3.5x | TensorRT inference         |
+| **+ Phase 3 (Flash Attn)**    | 5.0-7.0x | Flash Attention for ViT    |
+| **+ Phase 3 (Quantization)**  | 3.5-5.0x | INT8 quantization (CPU)    |
 
 ### Example: Vision Transformer with All Optimizations
 
@@ -709,11 +695,7 @@ from cyto_dl.utils.performance import setup_gpu_optimizations
 model = MyViTModel()
 
 # 2. Phase 1: Basic optimizations
-setup_gpu_optimizations(
-    enable_cudnn_benchmark=True,
-    enable_tf32=True,
-    channels_last=True
-)
+setup_gpu_optimizations(enable_cudnn_benchmark=True, enable_tf32=True, channels_last=True)
 
 model = model.to(memory_format=torch.channels_last)
 
@@ -730,19 +712,19 @@ with torch.cuda.amp.autocast(dtype=torch.bfloat16):
 # Result: 5-7x faster than baseline!
 ```
 
----
+______________________________________________________________________
 
 ## Best Practices
 
 ### Choosing Optimizations
 
-| Scenario | Recommended Optimizations |
-|----------|--------------------------|
-| **CPU Inference** | Quantization (dynamic or static) |
-| **GPU Inference (RTX 4090/5080)** | Phase 1 + TensorRT FP16 |
-| **ViT Models** | Phase 1 + Flash Attention + TensorRT |
-| **Multi-GPU Training** | Phase 1 + DDP optimizations |
-| **Not sure?** | Use auto-tuning |
+| Scenario                          | Recommended Optimizations            |
+| --------------------------------- | ------------------------------------ |
+| **CPU Inference**                 | Quantization (dynamic or static)     |
+| **GPU Inference (RTX 4090/5080)** | Phase 1 + TensorRT FP16              |
+| **ViT Models**                    | Phase 1 + Flash Attention + TensorRT |
+| **Multi-GPU Training**            | Phase 1 + DDP optimizations          |
+| **Not sure?**                     | Use auto-tuning                      |
 
 ### Optimization Checklist
 
@@ -757,6 +739,7 @@ with torch.cuda.amp.autocast(dtype=torch.bfloat16):
 ### Common Pitfalls
 
 ❌ **Don't:**
+
 - Skip Phase 1 optimizations (they're free!)
 - Use quantization on GPU (use TensorRT instead)
 - Enable gradient checkpointing unless OOM
@@ -764,13 +747,14 @@ with torch.cuda.amp.autocast(dtype=torch.bfloat16):
 - Forget to benchmark
 
 ✅ **Do:**
+
 - Start with Phase 1
 - Add Phase 2 (TensorRT) for GPU inference
 - Add Phase 3 optimizations selectively
 - Profile to find bottlenecks
 - Test accuracy after quantization
 
----
+______________________________________________________________________
 
 ## Summary
 
@@ -787,26 +771,30 @@ Phase 3 provides advanced optimizations for specific use cases:
 ### Next Steps
 
 1. **For CPU deployment**: Use quantization
+
    ```bash
    python scripts/export_quantized_model.py --mode static
    ```
 
 2. **For ViT models**: Use Flash Attention
+
    ```python
    model = replace_attention_with_flash(model)
    ```
 
 3. **For multi-GPU**: Use DDP optimizations
+
    ```bash
    python cyto_dl/train.py trainer=multi_gpu_ddp trainer.devices=4
    ```
 
 4. **Not sure?**: Use auto-tuning
+
    ```python
    config = auto_tune_model(model, sample_input)
    ```
 
----
+______________________________________________________________________
 
 ## Additional Resources
 

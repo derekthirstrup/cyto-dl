@@ -29,7 +29,7 @@ Usage:
 
 import logging
 import os
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 import torch
 import torch.distributed as dist
@@ -134,7 +134,7 @@ def setup_ddp_optimizations(
         bucket_cap_mb=bucket_cap_mb,
     )
 
-    logger.info(f"✓ DDP initialized with optimizations:")
+    logger.info("✓ DDP initialized with optimizations:")
     logger.info(f"  - Gradient as bucket view: {gradient_as_bucket_view}")
     logger.info(f"  - Static graph: {static_graph}")
     logger.info(f"  - Bucket size: {bucket_cap_mb} MB")
@@ -212,9 +212,7 @@ class GradientCompression:
                     default_hooks as default,
                 )
 
-                ddp_model.register_comm_hook(
-                    state=None, hook=default.fp16_compress_hook
-                )
+                ddp_model.register_comm_hook(state=None, hook=default.fp16_compress_hook)
                 logger.info("✓ Registered FP16 gradient compression")
             except ImportError:
                 logger.warning("FP16 compression not available")
@@ -426,12 +424,8 @@ class DistributedMetrics:
 
         for name in self.metrics:
             # Create tensors for reduction
-            value_tensor = torch.tensor(
-                self.metrics[name], device=torch.cuda.current_device()
-            )
-            count_tensor = torch.tensor(
-                self.counts[name], device=torch.cuda.current_device()
-            )
+            value_tensor = torch.tensor(self.metrics[name], device=torch.cuda.current_device())
+            count_tensor = torch.tensor(self.counts[name], device=torch.cuda.current_device())
 
             # Reduce across processes
             if is_dist_available_and_initialized():

@@ -38,6 +38,7 @@ Read `autoresearch/CLAUDE.md` for the full decision framework.
 ## After Each Run
 
 Report:
+
 - Iteration number
 - What was changed and why
 - Score achieved

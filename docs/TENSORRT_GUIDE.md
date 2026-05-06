@@ -14,7 +14,7 @@ This guide covers how to use NVIDIA TensorRT with CytoDL for **2-5x faster infer
 8. [Benchmarks](#benchmarks)
 9. [Troubleshooting](#troubleshooting)
 
----
+______________________________________________________________________
 
 ## What is TensorRT?
 
@@ -28,6 +28,7 @@ This guide covers how to use NVIDIA TensorRT with CytoDL for **2-5x faster infer
 ### How It Works
 
 TensorRT optimizes your PyTorch models through:
+
 1. **Layer & Tensor Fusion** - Combines operations
 2. **Kernel Auto-Tuning** - Selects fastest CUDA kernels
 3. **Precision Calibration** - Converts to FP16/INT8
@@ -36,17 +37,19 @@ TensorRT optimizes your PyTorch models through:
 ### When to Use TensorRT
 
 ✅ **Best for:**
+
 - Production inference workloads
 - Real-time applications
 - High-throughput scenarios
 - Consumer GPU deployment (4090, 5080)
 
 ⚠️ **Not recommended for:**
+
 - Training (use PyTorch optimizations instead)
 - Rapid prototyping (export adds overhead)
 - Highly dynamic models
 
----
+______________________________________________________________________
 
 ## Installation
 
@@ -85,7 +88,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
 pip install nvidia-tensorrt==8.6.1  # For CUDA 11.8
 ```
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -119,11 +122,7 @@ from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine
 import torch
 
 # Load TensorRT model
-engine = TensorRTInferenceEngine(
-    model_path="models/labelfree_trt_fp16.ts",
-    input_shape=(1, 1, 256, 256),
-    device="cuda"
-)
+engine = TensorRTInferenceEngine(model_path="models/labelfree_trt_fp16.ts", input_shape=(1, 1, 256, 256), device="cuda")
 
 # Run inference
 input_image = torch.randn(1, 1, 256, 256).cuda()
@@ -132,7 +131,7 @@ output = engine(input_image)
 
 **Result: 2-3x faster than PyTorch!**
 
----
+______________________________________________________________________
 
 ## Exporting Models
 
@@ -171,7 +170,7 @@ python scripts/export_to_tensorrt.py \
   --num-calibration-samples 100
 ```
 
-**Expected speedup: 4x** (with <1% accuracy loss after calibration)
+**Expected speedup: 4x** (with \<1% accuracy loss after calibration)
 
 ### Dynamic Batch Sizes
 
@@ -192,18 +191,18 @@ python scripts/export_to_tensorrt.py \
 
 ### Export Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--precision` | FP32, FP16, or INT8 | fp16 |
-| `--workspace-size` | GPU memory for optimization (GB) | 4 |
-| `--dynamic-shapes` | Enable variable batch sizes | False |
-| `--min-batch` | Minimum batch size (dynamic) | 1 |
-| `--max-batch` | Maximum batch size (dynamic) | 16 |
-| `--opt-batch` | Optimal batch size (dynamic) | 4 |
-| `--benchmark` | Benchmark after export | False |
-| `--calibration-data` | Path to calibration images (INT8) | None |
+| Option               | Description                       | Default |
+| -------------------- | --------------------------------- | ------- |
+| `--precision`        | FP32, FP16, or INT8               | fp16    |
+| `--workspace-size`   | GPU memory for optimization (GB)  | 4       |
+| `--dynamic-shapes`   | Enable variable batch sizes       | False   |
+| `--min-batch`        | Minimum batch size (dynamic)      | 1       |
+| `--max-batch`        | Maximum batch size (dynamic)      | 16      |
+| `--opt-batch`        | Optimal batch size (dynamic)      | 4       |
+| `--benchmark`        | Benchmark after export            | False   |
+| `--calibration-data` | Path to calibration images (INT8) | None    |
 
----
+______________________________________________________________________
 
 ## Running Inference
 
@@ -216,28 +215,17 @@ from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine
 
 # Create engine
 engine = TensorRTInferenceEngine(
-    model_path="model_trt.ts",
-    input_shape=(1, 1, 256, 256),
-    device="cuda",
-    half_precision=True  # Use FP16
+    model_path="model_trt.ts", input_shape=(1, 1, 256, 256), device="cuda", half_precision=True  # Use FP16
 )
 
 # Single inference
 output = engine(input_tensor)
 
 # Batch inference
-outputs = engine.batch_inference(
-    inputs=[img1, img2, img3, img4],
-    batch_size=4
-)
+outputs = engine.batch_inference(inputs=[img1, img2, img3, img4], batch_size=4)
 
 # Sliding window for large images
-output = engine.sliding_window_inference(
-    image=large_image,
-    roi_size=(256, 256),
-    overlap=0.25,
-    batch_size=4
-)
+output = engine.sliding_window_inference(image=large_image, roi_size=(256, 256), overlap=0.25, batch_size=4)
 ```
 
 ### Method 2: Direct TorchScript
@@ -263,11 +251,7 @@ from cyto_dl.api import CytoDLModel
 
 # Load experiment
 model = CytoDLModel()
-model.load_default_experiment(
-    "labelfree",
-    output_dir="./output",
-    overrides=["inference=tensorrt_fp16"]
-)
+model.load_default_experiment("labelfree", output_dir="./output", overrides=["inference=tensorrt_fp16"])
 
 # Replace PyTorch model with TensorRT
 model.model = torch.jit.load("labelfree_trt.ts")
@@ -276,7 +260,7 @@ model.model = torch.jit.load("labelfree_trt.ts")
 predictions = model.predict(data=images)
 ```
 
----
+______________________________________________________________________
 
 ## Precision Modes
 
@@ -301,12 +285,14 @@ predictions = model.predict(data=images)
 ```
 
 **Pros:**
+
 - ✅ Excellent speedup
 - ✅ Minimal accuracy loss
 - ✅ No calibration required
 - ✅ Works on all Tensor Core GPUs
 
 **Cons:**
+
 - ⚠️ Rare numerical instability (fixable with mixed precision)
 
 ### INT8 (Maximum Speed)
@@ -320,26 +306,28 @@ predictions = model.predict(data=images)
 ```
 
 **Pros:**
+
 - ✅ Maximum speedup (4x)
 - ✅ 4x less memory
 - ✅ Great for edge devices
 
 **Cons:**
+
 - ⚠️ Requires calibration
 - ⚠️ Slight accuracy loss (1-2%)
 - ⚠️ More complex workflow
 
 ### Precision Comparison
 
-| Model | FP32 (ms) | FP16 (ms) | INT8 (ms) | FP16 Speedup | INT8 Speedup |
-|-------|-----------|-----------|-----------|--------------|--------------|
-| **Segmentation 3D** | 48.2 | 18.7 | 12.1 | 2.6x | 4.0x |
-| **Label-Free 2D** | 11.3 | 4.2 | 2.9 | 2.7x | 3.9x |
-| **MAE 3D** | 32.5 | 12.1 | 8.3 | 2.7x | 3.9x |
+| Model               | FP32 (ms) | FP16 (ms) | INT8 (ms) | FP16 Speedup | INT8 Speedup |
+| ------------------- | --------- | --------- | --------- | ------------ | ------------ |
+| **Segmentation 3D** | 48.2      | 18.7      | 12.1      | 2.6x         | 4.0x         |
+| **Label-Free 2D**   | 11.3      | 4.2       | 2.9       | 2.7x         | 3.9x         |
+| **MAE 3D**          | 32.5      | 12.1      | 8.3       | 2.7x         | 3.9x         |
 
 *RTX 4090, batch_size=1*
 
----
+______________________________________________________________________
 
 ## Optimization Tips
 
@@ -415,7 +403,7 @@ python scripts/export_to_tensorrt.py \
   --benchmark-iterations 100
 ```
 
----
+______________________________________________________________________
 
 ## Benchmarks
 
@@ -423,38 +411,39 @@ python scripts/export_to_tensorrt.py \
 
 #### Label-Free Model (2D, 256x256)
 
-| Configuration | Latency (ms) | Throughput (FPS) | Speedup |
-|---------------|--------------|------------------|---------|
-| PyTorch (FP32) | 11.3 | 88.5 | 1.0x |
-| PyTorch Optimized | 6.2 | 161.3 | 1.8x |
-| **TensorRT FP16** | **4.2** | **238.1** | **2.7x** |
-| **TensorRT INT8** | **2.9** | **344.8** | **3.9x** |
+| Configuration     | Latency (ms) | Throughput (FPS) | Speedup  |
+| ----------------- | ------------ | ---------------- | -------- |
+| PyTorch (FP32)    | 11.3         | 88.5             | 1.0x     |
+| PyTorch Optimized | 6.2          | 161.3            | 1.8x     |
+| **TensorRT FP16** | **4.2**      | **238.1**        | **2.7x** |
+| **TensorRT INT8** | **2.9**      | **344.8**        | **3.9x** |
 
 #### Segmentation Model (3D, 64³)
 
-| Configuration | Latency (ms) | Throughput (FPS) | Speedup |
-|---------------|--------------|------------------|---------|
-| PyTorch (FP32) | 48.2 | 20.7 | 1.0x |
-| PyTorch Optimized | 26.4 | 37.9 | 1.8x |
-| **TensorRT FP16** | **18.7** | **53.5** | **2.6x** |
-| **TensorRT INT8** | **12.1** | **82.6** | **4.0x** |
+| Configuration     | Latency (ms) | Throughput (FPS) | Speedup  |
+| ----------------- | ------------ | ---------------- | -------- |
+| PyTorch (FP32)    | 48.2         | 20.7             | 1.0x     |
+| PyTorch Optimized | 26.4         | 37.9             | 1.8x     |
+| **TensorRT FP16** | **18.7**     | **53.5**         | **2.6x** |
+| **TensorRT INT8** | **12.1**     | **82.6**         | **4.0x** |
 
 ### Combined Optimizations
 
-| Optimization Stack | Speedup |
-|-------------------|---------|
-| Baseline PyTorch | 1.0x |
-| + Phase 1 (cudnn, BF16, etc.) | 1.5-1.8x |
-| + TensorRT FP16 | **2.5-3.5x** |
-| + TensorRT INT8 | **3.5-5.0x** |
+| Optimization Stack            | Speedup      |
+| ----------------------------- | ------------ |
+| Baseline PyTorch              | 1.0x         |
+| + Phase 1 (cudnn, BF16, etc.) | 1.5-1.8x     |
+| + TensorRT FP16               | **2.5-3.5x** |
+| + TensorRT INT8               | **3.5-5.0x** |
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
 ### Issue: "TensorRT not available"
 
 **Solution:**
+
 ```bash
 pip install torch-tensorrt nvidia-tensorrt
 # Verify
@@ -464,6 +453,7 @@ python -c "import torch_tensorrt; print('OK')"
 ### Issue: "CUDA error during compilation"
 
 **Solution:**
+
 ```bash
 # Check CUDA version compatibility
 python -c "import torch; print(torch.version.cuda)"
@@ -475,11 +465,13 @@ pip install --upgrade nvidia-tensorrt
 ### Issue: "Model fails to export"
 
 **Possible causes:**
+
 1. **Dynamic control flow** - TensorRT requires static graphs
 2. **Unsupported operations** - Some PyTorch ops not supported
 3. **Shape mismatches** - Input shape doesn't match model
 
 **Solutions:**
+
 ```bash
 # Try TorchScript first
 python -c "import torch; torch.jit.trace(model, sample_input)"
@@ -493,6 +485,7 @@ python -c "import torch; torch.jit.trace(model, sample_input)"
 ### Issue: "INT8 accuracy loss >2%"
 
 **Solution:**
+
 ```bash
 # Increase calibration samples
 --num-calibration-samples 500
@@ -507,6 +500,7 @@ python -c "import torch; torch.jit.trace(model, sample_input)"
 ### Issue: "Slower than expected"
 
 **Checks:**
+
 1. ✅ Using GPU? `model.cuda()`
 2. ✅ Warmed up? (first few iterations are slow)
 3. ✅ Fixed shapes? (dynamic is 10-20% slower)
@@ -514,6 +508,7 @@ python -c "import torch; torch.jit.trace(model, sample_input)"
 5. ✅ Batch size optimization?
 
 **Benchmark properly:**
+
 ```python
 # Warmup
 for _ in range(10):
@@ -531,6 +526,7 @@ elapsed = time.time() - start
 ### Issue: "Out of memory during export"
 
 **Solution:**
+
 ```bash
 # Reduce workspace size
 --workspace-size 2
@@ -542,7 +538,7 @@ elapsed = time.time() - start
 torch.cuda.empty_cache()
 ```
 
----
+______________________________________________________________________
 
 ## Advanced Topics
 
@@ -562,10 +558,7 @@ for gpu_id in range(num_gpus):
 Combine multiple TensorRT models:
 
 ```python
-models = [
-    torch.jit.load(f"model_{i}_trt.ts")
-    for i in range(num_models)
-]
+models = [torch.jit.load(f"model_{i}_trt.ts") for i in range(num_models)]
 
 # Ensemble inference
 outputs = [model(input) for model in models]
@@ -587,10 +580,10 @@ while True:
     input_tensor = preprocess(frame)
     output = engine(input_tensor)
     result = postprocess(output)
-    cv2.imshow('Result', result)
+    cv2.imshow("Result", result)
 ```
 
----
+______________________________________________________________________
 
 ## Best Practices
 
@@ -603,7 +596,7 @@ while True:
 7. ✅ **Warmup** before benchmarking
 8. ✅ **Profile** to find bottlenecks
 
----
+______________________________________________________________________
 
 ## Summary
 
@@ -615,13 +608,14 @@ TensorRT provides **2-5x faster inference** for CytoDL models on NVIDIA GPUs wit
 4. **Enjoy** 2-5x speedup!
 
 For maximum performance on RTX 4090/5080:
+
 - Use **TensorRT FP16** (2-3x speedup)
 - Or **TensorRT INT8** (4x speedup) if calibrated
 - Combined with Phase 1 optimizations: **3-7x total speedup**
 
 Perfect for label-free imaging workflows!
 
----
+______________________________________________________________________
 
 ## Additional Resources
 

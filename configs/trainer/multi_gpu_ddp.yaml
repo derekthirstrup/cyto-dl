@@ -32,9 +32,9 @@ _target_: lightning.pytorch.Trainer
 
 # Multi-GPU settings
 accelerator: gpu
-devices: 4  # Number of GPUs per node
-num_nodes: 1  # Number of nodes
-strategy: ddp  # DistributedDataParallel
+devices: 4 # Number of GPUs per node
+num_nodes: 1 # Number of nodes
+strategy: ddp # DistributedDataParallel
 
 # Mixed precision for speed
 precision: bf16-mixed
@@ -49,7 +49,7 @@ accumulate_grad_batches: 1
 
 # Validation
 check_val_every_n_epoch: 1
-val_check_interval: null  # Validate after each epoch
+val_check_interval: null # Validate after each epoch
 
 # Callbacks
 enable_checkpointing: true
@@ -61,8 +61,8 @@ log_every_n_steps: 50
 logger: true
 
 # Performance
-benchmark: true  # cudnn benchmark for speed
-deterministic: false  # Set true for reproducibility (slower)
+benchmark: true # cudnn benchmark for speed
+deterministic: false # Set true for reproducibility (slower)
 
 # DDP-specific settings (via strategy)
 # These are set via performance/advanced.yaml:

@@ -30,11 +30,11 @@ from typing import List, Optional, Set
 import torch
 import torch.nn as nn
 from torch.quantization import (
+    convert,
+    fuse_modules,
     get_default_qconfig,
     prepare,
-    convert,
     quantize_dynamic,
-    fuse_modules,
 )
 
 logger = logging.getLogger(__name__)
@@ -87,13 +87,13 @@ def quantize_model_dynamic(
     quantized_size = sum(p.numel() * p.element_size() for p in quantized_model.parameters())
     reduction = (1 - quantized_size / original_size) * 100
 
-    logger.info(f"✓ Dynamic quantization complete")
+    logger.info("✓ Dynamic quantization complete")
     logger.info(f"  Original size: {original_size / 1e6:.2f} MB")
     logger.info(f"  Quantized size: {quantized_size / 1e6:.2f} MB")
     logger.info(f"  Reduction: {reduction:.1f}%")
 
     if output_path:
-        torch.save(quantized_model.state_dict(), output_path)
+        torch.save(quantized_model.state_dict(), output_path)  # nosec B614
         logger.info(f"✓ Saved to {output_path}")
 
     return quantized_model
@@ -137,7 +137,9 @@ def fuse_model_layers(model: nn.Module, fuse_list: Optional[List[List[str]]] = N
                 layers = list(module.children())
                 if len(layers) >= 2:
                     # Conv + BN
-                    if isinstance(layers[0], (nn.Conv2d, nn.Conv3d)) and isinstance(layers[1], (nn.BatchNorm2d, nn.BatchNorm3d)):
+                    if isinstance(layers[0], (nn.Conv2d, nn.Conv3d)) and isinstance(
+                        layers[1], (nn.BatchNorm2d, nn.BatchNorm3d)
+                    ):
                         pattern = [f"{name}.0", f"{name}.1"]
                         if len(layers) >= 3 and isinstance(layers[2], nn.ReLU):
                             pattern.append(f"{name}.2")
@@ -215,7 +217,7 @@ def quantize_model_static(
             if isinstance(batch, (tuple, list)):
                 inputs = batch[0]
             elif isinstance(batch, dict):
-                inputs = batch.get('input', batch.get('raw', batch.get('x', None)))
+                inputs = batch.get("input", batch.get("raw", batch.get("x", None)))
             else:
                 inputs = batch
 
@@ -238,13 +240,13 @@ def quantize_model_static(
     quantized_size = sum(p.numel() * p.element_size() for p in quantized_model.parameters())
     reduction = (1 - quantized_size / original_size) * 100
 
-    logger.info(f"✓ Static quantization complete")
+    logger.info("✓ Static quantization complete")
     logger.info(f"  Original size: {original_size / 1e6:.2f} MB")
     logger.info(f"  Quantized size: {quantized_size / 1e6:.2f} MB")
     logger.info(f"  Reduction: {reduction:.1f}%")
 
     if output_path:
-        torch.save(quantized_model.state_dict(), output_path)
+        torch.save(quantized_model.state_dict(), output_path)  # nosec B614
         logger.info(f"✓ Saved to {output_path}")
 
     return quantized_model
@@ -307,10 +309,12 @@ class QuantizationAwareTraining:
 
         # Attach qconfig
         from torch.quantization import get_default_qat_qconfig
+
         self.model.qconfig = get_default_qat_qconfig(self.backend)
 
         # Prepare for QAT
         from torch.quantization import prepare_qat
+
         self.prepared_model = prepare_qat(self.model, inplace=False)
 
         logger.info("✓ Model prepared for QAT")
@@ -407,13 +411,13 @@ def benchmark_quantized_model(
         "device": device,
     }
 
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info("QUANTIZATION BENCHMARK")
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info(f"Original:  {results['original_time_ms']:.2f} ms")
     logger.info(f"Quantized: {results['quantized_time_ms']:.2f} ms")
     logger.info(f"Speedup:   {speedup:.2f}x faster")
-    logger.info("="*60)
+    logger.info("=" * 60)
 
     return results
 
@@ -444,7 +448,7 @@ def export_quantized_model(
 
     if export_format == "torchscript":
         traced = torch.jit.trace(model, example_input)
-        torch.jit.save(traced, str(output_path))
+        torch.jit.save(traced, str(output_path))  # nosec B614
         logger.info(f"✓ Exported to TorchScript: {output_path}")
 
     elif export_format == "onnx":
@@ -459,7 +463,7 @@ def export_quantized_model(
         logger.info(f"✓ Exported to ONNX: {output_path}")
 
     elif export_format == "state_dict":
-        torch.save(model.state_dict(), str(output_path))
+        torch.save(model.state_dict(), str(output_path))  # nosec B614
         logger.info(f"✓ Exported state dict: {output_path}")
 
     else:

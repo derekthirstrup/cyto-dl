@@ -1,7 +1,7 @@
 """Loss wrapper that computes image quality metrics alongside the primary loss.
 
-Used by the autoresearch system to track SSIM, PSNR, and Pearson correlation
-during training/validation without modifying the model architecture.
+Used by the autoresearch system to track SSIM, PSNR, and Pearson correlation during
+training/validation without modifying the model architecture.
 """
 
 import torch
@@ -12,8 +12,8 @@ import torch.nn.functional as F
 def _ssim_3d(pred, target, window_size=7, data_range=None):
     """Compute SSIM for 3D volumes (or 2D images).
 
-    Simplified SSIM that works on arbitrary spatial dims by computing
-    statistics over all spatial dimensions.
+    Simplified SSIM that works on arbitrary spatial dims by computing statistics over all spatial
+    dimensions.
     """
     if data_range is None:
         data_range = max(target.max() - target.min(), 1e-8)

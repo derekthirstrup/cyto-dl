@@ -19,33 +19,33 @@
 mode: static
 
 # Backend (hardware-specific)
-backend: fbgemm  # fbgemm for x86 CPU, qnnpack for ARM/mobile
+backend: fbgemm # fbgemm for x86 CPU, qnnpack for ARM/mobile
 
 # Quantization dtype
-dtype: qint8  # INT8 quantization
+dtype: qint8 # INT8 quantization
 
 # Calibration settings
 calibration:
-  num_samples: 100  # Number of calibration images (50-500 recommended)
-  batch_size: 4  # Calibration batch size
-  use_validation_set: true  # Use validation data for calibration
+  num_samples: 100 # Number of calibration images (50-500 recommended)
+  batch_size: 4 # Calibration batch size
+  use_validation_set: true # Use validation data for calibration
 
 # Quantization configuration
-qconfig: default  # Options: default, fbgemm, qnnpack
+qconfig: default # Options: default, fbgemm, qnnpack
 
 # Fuse operations before quantization
-fuse_modules: true  # Fuse Conv-BN-ReLU for better performance
+fuse_modules: true # Fuse Conv-BN-ReLU for better performance
 
 # Export options
 export:
-  format: torchscript  # torchscript or state_dict
-  include_onnx: true  # Also export ONNX
+  format: torchscript # torchscript or state_dict
+  include_onnx: true # Also export ONNX
 
 # Benchmarking
 benchmark:
   enabled: true
   num_iterations: 100
-  device: cpu  # Static quantization optimized for CPU
+  device: cpu # Static quantization optimized for CPU
 
 # Expected performance:
 # - Model size: 4x smaller

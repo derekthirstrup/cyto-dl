@@ -2,7 +2,7 @@
 
 **Get 5-10x faster inference and training in 5 minutes!**
 
----
+______________________________________________________________________
 
 ## ⚡ Fastest Path to Speedup
 
@@ -67,19 +67,19 @@ python scripts/export_quantized_model.py \
 # Result: 2-4x faster on CPU, 4x smaller! 🚀
 ```
 
----
+______________________________________________________________________
 
 ## 📊 What Speedup Can I Expect?
 
-| Your Situation | Recommended | Expected Speedup |
-|----------------|-------------|------------------|
-| **Training on GPU** | Phase 1 only | 1.5-1.8x |
-| **Inference on GPU** | Phase 1 + TensorRT | 3-7x |
-| **ViT/Transformer models** | Phase 1 + Flash Attention | 5-10x |
-| **CPU deployment** | Quantization INT8 | 2-4x (+ 4x smaller) |
-| **Multi-GPU training** | Phase 1 + DDP | Near-linear scaling |
+| Your Situation             | Recommended               | Expected Speedup    |
+| -------------------------- | ------------------------- | ------------------- |
+| **Training on GPU**        | Phase 1 only              | 1.5-1.8x            |
+| **Inference on GPU**       | Phase 1 + TensorRT        | 3-7x                |
+| **ViT/Transformer models** | Phase 1 + Flash Attention | 5-10x               |
+| **CPU deployment**         | Quantization INT8         | 2-4x (+ 4x smaller) |
+| **Multi-GPU training**     | Phase 1 + DDP             | Near-linear scaling |
 
----
+______________________________________________________________________
 
 ## 🎯 5-Minute Checklist
 
@@ -135,6 +135,7 @@ print('✓ TensorRT working!')
 ### Phase 3 (Advanced - Optional)
 
 **For ViT models:**
+
 ```bash
 pip install flash-attn
 
@@ -145,6 +146,7 @@ model = replace_attention_with_flash(model)  # 2-4x faster attention!
 ```
 
 **For CPU deployment:**
+
 ```bash
 python scripts/export_quantized_model.py \
   --config your_config.yaml \
@@ -153,6 +155,7 @@ python scripts/export_quantized_model.py \
 ```
 
 **For multi-GPU:**
+
 ```bash
 python cyto_dl/train.py \
   experiment=your_experiment \
@@ -174,7 +177,7 @@ python scripts/benchmark_performance.py \
 pytest tests/test_performance_regression.py -v
 ```
 
----
+______________________________________________________________________
 
 ## 💡 Common Scenarios
 
@@ -254,7 +257,7 @@ python cyto_dl/train.py \
 
 **Benefit:** ~3.5x on 4 GPUs (87% efficiency)
 
----
+______________________________________________________________________
 
 ## 🧪 Test Before Deploying
 
@@ -268,7 +271,7 @@ passed = validate_optimization(
     baseline_model=model_baseline,
     optimized_model=model_optimized,
     validation_loader=val_loader,
-    tolerance=0.01  # 1% acceptable
+    tolerance=0.01,  # 1% acceptable
 )
 
 if passed:
@@ -291,7 +294,7 @@ python scripts/benchmark_performance.py \
 open benchmark_results/comparison.html
 ```
 
----
+______________________________________________________________________
 
 ## 📖 Next Steps
 
@@ -304,33 +307,38 @@ open benchmark_results/comparison.html
 3. **Examples:** Check `examples/` directory
 4. **Tests:** `pytest tests/test_performance_regression.py -v`
 
----
+______________________________________________________________________
 
 ## 🔧 Troubleshooting One-Liners
 
 **"Import Error"**
+
 ```bash
 pip install -e .  # Reinstall in dev mode
 ```
 
 **"CUDA Out of Memory"**
+
 ```python
 # Reduce batch size in config
 batch_size: 2  # Instead of 4
 ```
 
 **"TensorRT not found"**
+
 ```bash
 pip install torch-tensorrt nvidia-tensorrt
 ```
 
 **"Flash Attention build fails"**
+
 ```bash
 pip install flash-attn --no-build-isolation
 # Or check GPU: needs Ampere+ (RTX 3000+)
 ```
 
 **"Slow data loading"**
+
 ```yaml
 # In data config
 num_workers: 4
@@ -338,45 +346,45 @@ persistent_workers: true
 pin_memory: true
 ```
 
----
+______________________________________________________________________
 
 ## 📦 All Branches
 
 Test each phase separately:
 
-| Phase | Branch | Command |
-|-------|--------|---------|
-| **Phase 1** | `claude/optimize-gpu-performance-014viXtwt7gNsiG4xedaMKNA` | `git checkout claude/optimize-gpu-performance...` |
-| **Phase 2** | `claude/tensorrt-integration-phase2-014viXtwt7gNsiG4xedaMKNA` | `git checkout claude/tensorrt-integration-phase2...` |
-| **Phase 3** | `claude/advanced-optimizations-phase3-014viXtwt7gNsiG4xedaMKNA` | `git checkout claude/advanced-optimizations-phase3...` |
-| **Phase 4** | `claude/benchmarking-phase4-014viXtwt7gNsiG4xedaMKNA` | `git checkout claude/benchmarking-phase4...` |
-| **All Combined** | `claude/all-optimizations-combined-014viXtwt7gNsiG4xedaMKNA` | `git checkout claude/all-optimizations-combined...` |
+| Phase            | Branch                                                          | Command                                                |
+| ---------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
+| **Phase 1**      | `claude/optimize-gpu-performance-014viXtwt7gNsiG4xedaMKNA`      | `git checkout claude/optimize-gpu-performance...`      |
+| **Phase 2**      | `claude/tensorrt-integration-phase2-014viXtwt7gNsiG4xedaMKNA`   | `git checkout claude/tensorrt-integration-phase2...`   |
+| **Phase 3**      | `claude/advanced-optimizations-phase3-014viXtwt7gNsiG4xedaMKNA` | `git checkout claude/advanced-optimizations-phase3...` |
+| **Phase 4**      | `claude/benchmarking-phase4-014viXtwt7gNsiG4xedaMKNA`           | `git checkout claude/benchmarking-phase4...`           |
+| **All Combined** | `claude/all-optimizations-combined-014viXtwt7gNsiG4xedaMKNA`    | `git checkout claude/all-optimizations-combined...`    |
 
----
+______________________________________________________________________
 
 ## ✅ Success Checklist
 
 After implementing optimizations, verify:
 
 - [ ] Training/inference is noticeably faster
-- [ ] Model accuracy is maintained (<1% change)
+- [ ] Model accuracy is maintained (\<1% change)
 - [ ] No new errors or warnings
 - [ ] Memory usage is acceptable
 - [ ] Benchmarks show expected speedup
 
----
+______________________________________________________________________
 
 ## 🎉 Results Summary
 
-| Phase | Time to Setup | Speedup | Dependencies |
-|-------|---------------|---------|--------------|
-| **Phase 1** | 2 min | 1.5-1.8x | None! |
-| **Phase 2** | 5 min | +2-5x | TensorRT |
-| **Phase 3** | Variable | +2-4x | Optional |
-| **Total** | <10 min | **5-10x** | Minimal |
+| Phase       | Time to Setup | Speedup   | Dependencies |
+| ----------- | ------------- | --------- | ------------ |
+| **Phase 1** | 2 min         | 1.5-1.8x  | None!        |
+| **Phase 2** | 5 min         | +2-5x     | TensorRT     |
+| **Phase 3** | Variable      | +2-4x     | Optional     |
+| **Total**   | \<10 min      | **5-10x** | Minimal      |
 
 **Start now and get faster results in minutes!** 🚀
 
----
+______________________________________________________________________
 
 **Questions?** See `docs/COMPLETE_OPTIMIZATION_GUIDE.md` or file an issue on GitHub.

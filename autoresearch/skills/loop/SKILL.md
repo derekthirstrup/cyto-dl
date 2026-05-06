@@ -32,6 +32,7 @@ Each iteration autonomously:
 ## Monitoring
 
 While the loop is running:
+
 - `/ar:status` to check progress
 - `/ar:loop stop` to stop the loop
 

@@ -12,6 +12,7 @@ Show the current state of the autoresearch optimization.
 ## What It Shows
 
 ### Summary
+
 - Total iterations run
 - Current best score and its configuration
 - Last 5 experiment results
@@ -19,6 +20,7 @@ Show the current state of the autoresearch optimization.
 - Active loop status
 
 ### Detailed (`--full`)
+
 - Full results table
 - Score trend (improving/plateauing/declining)
 - Per-metric breakdown (SSIM, PSNR, Pearson)

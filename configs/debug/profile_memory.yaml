@@ -17,7 +17,7 @@ trainer:
 
 # Test different batch sizes to find optimal memory usage
 data:
-  batch_size: 1  # Start small, can override with +data.batch_size=N
+  batch_size: 1 # Start small, can override with +data.batch_size=N
 
 # Performance settings
 performance:

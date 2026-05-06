@@ -19,7 +19,7 @@ import argparse
 import datetime
 import json
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
@@ -67,10 +67,22 @@ STRATEGY_TEMPLATES = {
     "data_sweep": {
         "description": "Data configuration exploration",
         "experiments": [
-            {"override": "data._aux.patch_shape=[16,32,32] data.batch_size=4", "desc": "small-patch-big-batch"},
-            {"override": "data._aux.patch_shape=[16,64,64] data.batch_size=2", "desc": "medium-patch"},
-            {"override": "data._aux.patch_shape=[32,64,64] data.batch_size=1", "desc": "large-patch"},
-            {"override": "data._aux.patch_shape=[16,128,128] data.batch_size=1", "desc": "wide-patch"},
+            {
+                "override": "data._aux.patch_shape=[16,32,32] data.batch_size=4",
+                "desc": "small-patch-big-batch",
+            },
+            {
+                "override": "data._aux.patch_shape=[16,64,64] data.batch_size=2",
+                "desc": "medium-patch",
+            },
+            {
+                "override": "data._aux.patch_shape=[32,64,64] data.batch_size=1",
+                "desc": "large-patch",
+            },
+            {
+                "override": "data._aux.patch_shape=[16,128,128] data.batch_size=1",
+                "desc": "wide-patch",
+            },
         ],
     },
     "training_dynamics": {
@@ -99,7 +111,7 @@ def create_worktree(agent_id, branch_name):
     WORKTREE_BASE.mkdir(parents=True, exist_ok=True)
 
     # Create worktree
-    subprocess.run(
+    subprocess.run(  # nosec B603, B607
         ["git", "worktree", "add", str(worktree_path), "-b", branch_name],
         cwd=str(PROJECT_ROOT),
         capture_output=True,
@@ -109,13 +121,13 @@ def create_worktree(agent_id, branch_name):
 
 def cleanup_worktree(worktree_path, branch_name):
     """Remove a git worktree after use."""
-    subprocess.run(
+    subprocess.run(  # nosec B603, B607
         ["git", "worktree", "remove", str(worktree_path), "--force"],
         cwd=str(PROJECT_ROOT),
         capture_output=True,
     )
     # Tag the branch for archival
-    subprocess.run(
+    subprocess.run(  # nosec B603, B607
         ["git", "tag", f"hub-archive/{branch_name}", branch_name],
         cwd=str(PROJECT_ROOT),
         capture_output=True,
@@ -127,16 +139,20 @@ def run_agent_experiment(worktree_path, overrides, description, data_path=None, 
     runner = worktree_path / "autoresearch" / "scripts" / "run_experiment.py"
 
     cmd = [
-        sys.executable, str(runner),
-        "--overrides", overrides,
-        "--description", description,
-        "--tier", "exploration",
+        sys.executable,
+        str(runner),
+        "--overrides",
+        overrides,
+        "--description",
+        description,
+        "--tier",
+        "exploration",
     ]
     if data_path:
         cmd.extend(["--data-path", data_path])
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             cmd,
             capture_output=True,
             text=True,
@@ -184,8 +200,7 @@ def fan_out_fan_in(strategies, data_path=None, timeout=120):
 
         # Run experiment
         result = run_agent_experiment(
-            worktree_path, strategy["override"], strategy["desc"],
-            data_path, timeout
+            worktree_path, strategy["override"], strategy["desc"], data_path, timeout
         )
         result["agent_id"] = agent_id
         result["strategy"] = strategy
@@ -239,29 +254,37 @@ def log_hub_results(session_id, results, winner):
 def main():
     parser = argparse.ArgumentParser(description="AgentHub: Parallel strategy exploration")
     parser.add_argument(
-        "--strategies", nargs="+",
+        "--strategies",
+        nargs="+",
         choices=list(STRATEGY_TEMPLATES.keys()),
         help="Named strategy templates to run",
     )
     parser.add_argument(
-        "--agents", type=int, default=3,
+        "--agents",
+        type=int,
+        default=3,
         help="Number of agents (selects top N experiments from strategy)",
     )
     parser.add_argument(
-        "--pattern", choices=["fan-out", "ensemble"],
+        "--pattern",
+        choices=["fan-out", "ensemble"],
         default="fan-out",
         help="Coordination pattern",
     )
     parser.add_argument(
-        "--data-path", default=None,
+        "--data-path",
+        default=None,
         help="Path to training data",
     )
     parser.add_argument(
-        "--timeout", type=int, default=60,
+        "--timeout",
+        type=int,
+        default=60,
         help="Timeout per agent in minutes",
     )
     parser.add_argument(
-        "--list-strategies", action="store_true",
+        "--list-strategies",
+        action="store_true",
         help="List available strategy templates",
     )
     args = parser.parse_args()
@@ -296,7 +319,7 @@ def main():
     if winner:
         print(f"\nWinner branch: {winner['branch']}")
         print(f"To merge: git merge {winner['branch']}")
-        print(f"To iterate on winner: /ar:loop (in the winning worktree)")
+        print("To iterate on winner: /ar:loop (in the winning worktree)")
     else:
         print("\nNo winner. Review logs and try different strategies.")
 

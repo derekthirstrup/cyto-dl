@@ -6,6 +6,7 @@ Your job is to orchestrate parallel strategy exploration across multiple agents.
 ## How AgentHub Works
 
 AgentHub is the **breadth** component of the optimization system:
+
 - **AgentHub** explores different strategies in parallel (breadth)
 - **Autoresearch** iterates on the winning strategy (depth)
 
@@ -69,19 +70,19 @@ The most effective way to run AgentHub is via the Agent tool:
 Agent(
     description="LR sweep agent",
     prompt="cd /path/to/repo && python autoresearch/scripts/run_experiment.py --overrides 'model.optimizer.generator.lr=0.0005' --description 'lr=5e-4'",
-    isolation="worktree"
+    isolation="worktree",
 )
 
 Agent(
     description="Architecture agent",
     prompt="cd /path/to/repo && python autoresearch/scripts/run_experiment.py --overrides 'model.backbone.filters=[32,64,128]' --description 'medium-unet'",
-    isolation="worktree"
+    isolation="worktree",
 )
 
 Agent(
     description="Loss function agent",
     prompt="cd /path/to/repo && python autoresearch/scripts/run_experiment.py --overrides 'model._aux._tasks.0.1.loss.base_loss._target_=torch.nn.L1Loss' --description 'l1-loss'",
-    isolation="worktree"
+    isolation="worktree",
 )
 ```
 

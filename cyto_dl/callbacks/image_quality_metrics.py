@@ -1,7 +1,7 @@
 """Callback to log image quality metrics (SSIM, PSNR, Pearson) during training.
 
-Works in conjunction with MetricTrackingLoss to extract computed metrics
-and log them via Lightning's logging system.
+Works in conjunction with MetricTrackingLoss to extract computed metrics and log them via
+Lightning's logging system.
 """
 
 from lightning.pytorch.callbacks import Callback
@@ -81,7 +81,9 @@ class ImageQualityMetrics(Callback):
         if "train" in self.stages:
             self._collect_metrics(pl_module, "train")
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
+    ):
         if "val" in self.stages:
             self._collect_metrics(pl_module, "val")
 

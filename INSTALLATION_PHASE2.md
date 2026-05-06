@@ -59,6 +59,7 @@ python -c "import torch_tensorrt; print(f'✓ TensorRT: {torch_tensorrt.__versio
 ```
 
 Expected output:
+
 ```
 ✓ TensorRT: 2.x.x
 ```
@@ -89,10 +90,12 @@ print('='*60)
 Phase 2 adds TensorRT support on top of Phase 1:
 
 **Phase 1 (included as base):**
+
 - ✅ BF16, torch.compile, fused optimizers, etc.
 - ✅ 40-60% faster training, 1.8-3x faster inference
 
 **Phase 2 (NEW - TensorRT):**
+
 - ✅ TensorRT export utilities
 - ✅ FP16 precision (2-3x additional speedup)
 - ✅ INT8 quantization (4x additional speedup)
@@ -127,10 +130,7 @@ python scripts/export_to_tensorrt.py \
 from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine
 
 # Load TensorRT model
-engine = TensorRTInferenceEngine(
-    model_path="models/labelfree_trt_fp16.ts",
-    input_shape=(1, 1, 256, 256)
-)
+engine = TensorRTInferenceEngine(model_path="models/labelfree_trt_fp16.ts", input_shape=(1, 1, 256, 256))
 
 # Run inference (2-3x faster than PyTorch!)
 output = engine(input_tensor)
@@ -138,20 +138,20 @@ output = engine(input_tensor)
 
 ## Platform Support
 
-| Platform | TensorRT Support | Notes |
-|----------|-----------------|-------|
-| **Linux** | ✅ Full | All features |
-| **Windows** | ✅ Full | WSL2 or native |
-| **macOS** | ❌ Not supported | NVIDIA GPUs only |
+| Platform    | TensorRT Support | Notes            |
+| ----------- | ---------------- | ---------------- |
+| **Linux**   | ✅ Full          | All features     |
+| **Windows** | ✅ Full          | WSL2 or native   |
+| **macOS**   | ❌ Not supported | NVIDIA GPUs only |
 
 ## GPU Compatibility
 
-| GPU | FP16 | INT8 | Notes |
-|-----|------|------|-------|
-| **RTX 4090, 5080** | ✅ | ✅ | Best performance |
-| **RTX 3090, A100** | ✅ | ✅ | Excellent |
-| **RTX 2080 Ti, V100** | ✅ | ✅ | Good |
-| **GTX 1080 Ti** | ⚠️ | ❌ | FP16 only, limited |
+| GPU                   | FP16 | INT8 | Notes              |
+| --------------------- | ---- | ---- | ------------------ |
+| **RTX 4090, 5080**    | ✅   | ✅   | Best performance   |
+| **RTX 3090, A100**    | ✅   | ✅   | Excellent          |
+| **RTX 2080 Ti, V100** | ✅   | ✅   | Good               |
+| **GTX 1080 Ti**       | ⚠️   | ❌   | FP16 only, limited |
 
 ## Troubleshooting
 
@@ -174,6 +174,7 @@ python -c "import torch; print(torch.version.cuda)"
 ### Issue: "nvidia-tensorrt installation failed"
 
 **Possible causes:**
+
 1. CUDA version mismatch
 2. Missing CUDA libraries
 3. Platform not supported
@@ -196,14 +197,17 @@ pip install nvidia-tensorrt==8.6.1  # For CUDA 11.8/12.x
 **Common causes & solutions:**
 
 1. **Model has dynamic control flow**
+
    - TensorRT requires static graphs
    - Simplify model or use TorchScript
 
 2. **Unsupported operations**
+
    - Some PyTorch ops not supported
    - Check TensorRT documentation for supported ops
 
 3. **Out of memory during export**
+
    - Reduce workspace size: `--workspace-size 2`
    - Use smaller model
 
@@ -224,10 +228,10 @@ pip install nvidia-tensorrt==8.6.1  # For CUDA 11.8/12.x
 ## CUDA Version Compatibility
 
 | CUDA Version | TensorRT Version | torch-tensorrt |
-|--------------|------------------|----------------|
-| 11.8 | 8.6.x | 2.1.0+ |
-| 12.0 | 8.6.x | 2.1.0+ |
-| 12.1+ | 8.6.x | 2.1.0+ |
+| ------------ | ---------------- | -------------- |
+| 11.8         | 8.6.x            | 2.1.0+         |
+| 12.0         | 8.6.x            | 2.1.0+         |
+| 12.1+        | 8.6.x            | 2.1.0+         |
 
 If you have CUDA 11.7 or older, you may need older TensorRT versions:
 
@@ -241,20 +245,20 @@ pip install torch-tensorrt==2.0.0
 
 ### RTX 4090 - Label-Free Model (256x256)
 
-| Configuration | FPS | Speedup |
-|---------------|-----|---------|
-| Baseline PyTorch | 45 | 1.0x |
-| Phase 1 Optimized | 89 | 2.0x |
+| Configuration       | FPS     | Speedup  |
+| ------------------- | ------- | -------- |
+| Baseline PyTorch    | 45      | 1.0x     |
+| Phase 1 Optimized   | 89      | 2.0x     |
 | **+ TensorRT FP16** | **238** | **5.3x** |
 | **+ TensorRT INT8** | **345** | **7.6x** |
 
 ### RTX 4090 - Segmentation 3D (64³)
 
-| Configuration | FPS | Speedup |
-|---------------|-----|---------|
-| Baseline PyTorch | 8.2 | 1.0x |
-| Phase 1 Optimized | 14.7 | 1.8x |
-| **+ TensorRT FP16** | **53.5** | **6.5x** |
+| Configuration       | FPS      | Speedup   |
+| ------------------- | -------- | --------- |
+| Baseline PyTorch    | 8.2      | 1.0x      |
+| Phase 1 Optimized   | 14.7     | 1.8x      |
+| **+ TensorRT FP16** | **53.5** | **6.5x**  |
 | **+ TensorRT INT8** | **82.6** | **10.1x** |
 
 ## Documentation
@@ -273,12 +277,14 @@ python examples/tensorrt_workflow.py
 ```
 
 This will:
+
 1. Train a small model (2 epochs)
 2. Export to TensorRT
 3. Benchmark PyTorch vs TensorRT
 4. Run inference examples
 
 Expected output:
+
 ```
 ✓ Model trained
 ✓ TensorRT export successful
@@ -343,7 +349,7 @@ If you encounter issues:
 3. Check GPU compatibility
 4. File an issue on GitHub with error details
 
----
+______________________________________________________________________
 
 **Summary:**
 
@@ -352,6 +358,7 @@ If you encounter issues:
 🚀 **Result:** 3-7x total speedup for inference!
 
 Install TensorRT with:
+
 ```bash
 pip install -r requirements/tensorrt-requirements.txt
 ```

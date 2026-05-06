@@ -12,15 +12,15 @@ The only optional dependency is **Flash Attention** for Vision Transformer model
 
 Phase 3 includes:
 
-| Feature | Dependencies | Installation Required |
-|---------|--------------|----------------------|
-| **PyTorch Quantization** | Built into PyTorch | ❌ No |
-| **Advanced Profiling** | Built into PyTorch | ❌ No |
-| **Multi-GPU DDP** | Built into PyTorch | ❌ No |
-| **Auto-Tuning** | Built into PyTorch | ❌ No |
-| **Flash Attention** | `flash-attn` package | ✅ Yes (optional) |
+| Feature                  | Dependencies         | Installation Required |
+| ------------------------ | -------------------- | --------------------- |
+| **PyTorch Quantization** | Built into PyTorch   | ❌ No                 |
+| **Advanced Profiling**   | Built into PyTorch   | ❌ No                 |
+| **Multi-GPU DDP**        | Built into PyTorch   | ❌ No                 |
+| **Auto-Tuning**          | Built into PyTorch   | ❌ No                 |
+| **Flash Attention**      | `flash-attn` package | ✅ Yes (optional)     |
 
----
+______________________________________________________________________
 
 ## Installation Options
 
@@ -38,6 +38,7 @@ python -c "from cyto_dl.utils.auto_tune import AutoTuner; print('✓ Auto-tuning
 ```
 
 **Expected output:**
+
 ```
 ✓ Quantization ready
 ✓ Profiling ready
@@ -74,11 +75,12 @@ python -c "import flash_attn; print(f'✓ Flash Attention {flash_attn.__version_
 ```
 
 **Expected output:**
+
 ```
 ✓ Flash Attention 2.x.x installed
 ```
 
----
+______________________________________________________________________
 
 ## Verification
 
@@ -96,6 +98,7 @@ print("=" * 60)
 # 1. PyTorch Quantization
 try:
     from cyto_dl.utils.quantization import quantize_model_dynamic
+
     print("✓ PyTorch Quantization: Available")
 except ImportError as e:
     print(f"✗ PyTorch Quantization: Failed - {e}")
@@ -104,6 +107,7 @@ except ImportError as e:
 try:
     from cyto_dl.nn.vits.flash_attention import FlashAttentionBlock
     import flash_attn
+
     print(f"✓ Flash Attention: Available (v{flash_attn.__version__})")
 except ImportError:
     print("⚠ Flash Attention: Not installed (optional)")
@@ -111,6 +115,7 @@ except ImportError:
 # 3. Advanced Profiling
 try:
     from cyto_dl.utils.advanced_profiling import MemoryProfiler
+
     print("✓ Advanced Profiling: Available")
 except ImportError as e:
     print(f"✗ Advanced Profiling: Failed - {e}")
@@ -118,6 +123,7 @@ except ImportError as e:
 # 4. Multi-GPU DDP
 try:
     from cyto_dl.utils.distributed import setup_ddp_optimizations
+
     print("✓ Multi-GPU DDP: Available")
 except ImportError as e:
     print(f"✗ Multi-GPU DDP: Failed - {e}")
@@ -125,6 +131,7 @@ except ImportError as e:
 # 5. Auto-Tuning
 try:
     from cyto_dl.utils.auto_tune import AutoTuner
+
     print("✓ Auto-Tuning: Available")
 except ImportError as e:
     print(f"✗ Auto-Tuning: Failed - {e}")
@@ -143,28 +150,32 @@ print("\nPhase 3 Verification Complete!")
 ```
 
 Run verification:
+
 ```bash
 python verify_phase3.py
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
 ### Issue: Flash Attention Installation Fails
 
 **Error:**
+
 ```
 ERROR: Failed building wheel for flash-attn
 ```
 
 **Solution 1: Pre-built wheels**
+
 ```bash
 # Check for pre-built wheels
 pip install flash-attn --no-build-isolation
 ```
 
 **Solution 2: Check CUDA version**
+
 ```bash
 # Verify CUDA version
 python -c "import torch; print(torch.version.cuda)"
@@ -175,6 +186,7 @@ python -c "import torch; print(torch.version.cuda)"
 ```
 
 **Solution 3: Install build dependencies**
+
 ```bash
 # Install ninja for faster builds
 pip install ninja
@@ -184,6 +196,7 @@ pip install flash-attn --no-build-isolation -v
 ```
 
 **Solution 4: Use pre-compiled binaries**
+
 ```bash
 # Download pre-compiled wheel from:
 # https://github.com/Dao-AILab/flash-attention/releases
@@ -195,6 +208,7 @@ pip install flash_attn-*.whl
 ### Issue: GPU Not Supported
 
 **Error:**
+
 ```
 RuntimeError: FlashAttention only supports Ampere GPUs or newer
 ```
@@ -214,11 +228,13 @@ block = FlashAttentionBlock(dim=768, num_heads=12, use_flash=True)
 ### Issue: Out of Memory with Flash Attention
 
 **Error:**
+
 ```
 RuntimeError: CUDA out of memory
 ```
 
 **Solution:**
+
 ```python
 # Flash Attention uses less memory, but if you still get OOM:
 
@@ -239,11 +255,13 @@ with torch.cuda.amp.autocast(dtype=torch.bfloat16):
 ### Issue: Import Errors
 
 **Error:**
+
 ```
 ImportError: cannot import name 'quantize_model_dynamic'
 ```
 
 **Solution:**
+
 ```bash
 # Ensure you're on the correct branch
 git checkout claude/advanced-optimizations-phase3-014viXtwt7gNsiG4xedaMKNA
@@ -255,7 +273,7 @@ pip install -e .
 python -c "from cyto_dl.utils.quantization import quantize_model_dynamic"
 ```
 
----
+______________________________________________________________________
 
 ## Platform-Specific Notes
 
@@ -300,7 +318,7 @@ python -c "from cyto_dl.utils.quantization import quantize_model_dynamic; print(
 python -c "from cyto_dl.utils.auto_tune import AutoTuner; print('✓')"
 ```
 
----
+______________________________________________________________________
 
 ## Testing Installation
 
@@ -368,7 +386,7 @@ else:
 "
 ```
 
----
+______________________________________________________________________
 
 ## Complete Installation Script
 
@@ -411,18 +429,20 @@ echo "Installation complete!"
 ```
 
 Make executable and run:
+
 ```bash
 chmod +x install_phase3.sh
 ./install_phase3.sh
 ```
 
----
+______________________________________________________________________
 
 ## Summary
 
 ### ✅ No Installation Required
 
 Most Phase 3 features work immediately:
+
 - PyTorch Quantization
 - Advanced Profiling
 - Multi-GPU DDP
@@ -431,6 +451,7 @@ Most Phase 3 features work immediately:
 ### ✅ Optional: Flash Attention
 
 For Vision Transformer models:
+
 ```bash
 pip install flash-attn --no-build-isolation
 ```
@@ -442,7 +463,7 @@ pip install flash-attn --no-build-isolation
 3. **Read docs**: See `docs/PHASE3_ADVANCED_OPTIMIZATIONS.md`
 4. **Optimize your models**: Apply Phase 3 to your workflows
 
----
+______________________________________________________________________
 
 ## Support
 
@@ -454,15 +475,15 @@ If you encounter issues:
 4. **See troubleshooting**: Common issues above
 5. **File an issue**: [GitHub Issues](https://github.com/derekthirstrup/cyto-dl/issues)
 
----
+______________________________________________________________________
 
 ## Version Compatibility
 
-| Component | Minimum Version | Recommended |
-|-----------|----------------|-------------|
-| Python | 3.8 | 3.10+ |
-| PyTorch | 2.0 | 2.1+ |
-| CUDA | 11.6 | 12.0+ |
-| flash-attn | 2.0 | 2.5+ |
+| Component  | Minimum Version | Recommended |
+| ---------- | --------------- | ----------- |
+| Python     | 3.8             | 3.10+       |
+| PyTorch    | 2.0             | 2.1+        |
+| CUDA       | 11.6            | 12.0+       |
+| flash-attn | 2.0             | 2.5+        |
 
 Enjoy Phase 3 optimizations! 🚀

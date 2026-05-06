@@ -5,13 +5,13 @@
 tensorrt:
   enabled: True
   precision: fp16
-  workspace_size: 4  # GB
-  dynamic_shapes: True  # Enable dynamic batch sizes
+  workspace_size: 4 # GB
+  dynamic_shapes: True # Enable dynamic batch sizes
 
   # Batch size range
   min_batch_size: 1
   max_batch_size: 32
-  opt_batch_size: 8  # Optimize for this batch size
+  opt_batch_size: 8 # Optimize for this batch size
 
 # Use optimized inference trainer
 defaults:

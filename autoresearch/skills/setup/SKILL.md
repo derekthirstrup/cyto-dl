@@ -27,6 +27,7 @@ python autoresearch/scripts/setup_experiment.py --data-path <DATA_PATH>
 If `--data-path` is not provided, ask the user for their data path.
 
 After setup completes, report:
+
 - Baseline composite score
 - Individual metrics (SSIM, PSNR, Pearson)
 - GPU detected

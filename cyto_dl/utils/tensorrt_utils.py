@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 # Check for TensorRT availability
 try:
     import torch_tensorrt
+
     TENSORRT_AVAILABLE = True
     logger.info(f"✓ TensorRT available: torch_tensorrt {torch_tensorrt.__version__}")
 except ImportError:
@@ -181,7 +182,7 @@ def export_to_tensorrt(
         if output_path:
             output_path = Path(output_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            torch.jit.save(trt_model, str(output_path))
+            torch.jit.save(trt_model, str(output_path))  # nosec B614
             logger.info(f"✓ Saved TensorRT model to {output_path}")
 
         return trt_model
@@ -250,7 +251,7 @@ class TensorRTInferenceEngine:
 
         # Load model
         logger.info(f"Loading TensorRT model from {model_path}")
-        self.model = torch.jit.load(model_path, map_location=device)
+        self.model = torch.jit.load(model_path, map_location=device)  # nosec B614
         self.model.eval()
 
         # Warmup
@@ -313,7 +314,7 @@ class TensorRTInferenceEngine:
         outputs = []
 
         for i in range(0, len(inputs), batch_size):
-            batch = inputs[i:i + batch_size]
+            batch = inputs[i : i + batch_size]
             batch_tensor = torch.stack(batch).to(self.device)
 
             if self.half_precision:

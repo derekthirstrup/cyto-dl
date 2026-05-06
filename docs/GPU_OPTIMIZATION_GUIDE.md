@@ -16,7 +16,7 @@ python cyto_dl/train.py experiment=im2im/segmentation trainer=gpu_optimized perf
 
 **Expected speedup: 40-60% faster training, 30-50% faster inference**
 
----
+______________________________________________________________________
 
 ## Table of Contents
 
@@ -28,23 +28,23 @@ python cyto_dl/train.py experiment=im2im/segmentation trainer=gpu_optimized perf
 6. [Troubleshooting](#troubleshooting)
 7. [Advanced Optimizations](#advanced-optimizations)
 
----
+______________________________________________________________________
 
 ## Performance Optimizations Overview
 
 ### Implemented Optimizations
 
-| Optimization | Speedup | Memory | Applies To | Config |
-|--------------|---------|--------|------------|--------|
-| **BF16 Mixed Precision** | 30-50% | -20% | Training | `trainer=gpu_optimized` |
-| **Channels-Last Memory** | 20-30% | 0% | All | `model.channels_last=True` |
-| **torch.compile** | 20-50% | 0% | All | `model.compile_model=True` |
-| **Fused Optimizers** | 10-20% | 0% | Training | `optimizer=adamw_fused` |
-| **cudnn Benchmarking** | 5-10% | 0% | All | `performance.enable_cudnn_benchmark=True` |
-| **TF32 Tensor Cores** | 10-20% | 0% | Ampere+ GPUs | `performance.enable_tf32=True` |
-| **Gradient Checkpointing** | -20% | -40-60% | Training | `model.gradient_checkpointing=True` |
-| **Optimal num_workers** | 20-40% | +10% | All | `data.num_workers=4` |
-| **CUDA Graphs** | 5-15% | 0% | Inference | Advanced |
+| Optimization               | Speedup | Memory  | Applies To   | Config                                    |
+| -------------------------- | ------- | ------- | ------------ | ----------------------------------------- |
+| **BF16 Mixed Precision**   | 30-50%  | -20%    | Training     | `trainer=gpu_optimized`                   |
+| **Channels-Last Memory**   | 20-30%  | 0%      | All          | `model.channels_last=True`                |
+| **torch.compile**          | 20-50%  | 0%      | All          | `model.compile_model=True`                |
+| **Fused Optimizers**       | 10-20%  | 0%      | Training     | `optimizer=adamw_fused`                   |
+| **cudnn Benchmarking**     | 5-10%   | 0%      | All          | `performance.enable_cudnn_benchmark=True` |
+| **TF32 Tensor Cores**      | 10-20%  | 0%      | Ampere+ GPUs | `performance.enable_tf32=True`            |
+| **Gradient Checkpointing** | -20%    | -40-60% | Training     | `model.gradient_checkpointing=True`       |
+| **Optimal num_workers**    | 20-40%  | +10%    | All          | `data.num_workers=4`                      |
+| **CUDA Graphs**            | 5-15%   | 0%      | Inference    | Advanced                                  |
 
 ### GPU Compatibility
 
@@ -53,7 +53,7 @@ python cyto_dl/train.py experiment=im2im/segmentation trainer=gpu_optimized perf
 - **RTX 2080 Ti** (Turing): FP16 instead of BF16, no TF32
 - **Older GPUs** (Pascal and earlier): Limited support, use FP16 carefully
 
----
+______________________________________________________________________
 
 ## Training Optimizations
 
@@ -74,6 +74,7 @@ trainer:
 ```
 
 **Command line:**
+
 ```bash
 python cyto_dl/train.py experiment=im2im/mae trainer.precision=bf16-mixed
 ```
@@ -93,6 +94,7 @@ optimizer:
 ```
 
 **Command line:**
+
 ```bash
 python cyto_dl/train.py experiment=im2im/segmentation optimizer=adamw_fused
 ```
@@ -103,18 +105,20 @@ python cyto_dl/train.py experiment=im2im/segmentation optimizer=adamw_fused
 
 Trade compute for memory - enables larger batch sizes or models.
 
-```python
+```yaml
 # In your model config
 model:
   gradient_checkpointing: True
 ```
 
 **Use when:**
+
 - Getting OOM (Out of Memory) errors
 - Want to use larger batch sizes
 - Training very deep models (ViT, large VAEs)
 
 **Don't use when:**
+
 - Training is already slow
 - Memory is not a constraint
 
@@ -131,6 +135,7 @@ model:
 ```
 
 **Command line:**
+
 ```bash
 python cyto_dl/train.py experiment=im2im/segmentation model.channels_last=True model.spatial_dims=3
 ```
@@ -148,6 +153,7 @@ model:
 ```
 
 **Compilation modes:**
+
 - `default`: Balanced (recommended for most cases)
 - `max-autotune`: Longest compile time, best performance (training)
 - `reduce-overhead`: Best for inference (uses CUDA graphs)
@@ -168,6 +174,7 @@ data:
 ```
 
 **Recommended num_workers:**
+
 - 4-8 for most systems
 - `cpu_count() // 2` as a rule of thumb
 - Lower if seeing CPU bottleneck
@@ -184,11 +191,13 @@ performance:
 ```
 
 **Best for:**
+
 - Fixed input sizes
 - Convolution-heavy models
 - After data loader optimizations
 
 **Not recommended for:**
+
 - Highly variable input sizes
 - When determinism is required
 
@@ -205,11 +214,12 @@ performance:
 ```
 
 **Only works on:**
+
 - A100, A6000 (Ampere)
 - RTX 4090, RTX 5080 (Ada Lovelace)
 - H100 (Hopper)
 
----
+______________________________________________________________________
 
 ## Inference Optimizations
 
@@ -259,7 +269,7 @@ For fixed input shapes only:
 from cyto_dl.utils.performance import CUDAGraphWrapper
 
 # Capture graph
-sample_input = torch.randn(1, 1, 64, 64, 64, device='cuda')
+sample_input = torch.randn(1, 1, 64, 64, 64, device="cuda")
 model_graph = CUDAGraphWrapper(model, sample_input)
 
 # Fast inference
@@ -279,7 +289,7 @@ model:
     mode: gaussian
 ```
 
----
+______________________________________________________________________
 
 ## Configuration Guide
 
@@ -347,7 +357,7 @@ performance:
   matmul_precision: high
 ```
 
----
+______________________________________________________________________
 
 ## Benchmarking
 
@@ -384,6 +394,7 @@ python cyto_dl/train.py experiment=im2im/segmentation debug=profile_gpu
 ```
 
 View results:
+
 ```bash
 tensorboard --logdir logs/train/runs/
 ```
@@ -394,23 +405,26 @@ tensorboard --logdir logs/train/runs/
 python cyto_dl/train.py experiment=im2im/mae debug=profile_memory
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
 ### Out of Memory (OOM)
 
 1. **Reduce batch size**
+
    ```bash
    python cyto_dl/train.py experiment=im2im/segmentation data.batch_size=2
    ```
 
 2. **Enable gradient checkpointing**
+
    ```bash
    python cyto_dl/train.py experiment=im2im/mae model.gradient_checkpointing=True
    ```
 
 3. **Reduce sliding window batch size**
+
    ```yaml
    model:
      inference_args:
@@ -418,6 +432,7 @@ python cyto_dl/train.py experiment=im2im/mae debug=profile_memory
    ```
 
 4. **Use mixed precision**
+
    ```bash
    python cyto_dl/train.py trainer.precision=bf16-mixed
    ```
@@ -425,17 +440,20 @@ python cyto_dl/train.py experiment=im2im/mae debug=profile_memory
 ### Slow Data Loading
 
 1. **Increase num_workers**
+
    ```bash
    python cyto_dl/train.py data.num_workers=8
    ```
 
 2. **Enable persistent workers**
+
    ```yaml
    data:
      persistent_workers: True
    ```
 
 3. **Use caching**
+
    ```yaml
    data:
      cache_dir: /path/to/cache
@@ -446,16 +464,19 @@ python cyto_dl/train.py experiment=im2im/mae debug=profile_memory
 If `torch.compile` fails:
 
 1. **Disable compilation**
+
    ```bash
    python cyto_dl/train.py model.compile_model=False
    ```
 
 2. **Use different mode**
+
    ```bash
    python cyto_dl/train.py model.compile_mode=default
    ```
 
 3. **Update PyTorch**
+
    ```bash
    pip install --upgrade torch
    ```
@@ -465,21 +486,24 @@ If `torch.compile` fails:
 If seeing NaN or Inf:
 
 1. **Use higher precision**
+
    ```bash
    python cyto_dl/train.py trainer.precision=32
    ```
 
 2. **Reduce learning rate**
+
    ```bash
    python cyto_dl/train.py model.optimizer.lr=0.0001
    ```
 
 3. **Enable gradient clipping**
+
    ```bash
    python cyto_dl/train.py trainer.gradient_clip_val=1.0
    ```
 
----
+______________________________________________________________________
 
 ## Advanced Optimizations
 
@@ -495,9 +519,7 @@ Post-training quantization for inference:
 import torch.quantization as quantization
 
 # Dynamic quantization (easiest)
-quantized_model = quantization.quantize_dynamic(
-    model, {torch.nn.Linear}, dtype=torch.qint8
-)
+quantized_model = quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
 
 # Static quantization (best performance, requires calibration)
 # Coming soon...
@@ -512,7 +534,7 @@ Custom fused kernels for common patterns:
 torch.nn.functional.scaled_dot_product_attention  # For ViT models
 ```
 
----
+______________________________________________________________________
 
 ## Performance Checklist
 
@@ -528,38 +550,40 @@ Before training or inference, ensure:
 - [ ] torch.compile (if PyTorch 2.0+): `model.compile_model=True`
 
 **For Inference Only:**
+
 - [ ] Compile mode: `model.compile_mode=reduce-overhead`
 - [ ] Optimized sliding window: `model.inference_args.sw_batch_size=4`
 
 **If OOM:**
+
 - [ ] Gradient checkpointing: `model.gradient_checkpointing=True`
 - [ ] Smaller batch size: `data.batch_size=4`
 
----
+______________________________________________________________________
 
 ## Expected Performance
 
 ### RTX 4090 (24GB)
 
-| Model | Task | Default FPS | Optimized FPS | Speedup |
-|-------|------|-------------|---------------|---------|
-| **Segmentation (3D)** | Training | 2.1 | 3.8 | 1.8x |
-| **MAE (3D)** | Training | 5.3 | 9.1 | 1.7x |
-| **Label-Free (2D)** | Training | 12.5 | 21.4 | 1.7x |
-| **Segmentation (3D)** | Inference | 8.2 | 14.7 | 1.8x |
-| **Label-Free (2D)** | Inference | 45.3 | 89.1 | 2.0x |
+| Model                 | Task      | Default FPS | Optimized FPS | Speedup |
+| --------------------- | --------- | ----------- | ------------- | ------- |
+| **Segmentation (3D)** | Training  | 2.1         | 3.8           | 1.8x    |
+| **MAE (3D)**          | Training  | 5.3         | 9.1           | 1.7x    |
+| **Label-Free (2D)**   | Training  | 12.5        | 21.4          | 1.7x    |
+| **Segmentation (3D)** | Inference | 8.2         | 14.7          | 1.8x    |
+| **Label-Free (2D)**   | Inference | 45.3        | 89.1          | 2.0x    |
 
 ### RTX 3090 (24GB)
 
-| Model | Task | Default FPS | Optimized FPS | Speedup |
-|-------|------|-------------|---------------|---------|
-| **Segmentation (3D)** | Training | 1.9 | 3.2 | 1.7x |
-| **MAE (3D)** | Training | 4.8 | 7.9 | 1.6x |
-| **Label-Free (2D)** | Inference | 42.1 | 78.3 | 1.9x |
+| Model                 | Task      | Default FPS | Optimized FPS | Speedup |
+| --------------------- | --------- | ----------- | ------------- | ------- |
+| **Segmentation (3D)** | Training  | 1.9         | 3.2           | 1.7x    |
+| **MAE (3D)**          | Training  | 4.8         | 7.9           | 1.6x    |
+| **Label-Free (2D)**   | Inference | 42.1        | 78.3          | 1.9x    |
 
 *Note: Results are approximate and depend on model size, input size, and specific configuration.*
 
----
+______________________________________________________________________
 
 ## Summary
 

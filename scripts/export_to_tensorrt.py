@@ -260,7 +260,7 @@ def main():
             print("Warning: INT8 precision requested but no calibration data provided")
             print("Accuracy may be reduced. Provide --calibration-data for best results")
         else:
-            print(f"\nPreparing INT8 calibration...")
+            print("\nPreparing INT8 calibration...")
             calibration_data = load_calibration_data(
                 args.calibration_data,
                 args.num_calibration_samples,
@@ -273,7 +273,7 @@ def main():
             )
 
     # Export to TensorRT
-    print(f"\nExporting to TensorRT...")
+    print("\nExporting to TensorRT...")
     print(f"  Input shape: {args.input_shape}")
     print(f"  Precision: {args.precision}")
     print(f"  Workspace size: {args.workspace_size} GB")
@@ -300,7 +300,7 @@ def main():
 
     # Benchmark if requested
     if args.benchmark:
-        print(f"\nRunning benchmark comparison...")
+        print("\nRunning benchmark comparison...")
         results = benchmark_tensorrt(
             pytorch_model=model,
             tensorrt_model=trt_model,
@@ -321,18 +321,18 @@ def main():
     print("\n" + "=" * 60)
     print("NEXT STEPS")
     print("=" * 60)
-    print(f"1. Test the TensorRT model:")
-    print(f"   >>> import torch")
+    print("1. Test the TensorRT model:")
+    print("   >>> import torch")
     print(f"   >>> model = torch.jit.load('{args.output}')")
     print(f"   >>> output = model(torch.randn({args.input_shape}).cuda())")
-    print(f"")
-    print(f"2. Use with TensorRTInferenceEngine:")
-    print(f"   >>> from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine")
+    print("")
+    print("2. Use with TensorRTInferenceEngine:")
+    print("   >>> from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine")
     print(f"   >>> engine = TensorRTInferenceEngine('{args.output}', {args.input_shape})")
-    print(f"   >>> output = engine(input_tensor)")
-    print(f"")
-    print(f"3. Benchmark your model:")
-    print(f"   python scripts/benchmark_performance.py \\")
+    print("   >>> output = engine(input_tensor)")
+    print("")
+    print("3. Benchmark your model:")
+    print("   python scripts/benchmark_performance.py \\")
     print(f"     --tensorrt-model {args.output} \\")
     print(f"     --input-shape {' '.join(map(str, args.input_shape))}")
     print("=" * 60)

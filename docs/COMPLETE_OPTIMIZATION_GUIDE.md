@@ -2,7 +2,7 @@
 
 **Complete implementation of GPU performance optimizations for CytoDL on consumer GPUs (RTX 4090, 5080, etc.)**
 
----
+______________________________________________________________________
 
 ## 🎯 Executive Summary
 
@@ -10,13 +10,13 @@ This project implements a comprehensive 4-phase GPU optimization plan for CytoDL
 
 ### Results at a Glance
 
-| Configuration | Speedup | Use Case |
-|---------------|---------|----------|
-| **Baseline** | 1.0x | Default PyTorch |
-| **Phase 1 Only** | 1.5-1.8x | Quick wins, no dependencies |
-| **Phase 1 + Phase 2** | 3-7x | GPU inference with TensorRT |
-| **Phase 1 + Phase 3** | 5-10x | ViT models with Flash Attention |
-| **Phase 1 + Phase 3** | 3-5x | CPU deployment with Quantization |
+| Configuration         | Speedup  | Use Case                         |
+| --------------------- | -------- | -------------------------------- |
+| **Baseline**          | 1.0x     | Default PyTorch                  |
+| **Phase 1 Only**      | 1.5-1.8x | Quick wins, no dependencies      |
+| **Phase 1 + Phase 2** | 3-7x     | GPU inference with TensorRT      |
+| **Phase 1 + Phase 3** | 5-10x    | ViT models with Flash Attention  |
+| **Phase 1 + Phase 3** | 3-5x     | CPU deployment with Quantization |
 
 ### What Was Implemented
 
@@ -27,22 +27,22 @@ This project implements a comprehensive 4-phase GPU optimization plan for CytoDL
 
 **All phases on separate branches for stepwise testing!**
 
----
+______________________________________________________________________
 
 ## 📋 Table of Contents
 
-1. [Quick Start](#quick-start)
-2. [Phase-by-Phase Overview](#phase-by-phase-overview)
-3. [Installation](#installation)
-4. [Usage Examples](#usage-examples)
-5. [Performance Benchmarks](#performance-benchmarks)
-6. [Architecture & Design](#architecture--design)
-7. [Testing & Validation](#testing--validation)
-8. [Deployment Recommendations](#deployment-recommendations)
-9. [Troubleshooting](#troubleshooting)
+01. [Quick Start](#quick-start)
+02. [Phase-by-Phase Overview](#phase-by-phase-overview)
+03. [Installation](#installation)
+04. [Usage Examples](#usage-examples)
+05. [Performance Benchmarks](#performance-benchmarks)
+06. [Architecture & Design](#architecture--design)
+07. [Testing & Validation](#testing--validation)
+08. [Deployment Recommendations](#deployment-recommendations)
+09. [Troubleshooting](#troubleshooting)
 10. [References](#references)
 
----
+______________________________________________________________________
 
 ## 🚀 Quick Start
 
@@ -93,7 +93,7 @@ git checkout claude/benchmarking-phase4-014viXtwt7gNsiG4xedaMKNA
 pytest tests/test_performance_regression.py -v
 ```
 
----
+______________________________________________________________________
 
 ## 📊 Phase-by-Phase Overview
 
@@ -102,6 +102,7 @@ pytest tests/test_performance_regression.py -v
 **No new dependencies required!**
 
 **What's included:**
+
 - ✅ cudnn benchmarking (5-10% speedup)
 - ✅ TF32 tensor cores (10-20% speedup)
 - ✅ BF16 mixed precision (30-50% speedup)
@@ -114,6 +115,7 @@ pytest tests/test_performance_regression.py -v
 **Branch:** `claude/optimize-gpu-performance-014viXtwt7gNsiG4xedaMKNA`
 
 **Files added:**
+
 - `cyto_dl/utils/performance.py` - Core performance utilities
 - `cyto_dl/train.py` - Updated with GPU optimizations
 - `configs/performance/gpu_optimized.yaml` - Optimized configs
@@ -123,7 +125,8 @@ pytest tests/test_performance_regression.py -v
 - `docs/PERFORMANCE_OPTIMIZATIONS.md` - Performance summary
 
 **Quick usage:**
-```python
+
+```bash
 from cyto_dl.utils.performance import setup_gpu_optimizations
 
 # Apply all Phase 1 optimizations
@@ -141,6 +144,7 @@ python cyto_dl/train.py \
 **Requires:** `torch-tensorrt`, `nvidia-tensorrt`
 
 **What's included:**
+
 - ✅ TensorRT FP16 precision (2-3x speedup)
 - ✅ TensorRT INT8 quantization (4x speedup)
 - ✅ Dynamic shape support
@@ -151,6 +155,7 @@ python cyto_dl/train.py \
 **Branch:** `claude/tensorrt-integration-phase2-014viXtwt7gNsiG4xedaMKNA`
 
 **Files added:**
+
 - `cyto_dl/utils/tensorrt_utils.py` - Complete TensorRT utilities
 - `scripts/export_to_tensorrt.py` - Export tool
 - `configs/inference/tensorrt_*.yaml` - TensorRT configs
@@ -159,6 +164,7 @@ python cyto_dl/train.py \
 - `INSTALLATION_PHASE2.md` - Installation instructions
 
 **Quick usage:**
+
 ```bash
 # Export to TensorRT FP16
 python scripts/export_to_tensorrt.py \
@@ -181,6 +187,7 @@ output = model(torch.randn(1, 1, 256, 256).cuda())
 **Optional dependency:** `flash-attn` (only for ViT models)
 
 **What's included:**
+
 - ✅ PyTorch Quantization INT8 (2-4x CPU speedup, 4x smaller)
 - ✅ Flash Attention for ViT (2-4x attention speedup)
 - ✅ Advanced profiling & bottleneck detection
@@ -190,6 +197,7 @@ output = model(torch.randn(1, 1, 256, 256).cuda())
 **Branch:** `claude/advanced-optimizations-phase3-014viXtwt7gNsiG4xedaMKNA`
 
 **Files added:**
+
 - `cyto_dl/utils/quantization.py` - PyTorch quantization
 - `cyto_dl/nn/vits/flash_attention.py` - Flash Attention
 - `cyto_dl/utils/advanced_profiling.py` - Profiling tools
@@ -204,6 +212,7 @@ output = model(torch.randn(1, 1, 256, 256).cuda())
 **Quick usage:**
 
 **Quantization (CPU deployment):**
+
 ```bash
 python scripts/export_quantized_model.py \
   --config configs/experiment/im2im/labelfree.yaml \
@@ -215,6 +224,7 @@ python scripts/export_quantized_model.py \
 ```
 
 **Flash Attention (ViT models):**
+
 ```python
 from cyto_dl.nn.vits.flash_attention import replace_attention_with_flash
 
@@ -223,6 +233,7 @@ model = replace_attention_with_flash(model)  # 2-4x faster!
 ```
 
 **Auto-tuning:**
+
 ```python
 from cyto_dl.utils.auto_tune import auto_tune_model
 
@@ -230,6 +241,7 @@ config = auto_tune_model(model, sample_input, save_config="optimal.yaml")
 ```
 
 **Multi-GPU training:**
+
 ```bash
 python cyto_dl/train.py \
   experiment=im2im/labelfree \
@@ -242,6 +254,7 @@ python cyto_dl/train.py \
 **No new dependencies required!**
 
 **What's included:**
+
 - ✅ Comprehensive benchmarking framework
 - ✅ Accuracy validation tools
 - ✅ Performance comparison
@@ -252,6 +265,7 @@ python cyto_dl/train.py \
 **Branch:** `claude/benchmarking-phase4-014viXtwt7gNsiG4xedaMKNA`
 
 **Files added:**
+
 - `cyto_dl/utils/benchmark.py` - Benchmarking framework
 - `cyto_dl/utils/accuracy_validation.py` - Accuracy validation
 - `scripts/benchmark_performance.py` - End-to-end benchmark script
@@ -259,6 +273,7 @@ python cyto_dl/train.py \
 - `docs/PHASE4_BENCHMARKING.md` - Complete guide
 
 **Quick usage:**
+
 ```bash
 # Benchmark all phases
 python scripts/benchmark_performance.py \
@@ -284,7 +299,7 @@ print('✓ Passed!' if passed else '✗ Failed')
 pytest tests/test_performance_regression.py -v
 ```
 
----
+______________________________________________________________________
 
 ## 💾 Installation
 
@@ -336,6 +351,7 @@ print('✓ All phases ready!')
 ### Platform-Specific Notes
 
 **Linux (Recommended):**
+
 ```bash
 # Install build dependencies for Flash Attention
 sudo apt update
@@ -346,6 +362,7 @@ pip install torch-tensorrt nvidia-tensorrt flash-attn
 ```
 
 **Windows:**
+
 ```powershell
 # Requires Visual Studio 2019+ with C++ tools
 pip install torch-tensorrt nvidia-tensorrt
@@ -353,6 +370,7 @@ pip install flash-attn --no-build-isolation
 ```
 
 **macOS:**
+
 ```bash
 # Flash Attention and TensorRT not supported (require NVIDIA GPU)
 # Phase 1, 3 (quantization), and 4 work on CPU
@@ -361,14 +379,14 @@ pip install -e .
 
 ### Requirements Summary
 
-| Phase | Required | Optional |
-|-------|----------|----------|
-| **Phase 1** | PyTorch 2.0+ | None |
-| **Phase 2** | torch-tensorrt, nvidia-tensorrt | None |
-| **Phase 3** | PyTorch 2.0+ | flash-attn (ViT only) |
-| **Phase 4** | PyTorch 2.0+ | pytest (testing) |
+| Phase       | Required                        | Optional              |
+| ----------- | ------------------------------- | --------------------- |
+| **Phase 1** | PyTorch 2.0+                    | None                  |
+| **Phase 2** | torch-tensorrt, nvidia-tensorrt | None                  |
+| **Phase 3** | PyTorch 2.0+                    | flash-attn (ViT only) |
+| **Phase 4** | PyTorch 2.0+                    | pytest (testing)      |
 
----
+______________________________________________________________________
 
 ## 📖 Usage Examples
 
@@ -493,7 +511,7 @@ open benchmark_results/comparison.html
 pytest tests/test_performance_regression.py -v -m performance
 ```
 
----
+______________________________________________________________________
 
 ## 📈 Performance Benchmarks
 
@@ -503,47 +521,47 @@ Benchmarks on RTX 4090, PyTorch 2.1, CUDA 12.1:
 
 #### 3D Segmentation Model (64×64×64 input)
 
-| Configuration | Latency (ms) | Throughput (FPS) | Memory (GB) | Speedup |
-|---------------|--------------|------------------|-------------|---------|
-| Baseline | 245.3 | 4.1 | 8.2 | 1.0x |
-| Phase 1 | 142.7 | 7.0 | 7.8 | 1.7x |
-| Phase 1 + Phase 2 (TRT FP16) | 68.4 | 14.6 | 4.1 | 3.6x |
-| Phase 1 + Phase 2 (TRT INT8) | 52.1 | 19.2 | 3.8 | 4.7x |
+| Configuration                | Latency (ms) | Throughput (FPS) | Memory (GB) | Speedup |
+| ---------------------------- | ------------ | ---------------- | ----------- | ------- |
+| Baseline                     | 245.3        | 4.1              | 8.2         | 1.0x    |
+| Phase 1                      | 142.7        | 7.0              | 7.8         | 1.7x    |
+| Phase 1 + Phase 2 (TRT FP16) | 68.4         | 14.6             | 4.1         | 3.6x    |
+| Phase 1 + Phase 2 (TRT INT8) | 52.1         | 19.2             | 3.8         | 4.7x    |
 
 #### 2D Label-Free Model (256×256 input)
 
-| Configuration | Latency (ms) | Throughput (FPS) | Memory (GB) | Speedup |
-|---------------|--------------|------------------|-------------|---------|
-| Baseline | 89.2 | 11.2 | 4.5 | 1.0x |
-| Phase 1 | 54.3 | 18.4 | 4.2 | 1.6x |
-| Phase 1 + Phase 2 (TRT FP16) | 23.1 | 43.3 | 2.3 | 3.9x |
+| Configuration                | Latency (ms) | Throughput (FPS) | Memory (GB) | Speedup |
+| ---------------------------- | ------------ | ---------------- | ----------- | ------- |
+| Baseline                     | 89.2         | 11.2             | 4.5         | 1.0x    |
+| Phase 1                      | 54.3         | 18.4             | 4.2         | 1.6x    |
+| Phase 1 + Phase 2 (TRT FP16) | 23.1         | 43.3             | 2.3         | 3.9x    |
 
 #### Vision Transformer MAE (3D)
 
-| Configuration | Latency (ms) | Throughput (FPS) | Memory (GB) | Speedup |
-|---------------|--------------|------------------|-------------|---------|
-| Baseline | 312.5 | 3.2 | 12.1 | 1.0x |
-| Phase 1 | 178.2 | 5.6 | 11.8 | 1.8x |
-| Phase 1 + Flash Attention | 62.4 | 16.0 | 6.2 | 5.0x |
+| Configuration             | Latency (ms) | Throughput (FPS) | Memory (GB) | Speedup |
+| ------------------------- | ------------ | ---------------- | ----------- | ------- |
+| Baseline                  | 312.5        | 3.2              | 12.1        | 1.0x    |
+| Phase 1                   | 178.2        | 5.6              | 11.8        | 1.8x    |
+| Phase 1 + Flash Attention | 62.4         | 16.0             | 6.2         | 5.0x    |
 
 #### Quantization (CPU: Intel Xeon)
 
 | Configuration | Latency (ms) | Model Size (MB) | Speedup |
-|---------------|--------------|-----------------|---------|
-| FP32 Baseline | 892.4 | 342.1 | 1.0x |
-| INT8 Dynamic | 312.7 | 85.5 | 2.9x |
-| INT8 Static | 245.8 | 85.5 | 3.6x |
+| ------------- | ------------ | --------------- | ------- |
+| FP32 Baseline | 892.4        | 342.1           | 1.0x    |
+| INT8 Dynamic  | 312.7        | 85.5            | 2.9x    |
+| INT8 Static   | 245.8        | 85.5            | 3.6x    |
 
 ### Memory Savings
 
-| Optimization | Memory Reduction |
-|--------------|------------------|
-| Channels-last | 10-15% |
-| TensorRT FP16 | 40-50% |
-| Gradient checkpointing | 40-60% |
-| Quantization INT8 | 75% (4x smaller) |
+| Optimization           | Memory Reduction |
+| ---------------------- | ---------------- |
+| Channels-last          | 10-15%           |
+| TensorRT FP16          | 40-50%           |
+| Gradient checkpointing | 40-60%           |
+| Quantization INT8      | 75% (4x smaller) |
 
----
+______________________________________________________________________
 
 ## 🏗️ Architecture & Design
 
@@ -587,6 +605,7 @@ CytoDL Optimizations
 ### Integration Points
 
 **Training Integration:**
+
 ```python
 # cyto_dl/train.py
 from cyto_dl.utils.performance import setup_gpu_optimizations
@@ -597,6 +616,7 @@ if cfg.get("performance"):
 ```
 
 **Model Integration:**
+
 ```python
 # cyto_dl/models/base_model.py
 def setup(self, stage: str):
@@ -610,6 +630,7 @@ def setup(self, stage: str):
 ```
 
 **Dataloader Integration:**
+
 ```yaml
 # configs/data/im2im/segmentation.yaml
 num_workers: 4  # Parallel data loading
@@ -617,7 +638,7 @@ persistent_workers: true  # Keep workers alive
 pin_memory: true  # Faster GPU transfer
 ```
 
----
+______________________________________________________________________
 
 ## ✅ Testing & Validation
 
@@ -641,6 +662,7 @@ pytest tests/test_performance_regression.py -v -m "not slow"
 ### Manual Validation
 
 **Accuracy Validation:**
+
 ```python
 from cyto_dl.utils.accuracy_validation import AccuracyValidator
 
@@ -648,7 +670,7 @@ validator = AccuracyValidator(
     baseline_model=model_fp32,
     optimized_model=model_quantized,
     validation_loader=val_loader,
-    tolerance=0.01  # 1% acceptable degradation
+    tolerance=0.01,  # 1% acceptable degradation
 )
 
 results = validator.validate()
@@ -663,6 +685,7 @@ validator.print_report()
 ```
 
 **Performance Validation:**
+
 ```bash
 python scripts/benchmark_performance.py \
   --config configs/experiment/im2im/labelfree.yaml \
@@ -675,7 +698,7 @@ python scripts/benchmark_performance.py \
 
 See `.github/workflows/performance_tests.yml` for GitHub Actions configuration.
 
----
+______________________________________________________________________
 
 ## 🚀 Deployment Recommendations
 
@@ -770,7 +793,7 @@ else:
     model = torch.jit.load("model_int8.pt")
 ```
 
----
+______________________________________________________________________
 
 ## 🔧 Troubleshooting
 
@@ -781,6 +804,7 @@ else:
 **Error:** `ModuleNotFoundError: No module named 'tensorrt'`
 
 **Solution:**
+
 ```bash
 pip install torch-tensorrt>=2.1.0 nvidia-tensorrt>=8.6.0
 
@@ -793,6 +817,7 @@ python -c "import torch; print(torch.version.cuda)"
 **Error:** `ERROR: Failed building wheel for flash-attn`
 
 **Solution:**
+
 ```bash
 # Option 1: Use pre-built wheels
 pip install flash-attn --no-build-isolation
@@ -811,6 +836,7 @@ python -c "import torch; print(torch.cuda.get_device_capability())"
 **Error:** `RuntimeError: CUDA out of memory`
 
 **Solutions:**
+
 ```python
 # 1. Reduce batch size
 batch_size = 2  # Instead of 4
@@ -830,6 +856,7 @@ torch.cuda.empty_cache()
 **Issue:** Model accuracy drops >1% after quantization
 
 **Solutions:**
+
 ```bash
 # 1. Use more calibration samples
 --num-calibration-samples 500  # Instead of 100
@@ -843,9 +870,10 @@ torch.cuda.empty_cache()
 
 #### 5. Slow Data Loading
 
-**Issue:** GPU utilization <70%
+**Issue:** GPU utilization \<70%
 
 **Solutions:**
+
 ```yaml
 # configs/data/your_config.yaml
 num_workers: 4  # Or 8 for faster CPUs
@@ -854,34 +882,39 @@ pin_memory: true
 prefetch_factor: 2
 ```
 
----
+______________________________________________________________________
 
 ## 📚 References
 
 ### Documentation Files
 
 - **Phase 1:**
+
   - `docs/GPU_OPTIMIZATION_GUIDE.md` - Complete Phase 1 guide
   - `docs/PERFORMANCE_OPTIMIZATIONS.md` - Performance summary
   - `INSTALLATION_PHASE1.md` - Installation (no dependencies)
 
 - **Phase 2:**
+
   - `docs/TENSORRT_GUIDE.md` - 400+ line TensorRT guide
   - `INSTALLATION_PHASE2.md` - TensorRT installation (360 lines)
   - `examples/tensorrt_workflow.py` - Complete workflow
 
 - **Phase 3:**
+
   - `docs/PHASE3_ADVANCED_OPTIMIZATIONS.md` - 600+ line guide
   - `INSTALLATION_PHASE3.md` - Installation instructions
   - `examples/phase3_workflow.py` - Comprehensive examples
 
 - **Phase 4:**
+
   - `docs/PHASE4_BENCHMARKING.md` - Benchmarking guide
   - `INSTALLATION_PHASE4.md` - Installation (no dependencies)
 
 ### Key Files by Function
 
 **Performance Utilities:**
+
 - `cyto_dl/utils/performance.py` - Phase 1 core utilities
 - `cyto_dl/utils/tensorrt_utils.py` - TensorRT integration
 - `cyto_dl/utils/quantization.py` - PyTorch quantization
@@ -892,6 +925,7 @@ prefetch_factor: 2
 - `cyto_dl/utils/accuracy_validation.py` - Accuracy validation
 
 **Scripts:**
+
 - `scripts/export_to_tensorrt.py` - TensorRT export
 - `scripts/export_quantized_model.py` - Quantization export
 - `scripts/benchmark_performance.py` - Complete benchmarking
@@ -899,9 +933,11 @@ prefetch_factor: 2
 - `examples/tensorrt_workflow.py` - TensorRT examples
 
 **Tests:**
+
 - `tests/test_performance_regression.py` - Automated regression tests
 
 **Configuration:**
+
 - `configs/performance/*.yaml` - Performance configs
 - `configs/trainer/gpu_optimized.yaml`, `multi_gpu_ddp.yaml` - Trainer configs
 - `configs/optimizer/adamw_fused.yaml` - Fused optimizer
@@ -915,7 +951,7 @@ prefetch_factor: 2
 - [Flash Attention Paper](https://arxiv.org/abs/2205.14135)
 - [PyTorch Quantization](https://pytorch.org/docs/stable/quantization.html)
 
----
+______________________________________________________________________
 
 ## 🎓 Summary
 
@@ -941,7 +977,7 @@ python scripts/benchmark_performance.py --help
 
 **Questions or issues?** File an issue on GitHub!
 
----
+______________________________________________________________________
 
 **Last updated:** November 2024
 **Branch:** `claude/all-optimizations-combined-014viXtwt7gNsiG4xedaMKNA`

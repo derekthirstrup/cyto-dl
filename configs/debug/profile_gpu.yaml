@@ -9,8 +9,8 @@ defaults:
 # Only train for 2 epochs for profiling
 trainer:
   max_epochs: 2
-  limit_train_batches: 100  # Only 100 batches per epoch
-  limit_val_batches: 20     # Only 20 validation batches
+  limit_train_batches: 100 # Only 100 batches per epoch
+  limit_val_batches: 20 # Only 20 validation batches
 
   # Enable PyTorch profiler for detailed performance analysis
   profiler:
@@ -18,7 +18,7 @@ trainer:
     dirpath: ${paths.output_dir}/profiler
     filename: gpu_profile
     group_by_input_shapes: True
-    emit_nvtx: True  # Enable NVIDIA Tools Extension for Nsight Systems
+    emit_nvtx: True # Enable NVIDIA Tools Extension for Nsight Systems
     activities:
       - cpu
       - cuda

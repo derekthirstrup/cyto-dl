@@ -17,29 +17,29 @@
 mode: dynamic
 
 # Backend (hardware-specific)
-backend: fbgemm  # fbgemm for x86 CPU, qnnpack for ARM/mobile
+backend: fbgemm # fbgemm for x86 CPU, qnnpack for ARM/mobile
 
 # Quantization dtype
-dtype: qint8  # INT8 quantization
+dtype: qint8 # INT8 quantization
 
 # Layers to quantize
 layers:
-  - nn.Linear  # Fully connected layers
-  - nn.LSTM  # Recurrent layers (if present)
+  - nn.Linear # Fully connected layers
+  - nn.LSTM # Recurrent layers (if present)
   - nn.GRU
   - nn.LSTMCell
   - nn.GRUCell
 
 # Export options
 export:
-  format: torchscript  # torchscript or state_dict
-  include_onnx: false  # Also export ONNX
+  format: torchscript # torchscript or state_dict
+  include_onnx: false # Also export ONNX
 
 # Benchmarking
 benchmark:
   enabled: true
   num_iterations: 100
-  device: cpu  # Dynamic quantization optimized for CPU
+  device: cpu # Dynamic quantization optimized for CPU
 
 # Expected performance:
 # - Model size: 4x smaller
