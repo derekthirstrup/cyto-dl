@@ -16,6 +16,7 @@ warnings.filterwarnings("ignore")
 import torch
 
 if hasattr(torch.serialization, "add_safe_globals"):
+    from monai.data.meta_tensor import MetaTensor
     from monai.utils.enums import TraceKeys
 
-    torch.serialization.add_safe_globals([TraceKeys])
+    torch.serialization.add_safe_globals([MetaTensor, TraceKeys])

@@ -169,7 +169,7 @@ def load_model_from_checkpoint(config_path: str, ckpt_path: str):
 
     # Load checkpoint
     print(f"Loading checkpoint: {ckpt_path}")
-    checkpoint = torch.load(ckpt_path, map_location="cpu")
+    checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
 
@@ -183,8 +183,8 @@ def load_calibration_data(
     device: str,
 ):
     """Load calibration data for INT8 quantization."""
-    from PIL import Image
     import numpy as np
+    from PIL import Image
     from torchvision import transforms
 
     data_path = Path(data_path)
@@ -200,14 +200,16 @@ def load_calibration_data(
     print(f"Loading {len(image_files)} calibration samples from {data_path}")
 
     # Create transform
-    transform = transforms.Compose([
-        transforms.Resize(input_shape[-2:]),  # Resize to input shape
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.Resize(input_shape[-2:]),  # Resize to input shape
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5], std=[0.5]),
+        ]
+    )
 
     for img_file in image_files:
-        img = Image.open(img_file).convert('L')  # Convert to grayscale
+        img = Image.open(img_file).convert("L")  # Convert to grayscale
         img_tensor = transform(img).unsqueeze(0)  # Add batch dim
 
         # Adjust shape if needed (for 3D models, just use 2D slices)
@@ -215,7 +217,7 @@ def load_calibration_data(
             img_tensor = img_tensor.unsqueeze(2)
 
         # Crop/pad to match input shape
-        img_tensor = img_tensor[..., :input_shape[-2], :input_shape[-1]]
+        img_tensor = img_tensor[..., : input_shape[-2], : input_shape[-1]]
 
         calibration_data.append(img_tensor.to(device))
 
@@ -229,9 +231,9 @@ def main():
     try:
         from cyto_dl.utils.tensorrt_utils import (
             TENSORRT_AVAILABLE,
-            export_to_tensorrt,
             benchmark_tensorrt,
             create_int8_calibrator,
+            export_to_tensorrt,
         )
     except ImportError:
         print("Error: TensorRT utilities not found")
@@ -310,14 +312,15 @@ def main():
 
         # Save benchmark results
         import json
+
         results_file = Path(args.output).with_suffix(".benchmark.json")
         with open(results_file, "w") as f:
             json.dump(results, f, indent=2)
         print(f"✓ Benchmark results saved to {results_file}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("NEXT STEPS")
-    print("="*60)
+    print("=" * 60)
     print(f"1. Test the TensorRT model:")
     print(f"   >>> import torch")
     print(f"   >>> model = torch.jit.load('{args.output}')")
@@ -332,7 +335,7 @@ def main():
     print(f"   python scripts/benchmark_performance.py \\")
     print(f"     --tensorrt-model {args.output} \\")
     print(f"     --input-shape {' '.join(map(str, args.input_shape))}")
-    print("="*60)
+    print("=" * 60)
 
 
 if __name__ == "__main__":

@@ -12,8 +12,9 @@ Usage:
 
 import sys
 from pathlib import Path
-import torch
+
 import numpy as np
+import torch
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -23,9 +24,9 @@ def train_model():
     """Train a simple label-free model."""
     from cyto_dl.api import CytoDLModel
 
-    print("="*60)
+    print("=" * 60)
     print("STEP 1: Training Model")
-    print("="*60)
+    print("=" * 60)
 
     model = CytoDLModel()
 
@@ -43,7 +44,7 @@ def train_model():
             "performance=gpu_optimized",
             "trainer.max_epochs=2",  # Quick training for demo
             "data.batch_size=4",
-        ]
+        ],
     )
 
     # Train
@@ -64,13 +65,14 @@ def train_model():
 
 def export_to_tensorrt(ckpt_path):
     """Export trained model to TensorRT."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("STEP 2: Exporting to TensorRT")
-    print("="*60)
+    print("=" * 60)
 
-    from cyto_dl.utils.tensorrt_utils import TENSORRT_AVAILABLE, export_to_tensorrt
     import hydra
     from omegaconf import OmegaConf
+
+    from cyto_dl.utils.tensorrt_utils import TENSORRT_AVAILABLE, export_to_tensorrt
 
     if not TENSORRT_AVAILABLE:
         print("\n⚠️  TensorRT not available!")
@@ -84,7 +86,7 @@ def export_to_tensorrt(ckpt_path):
     with hydra.initialize(config_path="../configs", version_base="1.3"):
         model = hydra.utils.instantiate(cfg.model, _recursive_=False)
 
-    checkpoint = torch.load(ckpt_path, map_location="cpu")
+    checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     model = model.cuda()
     model.eval()
@@ -112,12 +114,12 @@ def export_to_tensorrt(ckpt_path):
 
 def benchmark_inference(trt_model_path, pytorch_model):
     """Benchmark TensorRT vs PyTorch inference."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("STEP 3: Benchmarking Inference")
-    print("="*60)
+    print("=" * 60)
 
-    from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine
     from cyto_dl.utils.performance import benchmark_model
+    from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine
 
     input_shape = (1, 1, 64, 64, 64)
 
@@ -146,25 +148,25 @@ def benchmark_inference(trt_model_path, pytorch_model):
     speedup = pytorch_results["avg_latency_ms"] / trt_results["avg_latency_ms"]
 
     # Print results
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("RESULTS")
-    print("="*60)
+    print("=" * 60)
     print(f"PyTorch Latency:     {pytorch_results['avg_latency_ms']:.2f} ms")
     print(f"TensorRT Latency:    {trt_results['avg_latency_ms']:.2f} ms")
     print(f"Speedup:             {speedup:.2f}x faster")
     print("")
     print(f"PyTorch Throughput:  {pytorch_results['throughput_fps']:.2f} FPS")
     print(f"TensorRT Throughput: {trt_results['throughput_fps']:.2f} FPS")
-    print("="*60)
+    print("=" * 60)
 
     return speedup
 
 
 def run_inference_example(trt_model_path):
     """Demonstrate inference with TensorRT engine."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("STEP 4: Running Inference Example")
-    print("="*60)
+    print("=" * 60)
 
     from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine
 
@@ -191,16 +193,16 @@ def run_inference_example(trt_model_path):
     outputs = engine.batch_inference(batch, batch_size=4)
     print(f"✓ Batch inference complete! Processed {len(outputs)} images")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Inference examples complete!")
-    print("="*60)
+    print("=" * 60)
 
 
 def main():
     """Run complete TensorRT workflow."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CytoDL TensorRT Workflow Example")
-    print("="*80)
+    print("=" * 80)
 
     try:
         # Step 1: Train model
@@ -225,9 +227,9 @@ def main():
         run_inference_example(trt_model_path)
 
         # Summary
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("WORKFLOW COMPLETE!")
-        print("="*80)
+        print("=" * 80)
         print(f"✓ Model trained and saved to: {ckpt_path}")
         print(f"✓ TensorRT model exported to: {trt_model_path}")
         print(f"✓ TensorRT is {speedup:.2f}x faster than PyTorch")
@@ -236,11 +238,12 @@ def main():
         print("1. Use the TensorRT model for production inference")
         print("2. Try INT8 quantization for 4x speedup")
         print("3. Integrate into your workflow application")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
     except Exception as e:
         print(f"\n✗ Error: {e}")
         import traceback
+
         traceback.print_exc()
         print("\nWorkflow failed! Check the error message above.")
 

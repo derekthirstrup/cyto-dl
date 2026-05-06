@@ -173,7 +173,7 @@ def load_model_from_checkpoint(config_path: str, ckpt_path: str):
 
     # Load checkpoint
     print(f"Loading checkpoint: {ckpt_path}")
-    checkpoint = torch.load(ckpt_path, map_location="cpu")
+    checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
 
@@ -187,10 +187,10 @@ def create_calibration_loader(
     input_shape: tuple,
 ):
     """Create calibration data loader."""
-    from PIL import Image
     import numpy as np
-    from torchvision import transforms
+    from PIL import Image
     from torch.utils.data import DataLoader, TensorDataset
+    from torchvision import transforms
 
     data_path = Path(data_path)
     calibration_tensors = []
@@ -205,14 +205,16 @@ def create_calibration_loader(
     print(f"Loading {len(image_files)} calibration samples from {data_path}")
 
     # Create transform
-    transform = transforms.Compose([
-        transforms.Resize(input_shape[-2:]),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.Resize(input_shape[-2:]),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5], std=[0.5]),
+        ]
+    )
 
     for img_file in image_files:
-        img = Image.open(img_file).convert('L')
+        img = Image.open(img_file).convert("L")
         img_tensor = transform(img).unsqueeze(0)
 
         # Adjust shape for 3D if needed
@@ -240,10 +242,10 @@ def main():
 
     # Import quantization utilities
     from cyto_dl.utils.quantization import (
-        quantize_model_dynamic,
-        quantize_model_static,
         QuantizationAwareTraining,
         benchmark_quantized_model,
+        quantize_model_dynamic,
+        quantize_model_static,
     )
 
     print(f"\nQuantizing model with mode: {args.mode}")
@@ -402,6 +404,7 @@ def main():
 
         # Save benchmark results
         import json
+
         results_file = Path(args.output).with_suffix(".benchmark.json")
         with open(results_file, "w") as f:
             json.dump(results, f, indent=2)

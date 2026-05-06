@@ -78,10 +78,10 @@ Choose the appropriate installation based on your hardware:
 
 ```bash
 # Using uv (faster)
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+uv pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu130
 
 # Or using pip
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+pip3 install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu130
 ```
 
 **GPU with CUDA 12.4 (Windows/Linux)**

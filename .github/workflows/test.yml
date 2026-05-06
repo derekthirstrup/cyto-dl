@@ -19,7 +19,7 @@ jobs:
       matrix:
         #os: [ubuntu-latest, macOS-latest, windows-latest]
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.9, "3.10", "3.11"]
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v3
       - uses: conda-incubator/setup-miniconda@v3
@@ -34,7 +34,7 @@ jobs:
           conda activate test
           conda install -c conda-forge -n test fortran-compiler blas-devel
           pip install greenlet
-          pip install --no-deps -r requirements/test-requirements.txt
+          pip install --no-deps --extra-index-url https://download.pytorch.org/whl/cu130 -r requirements/test-requirements.txt
           pip install .
 
       - name: List dependencies
@@ -58,14 +58,14 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Install dependencies
         shell: bash -el {0}
         run: |
           conda activate test
           conda install -c conda-forge -n test pip fftw gfortran blas-devel
-          pip install --no-deps -r requirements/test-requirements.txt
+          pip install --no-deps --extra-index-url https://download.pytorch.org/whl/cu130 -r requirements/test-requirements.txt
           pip install .
 
       - name: Run tests and collect coverage
