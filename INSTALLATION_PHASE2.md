@@ -23,7 +23,7 @@ cd cyto-dl
 git checkout claude/tensorrt-integration-phase2-014viXtwt7gNsiG4xedaMKNA
 
 # Install PyTorch with CUDA
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip3 install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu130
 
 # Install base CytoDL
 pip install -e .
@@ -48,8 +48,7 @@ pip install -e .[tensorrt]
 #### **Option C: Manual installation**
 
 ```bash
-pip install torch-tensorrt>=2.1.0
-pip install nvidia-tensorrt>=8.6.0
+pip install torch-tensorrt==2.11.0 nvidia-tensorrt==99.0.0 --index-url https://download.pytorch.org/whl/cu130
 ```
 
 ### Step 3: Verify TensorRT Installation

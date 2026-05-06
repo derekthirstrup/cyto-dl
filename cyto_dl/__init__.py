@@ -11,3 +11,12 @@ logging.getLogger("bfio.init").setLevel(logging.ERROR)
 logging.getLogger("bfio.backends").setLevel(logging.ERROR)
 logging.getLogger("xmlschema").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore")
+
+# Allow MONAI enums in torch.load(weights_only=True) (PyTorch >= 2.6 default)
+import torch
+
+if hasattr(torch.serialization, "add_safe_globals"):
+    from monai.data.meta_tensor import MetaTensor
+    from monai.utils.enums import TraceKeys
+
+    torch.serialization.add_safe_globals([MetaTensor, TraceKeys])

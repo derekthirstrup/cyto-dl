@@ -53,10 +53,10 @@ from cyto_dl.utils.performance import benchmark_model, setup_gpu_optimizations
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Benchmark model performance across all optimization phases")
-    parser.add_argument(
-        "--config", type=str, required=True, help="Path to experiment config file"
+    parser = argparse.ArgumentParser(
+        description="Benchmark model performance across all optimization phases"
     )
+    parser.add_argument("--config", type=str, required=True, help="Path to experiment config file")
     parser.add_argument("--ckpt", type=str, default=None, help="Path to model checkpoint")
     parser.add_argument(
         "--input-shape",
@@ -72,9 +72,7 @@ def parse_args():
         default=[1],
         help="Batch sizes to benchmark",
     )
-    parser.add_argument(
-        "--num-iterations", type=int, default=100, help="Number of iterations"
-    )
+    parser.add_argument("--num-iterations", type=int, default=100, help="Number of iterations")
     parser.add_argument(
         "--warmup-iterations", type=int, default=10, help="Number of warmup iterations"
     )
@@ -83,18 +81,10 @@ def parse_args():
     parser.add_argument(
         "--all-phases", action="store_true", help="Benchmark all optimization phases"
     )
-    parser.add_argument(
-        "--baseline", action="store_true", help="Benchmark baseline (no opts)"
-    )
-    parser.add_argument(
-        "--phase1", action="store_true", help="Benchmark Phase 1 (GPU opts)"
-    )
-    parser.add_argument(
-        "--phase2", action="store_true", help="Benchmark Phase 2 (TensorRT)"
-    )
-    parser.add_argument(
-        "--phase3", action="store_true", help="Benchmark Phase 3 (Quantization)"
-    )
+    parser.add_argument("--baseline", action="store_true", help="Benchmark baseline (no opts)")
+    parser.add_argument("--phase1", action="store_true", help="Benchmark Phase 1 (GPU opts)")
+    parser.add_argument("--phase2", action="store_true", help="Benchmark Phase 2 (TensorRT)")
+    parser.add_argument("--phase3", action="store_true", help="Benchmark Phase 3 (Quantization)")
 
     # Validation
     parser.add_argument(
@@ -112,12 +102,8 @@ def parse_args():
     )
 
     # Output options
-    parser.add_argument(
-        "--output", type=str, default="benchmark_results", help="Output directory"
-    )
-    parser.add_argument(
-        "--generate-html", action="store_true", help="Generate HTML report"
-    )
+    parser.add_argument("--output", type=str, default="benchmark_results", help="Output directory")
+    parser.add_argument("--generate-html", action="store_true", help="Generate HTML report")
     parser.add_argument(
         "--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu"
     )
@@ -136,7 +122,7 @@ def load_model_from_config(config_path: str, ckpt_path: str = None) -> nn.Module
 
     # Load checkpoint if provided
     if ckpt_path:
-        checkpoint = torch.load(ckpt_path, map_location="cpu")
+        checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
         model.load_state_dict(checkpoint["state_dict"])
 
     return model
