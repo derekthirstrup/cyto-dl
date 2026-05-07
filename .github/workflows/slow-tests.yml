@@ -11,8 +11,19 @@ concurrency:
 
 jobs:
   slow-test:
+    name: slow-test (${{ matrix.dims }}D)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dims: 2
+            skip_2d: ""
+            skip_3d: "1"
+          - dims: 3
+            skip_2d: "1"
+            skip_3d: ""
     steps:
       - uses: actions/checkout@v4
 
@@ -36,8 +47,10 @@ jobs:
           path: data/example_experiment_data/s3_data
           key: cyto-dl-test-data-v1-${{ hashFiles('cyto_dl/utils/download_test_data.py') }}
 
-      - name: Run full pytest (including slow, 2D + 3D)
+      - name: Run slow pytest (${{ matrix.dims }}D only)
         shell: bash
         env:
           CYTO_DL_KEEP_TEST_DATA: "1"
+          CYTO_DL_SKIP_2D: ${{ matrix.skip_2d }}
+          CYTO_DL_SKIP_3D: ${{ matrix.skip_3d }}
         run: uv run pytest -v -o addopts= -n auto --durations=50
