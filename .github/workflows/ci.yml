@@ -41,16 +41,17 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          uv pip install --system --no-deps -r requirements/test-requirements.txt
-          uv pip install --system --no-deps .
+          uv venv --python 3.13
+          uv pip install --no-deps -r requirements/test-requirements.txt
+          uv pip install --no-deps .
 
       - name: Run pytest
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            pytest -v --cov cyto_dl --cov-report=xml
+            uv run pytest -v --cov cyto_dl --cov-report=xml
           else
-            pytest -v
+            uv run pytest -v
           fi
 
       - name: Upload coverage
@@ -79,11 +80,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system --no-deps -r requirements/docs-requirements.txt
-          uv pip install --system --no-deps .
+          uv venv --python 3.13
+          uv pip install --no-deps -r requirements/docs-requirements.txt
+          uv pip install --no-deps .
 
       - name: Generate docs
         run: |
+          source .venv/bin/activate
           make gen-docs
           touch docs/_build/html/.nojekyll
 
