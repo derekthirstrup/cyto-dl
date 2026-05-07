@@ -36,24 +36,21 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "requirements/test-requirements.txt"
-
-      - name: Install Python 3.13
-        run: uv python install 3.13
+          python-version: "3.13"
 
       - name: Install dependencies
         shell: bash
         run: |
-          uv venv --python 3.13
-          uv pip install --no-deps -r requirements/test-requirements.txt
-          uv pip install --no-deps .
+          uv pip install --system --no-deps -r requirements/test-requirements.txt
+          uv pip install --system --no-deps .
 
       - name: Run pytest
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            uv run pytest -v --cov cyto_dl --cov-report=xml
+            pytest -v --cov cyto_dl --cov-report=xml
           else
-            uv run pytest -v
+            pytest -v
           fi
 
       - name: Upload coverage
@@ -78,19 +75,15 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "requirements/docs-requirements.txt"
-
-      - name: Install Python 3.13
-        run: uv python install 3.13
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
-          uv venv --python 3.13
-          uv pip install --no-deps -r requirements/docs-requirements.txt
-          uv pip install --no-deps .
+          uv pip install --system --no-deps -r requirements/docs-requirements.txt
+          uv pip install --system --no-deps .
 
       - name: Generate docs
         run: |
-          source .venv/bin/activate
           make gen-docs
           touch docs/_build/html/.nojekyll
 
