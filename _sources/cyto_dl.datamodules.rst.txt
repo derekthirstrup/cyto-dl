@@ -1,0 +1,28 @@
+cyto\_dl.datamodules package
+============================
+
+.. automodule:: cyto_dl.datamodules
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.datamodules.dataframe
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.datamodules.array
+   cyto_dl.datamodules.data_dict
+   cyto_dl.datamodules.folder
+   cyto_dl.datamodules.multidim_image
+   cyto_dl.datamodules.smartcache
+   cyto_dl.datamodules.torchvision

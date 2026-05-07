@@ -1,0 +1,24 @@
+cyto\_dl.api package
+====================
+
+.. automodule:: cyto_dl.api
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.api.cyto_dl_model
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.api.data
+   cyto_dl.api.model

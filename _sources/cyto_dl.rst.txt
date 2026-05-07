@@ -1,0 +1,34 @@
+cyto\_dl package
+================
+
+.. automodule:: cyto_dl
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.api
+   cyto_dl.callbacks
+   cyto_dl.dataframe
+   cyto_dl.datamodules
+   cyto_dl.image
+   cyto_dl.loggers
+   cyto_dl.models
+   cyto_dl.nn
+   cyto_dl.point_cloud
+   cyto_dl.utils
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.compile
+   cyto_dl.eval
+   cyto_dl.train

@@ -1,0 +1,16 @@
+cyto\_dl.models.classification package
+======================================
+
+.. automodule:: cyto_dl.models.classification
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.models.classification.classification
+   cyto_dl.models.classification.timepoint_classification

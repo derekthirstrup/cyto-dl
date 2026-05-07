@@ -1,0 +1,25 @@
+cyto\_dl.models.im2im package
+=============================
+
+.. automodule:: cyto_dl.models.im2im
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.models.im2im.utils
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.models.im2im.diffusion_autoencoder
+   cyto_dl.models.im2im.gan
+   cyto_dl.models.im2im.multi_task

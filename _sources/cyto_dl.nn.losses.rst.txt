@@ -1,0 +1,27 @@
+cyto\_dl.nn.losses package
+==========================
+
+.. automodule:: cyto_dl.nn.losses
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.nn.losses.adversarial_loss
+   cyto_dl.nn.losses.chamfer_loss
+   cyto_dl.nn.losses.continuous_bernoulli
+   cyto_dl.nn.losses.cosine_loss
+   cyto_dl.nn.losses.gan_loss
+   cyto_dl.nn.losses.gaussian_nll_loss
+   cyto_dl.nn.losses.geomloss
+   cyto_dl.nn.losses.loss_wrapper
+   cyto_dl.nn.losses.spharm_loss
+   cyto_dl.nn.losses.threshold_loss
+   cyto_dl.nn.losses.vic_reg
+   cyto_dl.nn.losses.weibull
+   cyto_dl.nn.losses.weighted_mse_loss

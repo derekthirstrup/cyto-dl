@@ -1,0 +1,30 @@
+cyto\_dl.models package
+=======================
+
+.. automodule:: cyto_dl.models
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.models.classification
+   cyto_dl.models.contrastive
+   cyto_dl.models.handlers
+   cyto_dl.models.im2im
+   cyto_dl.models.jepa
+   cyto_dl.models.utils
+   cyto_dl.models.vae
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   cyto_dl.models.base_model
+   cyto_dl.models.basic_model
