@@ -68,9 +68,13 @@ class BasicModel(BaseModel):
             # Without `network`, the checkpoint is the serialized module
             # itself, which requires the full pickle path.
             if network is not None:
-                pretrained_weights = torch.load(pretrained_weights, weights_only=True)
+                pretrained_weights = torch.load(  # nosec B614
+                    pretrained_weights, weights_only=True
+                )
             else:
-                pretrained_weights = torch.load(pretrained_weights, weights_only=False)  # nosec B614
+                pretrained_weights = torch.load(  # nosec B614
+                    pretrained_weights, weights_only=False
+                )
 
         if network is not None:
             self.network = network

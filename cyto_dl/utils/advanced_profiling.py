@@ -19,9 +19,10 @@ Usage:
 """
 
 import logging
+import operator
 import time
 import warnings
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -359,15 +360,13 @@ class BottleneckDetector:
         # Record GPU utilization if available
         gpu_util = 0.0
         if torch.cuda.is_available():
-            try:
+            with suppress(Exception):  # nosec B110
                 import pynvml
 
                 pynvml.nvmlInit()
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
                 util = pynvml.nvmlDeviceGetUtilizationRates(handle)
                 gpu_util = util.gpu
-            except Exception:  # nosec B110
-                pass
 
         self.marks.append(
             {
@@ -413,7 +412,7 @@ class BottleneckDetector:
 
         # Print phase breakdown
         print("\nPhase Breakdown:")
-        for phase, duration in sorted(phases.items(), key=lambda x: x[1], reverse=True):
+        for phase, duration in sorted(phases.items(), key=operator.itemgetter(1), reverse=True):
             percentage = (duration / total_time) * 100
             print(f"  {phase:<40} {duration:>8.3f}s ({percentage:>5.1f}%)")
 

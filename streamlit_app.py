@@ -11,6 +11,7 @@ import re
 import signal
 import subprocess  # nosec: B404
 import threading
+from contextlib import suppress
 from pathlib import Path
 
 import streamlit as st
@@ -524,7 +525,7 @@ def _scan_installed_models() -> dict:
     """Scan for available model architectures from MONAI and timm at runtime."""
     results = {"monai_models": [], "timm_models": [], "monai_version": None, "timm_version": None}
 
-    try:
+    with suppress(ImportError):
         import monai
 
         results["monai_version"] = monai.__version__
@@ -532,18 +533,14 @@ def _scan_installed_models() -> dict:
 
         all_nets = [x for x in dir(nets) if not x.startswith("_") and x[0].isupper()]
         results["monai_models"] = sorted(all_nets)
-    except ImportError:
-        pass
 
-    try:
+    with suppress(ImportError):
         import timm
 
         results["timm_version"] = timm.__version__
         # Get segmentation-relevant models
         all_models = timm.list_models()
         results["timm_models"] = sorted(all_models)
-    except ImportError:
-        pass
 
     return results
 
@@ -1102,16 +1099,14 @@ def _stream_output(process, log_list):
     except (ValueError, OSError):
         pass
     finally:
-        try:
+        with suppress(OSError):
             process.stdout.close()
-        except OSError:
-            pass
 
 
 def launch_training(config: dict, config_path: Path):
     """Write config YAML and launch training subprocess."""
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, "w") as f:
+    with config_path.open("w") as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
     env = os.environ.copy()
@@ -1204,20 +1199,16 @@ def _parse_loss_from_logs(log_lines: list) -> dict:
         # Pattern: 'train/loss': <value> or train/loss=<value> or train/loss: <value>
         train_match = re.search(r'train[/_]loss[\'"\s:=]+([0-9.eE+-]+)', line)
         if train_match:
-            try:
+            with suppress(ValueError):
                 val = float(train_match.group(1))
                 train_losses.append((current_epoch, val))
-            except ValueError:
-                pass
 
         # Pattern: 'val/loss': <value> or val/loss=<value> or val/loss: <value>
         val_match = re.search(r'val[/_]loss[\'"\s:=]+([0-9.eE+-]+)', line)
         if val_match:
-            try:
+            with suppress(ValueError):
                 val = float(val_match.group(1))
                 val_losses.append((current_epoch, val))
-            except ValueError:
-                pass
 
     return {"train_loss": train_losses, "val_loss": val_losses}
 
@@ -1873,11 +1864,11 @@ def main():
                 "VRAM": info["vram_estimate"],
             }
             # Add task ratings
-            for task in [
+            for task in (
                 "BF → Nuclei Segmentation",
                 "BF → Cell Segmentation",
                 "BF → Fluorescence (label-free)",
-            ]:
+            ):
                 rating = info["tasks"].get(task, "—")
                 icon = {"best": "🟢", "good": "🟡", "fair": "🟠", "poor": "🔴"}.get(
                     rating.split()[0] if isinstance(rating, str) else "", "⚪"
@@ -2089,16 +2080,15 @@ def main():
         # Summary
         st.divider()
         st.markdown("#### Task Heads Summary")
-        summary_data = []
-        for h in task_heads_config:
-            summary_data.append(
-                {
-                    "Task": h["task_name"],
-                    "Head Type": h["head_type"].split("(")[0].strip(),
-                    "Loss": h["loss_function"],
-                    "Activation": h.get("prediction_activation", "—"),
-                }
-            )
+        summary_data = [
+            {
+                "Task": h["task_name"],
+                "Head Type": h["head_type"].split("(")[0].strip(),
+                "Loss": h["loss_function"],
+                "Activation": h.get("prediction_activation", "—"),
+            }
+            for h in task_heads_config
+        ]
         st.table(summary_data)
 
     # ------------------------------------------------------------------ #

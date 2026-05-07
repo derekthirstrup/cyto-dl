@@ -260,7 +260,7 @@ class AutoTuner:
         best_throughput = 0
         best_bs = optimal_bs
 
-        for bs in [optimal_bs // 4, optimal_bs // 2, optimal_bs]:
+        for bs in (optimal_bs // 4, optimal_bs // 2, optimal_bs):
             if bs < 1:
                 continue
 
@@ -442,10 +442,9 @@ class AutoTuner:
         # Heuristic: if batch size is small, use accumulation
         if batch_size <= 2:
             return 4
-        elif batch_size <= 4:
+        if batch_size <= 4:
             return 2
-        else:
-            return 1
+        return 1
 
     def _test_gradient_checkpointing(self, batch_size: int) -> float:
         """Test gradient checkpointing memory savings."""
@@ -494,7 +493,7 @@ class AutoTuner:
         best_throughput = 0
         best_workers = 0
 
-        for num_workers in [0, 2, 4, 8]:
+        for num_workers in (0, 2, 4, 8):
             try:
                 dataloader = DataLoader(
                     dataset,
@@ -563,8 +562,9 @@ def auto_tune_model(
     >>> sample_input = torch.randn(1, 64, 64, 64)
     >>> config = auto_tune_model(model, sample_input, save_config="optimal_config.yaml")
     """
-    tuner = AutoTuner(model, sample_input, device=device)
-    config = tuner.tune(tune_inference=True, tune_training=False)
+    config = AutoTuner(model, sample_input, device=device).tune(
+        tune_inference=True, tune_training=False
+    )
 
     if save_config:
         from omegaconf import OmegaConf

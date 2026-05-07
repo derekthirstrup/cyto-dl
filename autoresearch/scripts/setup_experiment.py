@@ -77,10 +77,9 @@ def validate_data(data_path):
 
     if csv_files:
         return True, f"Found {len(csv_files)} CSV manifest(s), {len(image_files)} image file(s)"
-    elif image_files:
+    if image_files:
         return True, f"Found {len(image_files)} image file(s)"
-    else:
-        return False, f"No recognized data files in {data_path}"
+    return False, f"No recognized data files in {data_path}"
 
 
 def run_baseline(data_path):
@@ -140,8 +139,9 @@ def main():
     # Initialize results.tsv
     if not RESULTS_FILE.exists():
         RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(RESULTS_FILE, "w") as f:
-            f.write("iteration\ttimestamp\tscore\tstatus\ttier\tdescription\toverrides\tdetails\n")
+        RESULTS_FILE.write_text(
+            "iteration\ttimestamp\tscore\tstatus\ttier\tdescription\toverrides\tdetails\n"
+        )
         print(f"\nCreated results tracking: {RESULTS_FILE}")
 
     if args.validate_only:

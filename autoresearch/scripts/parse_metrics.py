@@ -8,6 +8,7 @@ runner and evaluator.
 import csv
 import math
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 
@@ -39,12 +40,10 @@ def parse_csv_metrics(csv_path):
         for row in reader:
             for key, value in row.items():
                 if value and value.strip():
-                    try:
+                    with suppress(ValueError, TypeError):
                         val = float(value)
                         if not math.isnan(val) and not math.isinf(val):
                             all_metrics[key] = val
-                    except (ValueError, TypeError):
-                        pass
 
     return all_metrics
 
@@ -60,13 +59,11 @@ def get_metric_history(csv_path, metric_name):
         reader = csv.DictReader(f)
         for row in reader:
             if metric_name in row and row[metric_name].strip():
-                try:
+                with suppress(ValueError, TypeError):
                     val = float(row[metric_name])
                     step = int(row.get("step", row.get("epoch", 0)))
                     if not math.isnan(val):
                         history.append((step, val))
-                except (ValueError, TypeError):
-                    pass
 
     return history
 

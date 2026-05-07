@@ -18,6 +18,7 @@ Usage:
 """
 
 import logging
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -222,10 +223,8 @@ class AccuracyValidator:
         # SSIM (if images)
         ssim = 0.0
         if baseline.ndim >= 4:  # Batch of images
-            try:
+            with suppress(Exception):  # nosec B110
                 ssim = self._compute_ssim(baseline, optimized)
-            except Exception:  # nosec B110
-                pass
 
         # Custom metrics
         custom_results = {}

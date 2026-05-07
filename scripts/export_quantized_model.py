@@ -199,7 +199,7 @@ def create_calibration_loader(
     image_files = list(data_path.glob("*.png")) + list(data_path.glob("*.jpg"))
     image_files = image_files[:num_samples]
 
-    if len(image_files) == 0:
+    if not image_files:
         raise ValueError(f"No images found in {data_path}")
 
     print(f"Loading {len(image_files)} calibration samples from {data_path}")
@@ -359,7 +359,7 @@ def main():
         print("\n🔧 Exporting to TorchScript...")
         try:
             # Need a sample input for tracing
-            if args.mode == "static" or args.mode == "qat":
+            if args.mode in ("static", "qat"):
                 # Use calibration data shape
                 sample_input = torch.randn(1, 1, 256, 256)
             else:
@@ -421,12 +421,12 @@ def main():
         print("   >>> model = MyModel()")
         print(f"   >>> model.load_state_dict(torch.load('{args.output}'))")
     print("   >>> output = model(torch.randn(1, 1, 256, 256))")
-    print("")
+    print()
     print("2. Compare accuracy:")
     print("   - Run inference on validation set")
     print("   - Compare metrics with original model")
     print("   - Expected: <1% accuracy loss for static/qat")
-    print("")
+    print()
     print("3. Deploy:")
     print("   - Use quantized model for production inference")
     print("   - Expect 2-4x speedup on CPU")

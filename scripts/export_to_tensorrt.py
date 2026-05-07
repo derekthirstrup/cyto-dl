@@ -194,7 +194,7 @@ def load_calibration_data(
     image_files = list(data_path.glob("*.png")) + list(data_path.glob("*.jpg"))
     image_files = image_files[:num_samples]
 
-    if len(image_files) == 0:
+    if not image_files:
         raise ValueError(f"No images found in {data_path}")
 
     print(f"Loading {len(image_files)} calibration samples from {data_path}")
@@ -326,12 +326,12 @@ def main():
     print("   >>> import torch")
     print(f"   >>> model = torch.jit.load('{args.output}')")
     print(f"   >>> output = model(torch.randn({args.input_shape}).cuda())")
-    print("")
+    print()
     print("2. Use with TensorRTInferenceEngine:")
     print("   >>> from cyto_dl.utils.tensorrt_utils import TensorRTInferenceEngine")
     print(f"   >>> engine = TensorRTInferenceEngine('{args.output}', {args.input_shape})")
     print("   >>> output = engine(input_tensor)")
-    print("")
+    print()
     print("3. Benchmark your model:")
     print("   python scripts/benchmark_performance.py \\")
     print(f"     --tensorrt-model {args.output} \\")

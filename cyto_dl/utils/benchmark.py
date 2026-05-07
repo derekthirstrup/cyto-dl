@@ -535,8 +535,7 @@ class BenchmarkSuite:
 
         html = self._generate_html_report()
 
-        with open(output_path, "w") as f:
-            f.write(html)
+        Path(output_path).write_text(html)
 
         logger.info(f"✓ HTML report saved to {output_path}")
 
@@ -693,8 +692,9 @@ def quick_benchmark(
     >>> results = quick_benchmark(model, input_tensor, batch_size=4)
     >>> print(f"Latency: {results['latency_ms']:.2f} ms")
     """
-    benchmark = ModelBenchmark(model, sample_input, device=device)
-    result = benchmark.run_all(batch_size=batch_size, num_iterations=num_iterations)
+    result = ModelBenchmark(model, sample_input, device=device).run_all(
+        batch_size=batch_size, num_iterations=num_iterations
+    )
 
     return {
         "latency_ms": result.latency_ms,

@@ -200,9 +200,7 @@ class CUDAGraphWrapper:
         except StopIteration:
             device = torch.device("cuda")
         if device.type != "cuda":
-            raise ValueError(
-                f"CUDAGraphWrapper requires a CUDA model; got device={device}"
-            )
+            raise ValueError(f"CUDAGraphWrapper requires a CUDA model; got device={device}")
         if sample_input.device != device:
             sample_input = sample_input.to(device)
 

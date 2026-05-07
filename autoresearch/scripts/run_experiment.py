@@ -25,6 +25,7 @@ import json
 import os
 import subprocess  # nosec B404
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 # Add project root to path
@@ -58,17 +59,16 @@ def get_tier_for_iteration(iteration):
     """Auto-select training tier based on iteration number."""
     if iteration <= 20:
         return "exploration"
-    elif iteration <= 40:
+    if iteration <= 40:
         return "refinement"
-    else:
-        return "exploitation"
+    return "exploitation"
 
 
 def get_current_iteration():
     """Read results.tsv to determine current iteration number."""
     if not RESULTS_FILE.exists():
         return 1
-    with open(RESULTS_FILE) as f:
+    with RESULTS_FILE.open() as f:
         lines = [
             line for line in f.readlines() if line.strip() and not line.startswith("iteration")
         ]
@@ -106,7 +106,7 @@ def log_result(iteration, score, status, description, overrides, tier, details=N
     """Append result to results.tsv."""
     write_header = not RESULTS_FILE.exists()
 
-    with open(RESULTS_FILE, "a") as f:
+    with RESULTS_FILE.open("a") as f:
         if write_header:
             f.write("iteration\ttimestamp\tscore\tstatus\ttier\tdescription\toverrides\tdetails\n")
 
@@ -138,9 +138,8 @@ def run_training(cmd, timeout_minutes=120):
 def find_output_dir(run_name=None):
     """Find the training output directory for ``run_name`` if given, else the most recent one.
 
-    Looking up by run_name avoids returning a stale run when other training jobs
-    are running concurrently (or when the prior run touched its directory after
-    the current one started).
+    Looking up by run_name avoids returning a stale run when other training jobs are running
+    concurrently (or when the prior run touched its directory after the current one started).
     """
     logs_dir = PROJECT_ROOT / "logs"
     if not logs_dir.exists():
@@ -329,18 +328,16 @@ def get_best_score():
         return 0.0
 
     best = 0.0
-    with open(RESULTS_FILE) as f:
+    with RESULTS_FILE.open() as f:
         for line in f:
             if line.startswith("iteration") or not line.strip():
                 continue
             parts = line.strip().split("\t")
             if len(parts) >= 3:
-                try:
+                with suppress(ValueError):
                     score = float(parts[2])
                     if score > best:
                         best = score
-                except ValueError:
-                    pass
     return best
 
 

@@ -28,10 +28,10 @@ def _ssim_3d(pred, target, window_size=7, data_range=None):
     sigma_target_sq = ((target - mu_target) ** 2).mean()
     sigma_cross = ((pred - mu_pred) * (target - mu_target)).mean()
 
-    ssim = ((2 * mu_pred * mu_target + C1) * (2 * sigma_cross + C2)) / (
-        (mu_pred**2 + mu_target**2 + C1) * (sigma_pred_sq + sigma_target_sq + C2)
-    )
-    return ssim.clamp(-1, 1)
+    return (
+        ((2 * mu_pred * mu_target + C1) * (2 * sigma_cross + C2))
+        / ((mu_pred**2 + mu_target**2 + C1) * (sigma_pred_sq + sigma_target_sq + C2))
+    ).clamp(-1, 1)
 
 
 def _pearson_corr(pred, target):

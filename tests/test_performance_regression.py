@@ -261,8 +261,7 @@ def test_accuracy_after_optimization(conv2d_model, sample_input_2d):
     sample_optimized = sample_input_2d.cuda().to(memory_format=torch.channels_last)
 
     # Compare outputs
-    comparator = OutputComparator(baseline_model, optimized_model)
-    comparison = comparator.compare(sample_optimized)
+    comparison = OutputComparator(baseline_model, optimized_model).compare(sample_optimized)
 
     # Output difference should be negligible
     assert (

@@ -230,16 +230,15 @@ def print_summary(results: Dict):
     print("=" * 80)
 
     # Create DataFrame for nice formatting
-    data = []
-    for key, result in results.items():
-        data.append(
-            {
-                "Configuration": key,
-                "Latency (ms)": f"{result['avg_latency_ms']:.2f}",
-                "Throughput (FPS)": f"{result['throughput_fps']:.2f}",
-                "Total Time (ms)": f"{result['total_time_ms']:.2f}",
-            }
-        )
+    data = [
+        {
+            "Configuration": key,
+            "Latency (ms)": f"{result['avg_latency_ms']:.2f}",
+            "Throughput (FPS)": f"{result['throughput_fps']:.2f}",
+            "Total Time (ms)": f"{result['total_time_ms']:.2f}",
+        }
+        for key, result in results.items()
+    ]
 
     if data:
         df = pd.DataFrame(data)

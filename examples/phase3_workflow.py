@@ -357,8 +357,7 @@ def example_ddp():
         nn.AdaptiveAvgPool2d(1),
         nn.Flatten(),
         nn.Linear(64, 10),
-    )
-    model = model.cuda()
+    ).cuda()
 
     # Method 1: Basic DDP setup
     print("1. Basic DDP Setup:")
@@ -422,17 +421,17 @@ def example_auto_tune():
         nn.AdaptiveAvgPool2d(1),
         nn.Flatten(),
         nn.Linear(64, 10),
-    )
-    model = model.cuda()
+    ).cuda()
 
     # Sample input (single sample, no batch dimension)
     sample_input = torch.randn(1, 64, 64).cuda()
 
     print("\n1. Basic Auto-Tuning:")
-    tuner = AutoTuner(model, sample_input, device="cuda")
 
     # Run tuning
-    optimal_config = tuner.tune(tune_inference=True, tune_training=False)
+    optimal_config = AutoTuner(model, sample_input, device="cuda").tune(
+        tune_inference=True, tune_training=False
+    )
 
     print("\n   Optimal configuration found:")
     for key, value in optimal_config.items():

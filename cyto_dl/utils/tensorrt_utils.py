@@ -456,7 +456,7 @@ def benchmark_tensorrt(
 
     logger.info(f"\n{'='*60}")
     logger.info("TENSORRT BENCHMARK RESULTS")
-    logger.info(f"{'='*60}")
+    logger.info(str("=" * 60))
     logger.info(f"PyTorch Latency:    {results['pytorch_latency_ms']:.2f} ms")
     logger.info(f"TensorRT Latency:   {results['tensorrt_latency_ms']:.2f} ms")
     logger.info(f"Speedup:            {speedup:.2f}x faster")

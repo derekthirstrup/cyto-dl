@@ -18,6 +18,7 @@ import argparse
 import csv
 import math
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 
@@ -66,12 +67,10 @@ def parse_metrics(csv_path):
     for row in rows:
         for key, value in row.items():
             if value and value.strip():
-                try:
+                with suppress(ValueError, TypeError):
                     val = float(value)
                     if not math.isnan(val) and not math.isinf(val):
                         metrics[key] = val
-                except (ValueError, TypeError):
-                    pass
 
     return metrics
 

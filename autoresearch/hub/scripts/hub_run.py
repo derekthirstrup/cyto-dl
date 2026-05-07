@@ -18,6 +18,7 @@ Usage:
 import argparse
 import datetime
 import json
+import operator
 import os
 import subprocess  # nosec B404
 import sys
@@ -221,7 +222,7 @@ def fan_out_fan_in(strategies, data_path=None, timeout=120):
         print("\nAll agents failed. No winner.")
         return None, results
 
-    winner = max(valid_results, key=lambda r: r["score"])
+    winner = max(valid_results, key=operator.itemgetter("score"))
     print(f"\n=== WINNER: Agent {winner['strategy']['desc']} ===")
     print(f"Score: {winner['score']:.6f}")
     print(f"Branch: {winner['branch']}")
@@ -268,7 +269,7 @@ def log_hub_results(session_id, results, winner):
     write_header = not HUB_RESULTS.exists()
     HUB_RESULTS.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(HUB_RESULTS, "a") as f:
+    with HUB_RESULTS.open("a") as f:
         if write_header:
             f.write("session\tagent_id\tscore\tstatus\tstrategy\tbranch\tis_winner\n")
         for result in results:
