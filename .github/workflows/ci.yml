@@ -54,13 +54,21 @@ jobs:
           uv pip install --no-deps -r requirements/test-requirements.txt
           uv pip install --no-deps .
 
+      - name: Cache S3 test data
+        uses: actions/cache@v4
+        with:
+          path: data/example_experiment_data/s3_data
+          key: cyto-dl-test-data-v1-${{ hashFiles('cyto_dl/utils/download_test_data.py') }}
+
       - name: Run pytest
         shell: bash
+        env:
+          CYTO_DL_KEEP_TEST_DATA: "1"
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            uv run pytest -v -m "not slow" -o addopts= --durations=25 --cov cyto_dl --cov-report=xml
+            uv run pytest -v -m "not slow" -o addopts= -n auto --durations=25 --cov cyto_dl --cov-report=xml
           else
-            uv run pytest -v -m "not slow" -o addopts= --durations=25
+            uv run pytest -v -m "not slow" -o addopts= -n auto --durations=25
           fi
 
       - name: Upload coverage

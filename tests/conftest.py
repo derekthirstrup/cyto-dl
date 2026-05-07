@@ -120,5 +120,12 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    # Set CYTO_DL_KEEP_TEST_DATA=1 in CI to preserve the cached download
+    # between runs; skipped under pytest-xdist worker shutdown to avoid
+    # racing siblings that still hold references.
+    if os.environ.get("CYTO_DL_KEEP_TEST_DATA"):
+        return exitstatus
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        return exitstatus
     delete_test_data()
     return exitstatus
