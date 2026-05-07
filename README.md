@@ -152,13 +152,16 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f
 ### Troubleshooting
 
 **Issue: `ImportError` for numpy or other packages**
+
 - Try installing without `--no-deps`: `pip install -r requirements/requirements.txt`
 
 **Issue: CUDA out of memory**
+
 - Reduce batch size in your config: `datamodule.batch_size=8`
 - Use mixed precision: `trainer.precision=16-mixed`
 
 **Issue: Fortran compiler not found (for equivariant models)**
+
 - Install via conda: `conda install -c conda-forge fortran-compiler`
 
 ### API
@@ -235,12 +238,14 @@ python cyto_dl/train.py experiment=im2im/segmentation trainer=gpu trainer.max_ep
 ```
 
 **What this does:**
+
 - Loads the segmentation experiment configuration
 - Trains a U-Net model for semantic segmentation
 - Saves checkpoints to `logs/train/runs/<timestamp>/`
 - Logs metrics to TensorBoard
 
 **View training progress:**
+
 ```bash
 tensorboard --logdir logs/train/runs/
 ```
@@ -265,6 +270,7 @@ python cyto_dl/predict.py \
 ```
 
 **Output:**
+
 - Predictions saved to `logs/predict/runs/<timestamp>/predictions/`
 
 ### Example 3: Complete Workflow with Python API
@@ -283,12 +289,7 @@ model.download_example_data()
 model.load_default_experiment(
     "segmentation",
     output_dir="./my_segmentation_project",
-    overrides=[
-        "trainer=gpu",
-        "trainer.max_epochs=30",
-        "datamodule.batch_size=8",
-        "model.optimizer.lr=0.001"
-    ]
+    overrides=["trainer=gpu", "trainer.max_epochs=30", "datamodule.batch_size=8", "model.optimizer.lr=0.001"],
 )
 
 # 3. Inspect configuration
@@ -305,11 +306,7 @@ best_ckpt = list(checkpoint_dir.glob("*best*.ckpt"))[0]
 model.load_default_experiment(
     "segmentation",
     output_dir="./predictions",
-    overrides=[
-        "trainer=gpu",
-        f"ckpt_path={best_ckpt}",
-        "data.path=/path/to/new/images"
-    ]
+    overrides=["trainer=gpu", f"ckpt_path={best_ckpt}", "data.path=/path/to/new/images"],
 )
 predictions = model.predict()
 ```
@@ -324,38 +321,22 @@ import numpy as np
 from pathlib import Path
 
 # Prepare your data (CZYX format for 3D, CYX for 2D)
-train_images = [
-    np.random.randn(1, 40, 256, 256) for _ in range(10)  # 10 training images
-]
-train_masks = [
-    (np.random.rand(1, 40, 256, 256) > 0.5).astype(float) for _ in range(10)
-]
+train_images = [np.random.randn(1, 40, 256, 256) for _ in range(10)]  # 10 training images
+train_masks = [(np.random.rand(1, 40, 256, 256) > 0.5).astype(float) for _ in range(10)]
 
-val_images = [
-    np.random.randn(1, 40, 256, 256) for _ in range(3)  # 3 validation images
-]
-val_masks = [
-    (np.random.rand(1, 40, 256, 256) > 0.5).astype(float) for _ in range(3)
-]
+val_images = [np.random.randn(1, 40, 256, 256) for _ in range(3)]  # 3 validation images
+val_masks = [(np.random.rand(1, 40, 256, 256) > 0.5).astype(float) for _ in range(3)]
 
 # Format data for CytoDL
 data = {
-    "train": [
-        {"raw": img, "seg": mask}
-        for img, mask in zip(train_images, train_masks)
-    ],
-    "val": [
-        {"raw": img, "seg": mask}
-        for img, mask in zip(val_images, val_masks)
-    ]
+    "train": [{"raw": img, "seg": mask} for img, mask in zip(train_images, train_masks)],
+    "val": [{"raw": img, "seg": mask} for img, mask in zip(val_images, val_masks)],
 }
 
 # Train model
 model = CytoDLModel()
 model.load_default_experiment(
-    "segmentation_array",
-    output_dir="./output",
-    overrides=["trainer=gpu", "trainer.max_epochs=20"]
+    "segmentation_array", output_dir="./output", overrides=["trainer=gpu", "trainer.max_epochs=20"]
 )
 model.train(data=data)
 ```
@@ -410,11 +391,7 @@ model = CytoDLModel()
 model.load_default_experiment(
     "pcloud/autoencoder",
     output_dir="./pcloud_output",
-    overrides=[
-        "trainer=gpu",
-        "trainer.max_epochs=100",
-        "datamodule.batch_size=8"
-    ]
+    overrides=["trainer=gpu", "trainer.max_epochs=100", "datamodule.batch_size=8"],
 )
 
 # Train point cloud autoencoder
