@@ -101,6 +101,9 @@ class AccuracyValidator:
         device: str = "cuda",
         tolerance: float = 0.01,
     ):
+        if device == "cuda" and not torch.cuda.is_available():
+            logger.warning("CUDA not available, falling back to CPU for accuracy validation")
+            device = "cpu"
         self.baseline_model = baseline_model.to(device).eval()
         self.optimized_model = optimized_model.to(device).eval()
         self.validation_loader = validation_loader

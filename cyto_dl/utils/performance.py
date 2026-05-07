@@ -192,8 +192,22 @@ class CUDAGraphWrapper:
         self.model = model
         self.model.eval()
 
+        # CUDA graphs only run on the device the graph is captured on; if the
+        # caller hands us a CPU sample (or the model isn't on CUDA), capture
+        # would silently fail or crash. Normalize the sample and fail fast.
+        try:
+            device = next(self.model.parameters()).device
+        except StopIteration:
+            device = torch.device("cuda")
+        if device.type != "cuda":
+            raise ValueError(
+                f"CUDAGraphWrapper requires a CUDA model; got device={device}"
+            )
+        if sample_input.device != device:
+            sample_input = sample_input.to(device)
+
         # Create static copies for graph capture
-        self.static_input = torch.zeros_like(sample_input)
+        self.static_input = torch.zeros_like(sample_input, device=device)
         self.static_output = None
 
         # Warmup runs
@@ -293,7 +307,8 @@ def benchmark_model(
         elapsed_time_ms = (end - start) * 1000
 
     avg_time_ms = elapsed_time_ms / num_iterations
-    throughput = 1000 / avg_time_ms  # images per second
+    batch_size = input_shape[0] if input_shape else 1
+    throughput = (batch_size * 1000) / avg_time_ms  # images per second
 
     results = {
         "avg_latency_ms": round(avg_time_ms, 2),

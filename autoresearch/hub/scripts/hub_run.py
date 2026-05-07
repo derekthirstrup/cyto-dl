@@ -68,20 +68,20 @@ STRATEGY_TEMPLATES = {
         "description": "Data configuration exploration",
         "experiments": [
             {
-                "override": "data._aux.patch_shape=[16,32,32] data.batch_size=4",
-                "desc": "small-patch-big-batch",
+                "override": "data._aux.patch_shape=[16,32,32]",
+                "desc": "patch-16x32x32",
             },
             {
-                "override": "data._aux.patch_shape=[16,64,64] data.batch_size=2",
-                "desc": "medium-patch",
+                "override": "data._aux.patch_shape=[16,64,64]",
+                "desc": "patch-16x64x64",
             },
             {
-                "override": "data._aux.patch_shape=[32,64,64] data.batch_size=1",
-                "desc": "large-patch",
+                "override": "data._aux.patch_shape=[32,64,64]",
+                "desc": "patch-32x64x64",
             },
             {
-                "override": "data._aux.patch_shape=[16,128,128] data.batch_size=1",
-                "desc": "wide-patch",
+                "override": "data._aux.patch_shape=[16,128,128]",
+                "desc": "patch-16x128x128",
             },
         ],
     },
@@ -89,16 +89,20 @@ STRATEGY_TEMPLATES = {
         "description": "Optimizer and scheduler exploration",
         "experiments": [
             {
-                "override": "model.optimizer.generator._target_=torch.optim.Adam model.lr_scheduler.generator._target_=torch.optim.lr_scheduler.ExponentialLR model.lr_scheduler.generator.gamma=0.995",
-                "desc": "adam-exponential",
+                "override": "model.optimizer.generator._target_=torch.optim.Adam",
+                "desc": "optimizer-adam",
             },
             {
-                "override": "model.optimizer.generator._target_=torch.optim.AdamW model.optimizer.generator.weight_decay=0.01",
-                "desc": "adamw-decay",
+                "override": "model.optimizer.generator._target_=torch.optim.AdamW",
+                "desc": "optimizer-adamw",
             },
             {
-                "override": "model.lr_scheduler.generator._target_=torch.optim.lr_scheduler.CosineAnnealingLR model.lr_scheduler.generator.T_max=10",
-                "desc": "cosine-annealing",
+                "override": "model.lr_scheduler.generator._target_=torch.optim.lr_scheduler.ExponentialLR",
+                "desc": "scheduler-exponential",
+            },
+            {
+                "override": "model.lr_scheduler.generator._target_=torch.optim.lr_scheduler.CosineAnnealingLR",
+                "desc": "scheduler-cosine",
             },
         ],
     },
@@ -222,7 +226,10 @@ def fan_out_fan_in(strategies, data_path=None, timeout=120):
     print(f"Score: {winner['score']:.6f}")
     print(f"Branch: {winner['branch']}")
 
-    # Log results
+    # Log results — and merge each agent's results.tsv into the canonical
+    # autoresearch history BEFORE deleting the non-winning worktrees, so
+    # the depth loop can learn from the breadth-search experiments.
+    persist_agent_histories(results)
     log_hub_results(session_id, results, winner)
 
     # Cleanup non-winning worktrees (tag them for archival)
@@ -231,6 +238,29 @@ def fan_out_fan_in(strategies, data_path=None, timeout=120):
             cleanup_worktree(Path(result["worktree"]), result["branch"])
 
     return winner, results
+
+
+def persist_agent_histories(results):
+    """Append each agent's worktree-local results.tsv into the canonical file."""
+    canonical = PROJECT_ROOT / "autoresearch" / "results.tsv"
+    canonical.parent.mkdir(parents=True, exist_ok=True)
+
+    canonical_has_header = canonical.exists() and canonical.stat().st_size > 0
+
+    for result in results:
+        agent_log = Path(result["worktree"]) / "autoresearch" / "results.tsv"
+        if not agent_log.exists():
+            continue
+        with open(agent_log) as src:
+            lines = src.readlines()
+        if not lines:
+            continue
+        header, rows = lines[0], lines[1:]
+        with open(canonical, "a") as dst:
+            if not canonical_has_header:
+                dst.write(header)
+                canonical_has_header = True
+            dst.writelines(rows)
 
 
 def log_hub_results(session_id, results, winner):
@@ -301,14 +331,15 @@ def main():
         # Default: run lr_sweep, architecture_sweep, loss_sweep
         args.strategies = ["lr_sweep", "architecture_sweep", "loss_sweep"]
 
-    # Collect experiments from all requested strategies
-    all_experiments = []
-    for strategy_name in args.strategies:
-        template = STRATEGY_TEMPLATES[strategy_name]
-        all_experiments.extend(template["experiments"])
+    # Round-robin across strategies so the agent budget covers all axes
+    # (a flat slice would launch only experiments from the first strategy).
+    from itertools import chain, zip_longest
 
-    # Limit to N agents
-    experiments = all_experiments[: args.agents]
+    per_strategy = [STRATEGY_TEMPLATES[name]["experiments"] for name in args.strategies]
+    interleaved = [
+        exp for exp in chain.from_iterable(zip_longest(*per_strategy)) if exp is not None
+    ]
+    experiments = interleaved[: args.agents]
 
     print(f"=== AgentHub: {len(experiments)} agents, pattern={args.pattern} ===")
     for i, exp in enumerate(experiments):

@@ -17,13 +17,12 @@ This branch **builds on Phase 1**, so you need:
 ### Step 1: Install Base CytoDL (Same as Phase 1)
 
 ```bash
-# Clone repo and checkout TensorRT branch
+# Clone repo on main (or check out a specific PR branch when contributing)
 git clone https://github.com/derekthirstrup/cyto-dl.git
 cd cyto-dl
-git checkout claude/tensorrt-integration-phase2-014viXtwt7gNsiG4xedaMKNA
 
 # Install PyTorch with CUDA
-pip3 install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu130
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 
 # Install base CytoDL
 pip install -e .
@@ -60,7 +59,7 @@ python -c "import torch_tensorrt; print(f'✓ TensorRT: {torch_tensorrt.__versio
 
 Expected output:
 
-```
+```text
 ✓ TensorRT: 2.x.x
 ```
 
@@ -285,7 +284,7 @@ This will:
 
 Expected output:
 
-```
+```text
 ✓ Model trained
 ✓ TensorRT export successful
 ✓ TensorRT is 2.5x faster than PyTorch

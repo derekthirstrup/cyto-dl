@@ -134,7 +134,7 @@ class AutoTuner:
 
         if tune_training:
             logger.info("\n🔍 Tuning training performance...")
-            training_config = self._tune_training()
+            training_config = self._tune_training(results.get("batch_size", 4))
             results.update(training_config)
 
         # Always tune data loading
@@ -188,12 +188,11 @@ class AutoTuner:
 
         return results
 
-    def _tune_training(self) -> Dict[str, Any]:
+    def _tune_training(self, batch_size: int = 4) -> Dict[str, Any]:
         """Tune training settings."""
         results = {}
 
-        # Find optimal gradient accumulation
-        batch_size = results.get("batch_size", 4)
+        # Find optimal gradient accumulation using the inference-tuned batch size
         optimal_accum = self._find_optimal_gradient_accumulation(batch_size)
         results["gradient_accumulation_steps"] = optimal_accum
         logger.info(f"✓ Optimal gradient accumulation: {optimal_accum}")
@@ -462,19 +461,23 @@ class AutoTuner:
             )
             batch_input = batch_input.to(self.device)
 
-            # Measure without checkpointing
+            # Measure without checkpointing — kept for parity with the
+            # original code path; useful as a reference for future
+            # empirical benchmarks.
             with torch.no_grad():
                 _ = self.model(batch_input)
 
-            mem_without = torch.cuda.max_memory_allocated() / 1e9
-
-            # Measure with checkpointing (if supported)
-            # This is a rough estimate
-            mem_with = mem_without * 0.6  # Typical savings
-
-            savings = (mem_without - mem_with) / mem_without if mem_without > 0 else 0.0
             del batch_input
-            return savings
+            torch.cuda.empty_cache()
+
+            # No empirical checkpointing benchmark is implemented yet, so
+            # we no longer return a fabricated 40% win that would steer the
+            # tuner to recommend gradient checkpointing unconditionally.
+            logger.warning(
+                "Skipping automatic gradient-checkpointing recommendation: "
+                "no empirical checkpointing benchmark is implemented."
+            )
+            return 0.0
 
         except Exception as e:
             logger.warning(f"Gradient checkpointing test failed: {e}")

@@ -1,3 +1,4 @@
+import logging
 import shutil
 from pathlib import Path
 
@@ -6,6 +7,8 @@ import pandas as pd
 import pyrootutils
 from botocore import UNSIGNED
 from botocore.client import Config
+
+logger = logging.getLogger(__name__)
 
 EXAMPLE_DATA_DIR = None
 EXAMPLE_DATA_FILENAME = "s3_paths.csv"
@@ -69,5 +72,14 @@ def download_test_data(limit=-1):
 
 
 def delete_test_data():
+    if EXAMPLE_DATA_DIR is None:
+        setup_paths()
+
     for subdir in ("segmentation", "labelfree", "s3_data"):
-        shutil.rmtree(EXAMPLE_DATA_DIR / subdir, ignore_errors=True)
+        path = EXAMPLE_DATA_DIR / subdir
+        if not path.exists():
+            continue
+        try:
+            shutil.rmtree(path)
+        except OSError as e:
+            logger.warning("Failed to remove %s: %s", path, e)

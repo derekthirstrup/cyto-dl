@@ -135,33 +135,51 @@ def run_training(cmd, timeout_minutes=120):
         return -2, "", str(e)
 
 
-def find_output_dir():
-    """Find the most recent training output directory."""
+def find_output_dir(run_name=None):
+    """Find the training output directory for ``run_name`` if given, else the most recent one.
+
+    Looking up by run_name avoids returning a stale run when other training jobs
+    are running concurrently (or when the prior run touched its directory after
+    the current one started).
+    """
     logs_dir = PROJECT_ROOT / "logs"
     if not logs_dir.exists():
         return None
 
-    # Look for the most recent run directory
     run_dirs = []
     for task_dir in logs_dir.iterdir():
-        if task_dir.is_dir():
-            runs_dir = task_dir / "runs"
-            if runs_dir.exists():
-                for exp_dir in runs_dir.iterdir():
-                    if exp_dir.is_dir():
-                        for run_dir in exp_dir.iterdir():
-                            if run_dir.is_dir():
-                                run_dirs.append(run_dir)
+        if not task_dir.is_dir():
+            continue
 
-            # Also check multiruns
-            multiruns_dir = task_dir / "multiruns"
-            if multiruns_dir.exists():
-                for run_dir in multiruns_dir.iterdir():
+        runs_dir = task_dir / "runs"
+        if runs_dir.exists():
+            for exp_dir in runs_dir.iterdir():
+                if not exp_dir.is_dir():
+                    continue
+                for run_dir in exp_dir.iterdir():
                     if run_dir.is_dir():
                         run_dirs.append(run_dir)
 
+        multiruns_dir = task_dir / "multiruns"
+        if multiruns_dir.exists():
+            # multiruns/<date>/<exp>/<run>; descend two levels deeper than runs/
+            for date_dir in multiruns_dir.iterdir():
+                if not date_dir.is_dir():
+                    continue
+                for exp_dir in date_dir.iterdir():
+                    if not exp_dir.is_dir():
+                        continue
+                    for run_dir in exp_dir.iterdir():
+                        if run_dir.is_dir():
+                            run_dirs.append(run_dir)
+
     if not run_dirs:
         return None
+
+    if run_name:
+        matches = [d for d in run_dirs if d.name == run_name or run_name in d.parts]
+        if matches:
+            return max(matches, key=lambda d: d.stat().st_mtime)
 
     return max(run_dirs, key=lambda d: d.stat().st_mtime)
 
@@ -234,8 +252,8 @@ def main():
         log_result(iteration, score, status, args.description, args.overrides, tier, details)
         sys.exit(1)
 
-    # Find output directory and evaluate
-    output_dir = find_output_dir()
+    # Find output directory and evaluate (bind to this invocation's run_name).
+    output_dir = find_output_dir(run_name=run_name)
     if output_dir is None:
         print("Could not find training output directory")
         log_result(
@@ -253,6 +271,7 @@ def main():
 
     # Run evaluator
     evaluator_path = PROJECT_ROOT / "autoresearch" / "evaluators" / "labelfree_evaluator.py"
+    eval_returncode = None
     try:
         eval_result = subprocess.run(  # nosec B603
             [sys.executable, str(evaluator_path), str(output_dir), "--verbose"],
@@ -260,22 +279,30 @@ def main():
             text=True,
             timeout=60,
         )
-        score = float(eval_result.stdout.strip())
-        status = "KEEP"
-        details_str = eval_result.stderr  # verbose output goes to stderr
+        eval_returncode = eval_result.returncode
+        if eval_result.returncode != 0:
+            score = 0.0
+            status = "CRASH"
+            details_str = eval_result.stderr or eval_result.stdout
+        else:
+            score = float(eval_result.stdout.strip())
+            status = "OK"
+            details_str = eval_result.stderr  # verbose output goes to stderr
     except Exception as e:
         score = 0.0
         status = "CRASH"
         details_str = str(e)
 
-    # Check if this is an improvement
-    best_score = get_best_score()
-    if score > best_score:
-        status = "KEEP"
-        print(f"\nNEW BEST: {score:.6f} (previous best: {best_score:.6f})")
-    else:
-        status = "DISCARD"
-        print(f"\nNo improvement: {score:.6f} (best: {best_score:.6f})")
+    # Decide KEEP vs DISCARD only when the evaluator actually succeeded;
+    # never overwrite a CRASH with one of those.
+    if status != "CRASH":
+        best_score = get_best_score()
+        if score > best_score:
+            status = "KEEP"
+            print(f"\nNEW BEST: {score:.6f} (previous best: {best_score:.6f})")
+        else:
+            status = "DISCARD"
+            print(f"\nNo improvement: {score:.6f} (best: {best_score:.6f})")
 
     log_result(
         iteration,
@@ -284,7 +311,11 @@ def main():
         args.description,
         args.overrides,
         tier,
-        {"output_dir": str(output_dir)},
+        {
+            "output_dir": str(output_dir),
+            "eval_returncode": eval_returncode,
+            "eval_details": details_str[-2000:] if details_str else "",
+        },
     )
 
     print(f"\nScore: {score:.6f} | Status: {status}")

@@ -118,8 +118,9 @@ class FlashAttentionBlock(nn.Module):
         # Compute Q, K, V
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
 
-        if self.use_flash and self.training:
-            # Use Flash Attention (training only, faster)
+        if self.use_flash:
+            # Use Flash Attention in both train and eval; dropout below is
+            # already gated on self.training so eval runs without dropout.
             qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, B, num_heads, N, head_dim)
             q, k, v = qkv[0], qkv[1], qkv[2]
 

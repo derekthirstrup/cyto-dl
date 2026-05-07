@@ -63,7 +63,14 @@ class BasicModel(BaseModel):
             raise ValueError("`network` and `pretrained_weights` can't both be None.")
 
         if pretrained_weights is not None:
-            pretrained_weights = torch.load(pretrained_weights, weights_only=False)  # nosec B614
+            # When `network` is provided, the checkpoint is consumed via
+            # load_state_dict, so a tensor-only load is sufficient and safer.
+            # Without `network`, the checkpoint is the serialized module
+            # itself, which requires the full pickle path.
+            if network is not None:
+                pretrained_weights = torch.load(pretrained_weights, weights_only=True)
+            else:
+                pretrained_weights = torch.load(pretrained_weights, weights_only=False)  # nosec B614
 
         if network is not None:
             self.network = network

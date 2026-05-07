@@ -62,20 +62,27 @@ class ImageQualityMetrics(Callback):
 
     def _log_epoch_averages(self, pl_module, stage):
         """Log epoch-averaged metrics."""
+        cross_head_avgs = {"ssim": [], "psnr": [], "pearson": []}
         for key_prefix, metrics in self._epoch_metrics.items():
             if not key_prefix.startswith(stage):
                 continue
             for metric_name, values in metrics.items():
-                if values:
-                    avg = sum(values) / len(values)
-                    head_name = key_prefix.split("/", 1)[1]
-                    pl_module.log(
-                        f"{stage}/{metric_name}_epoch/{head_name}",
-                        avg,
-                        prog_bar=(metric_name == "ssim"),
-                    )
-                    # Also log without head name for single-task convenience
-                    pl_module.log(f"{stage}/{metric_name}_epoch", avg)
+                if not values:
+                    continue
+                avg = sum(values) / len(values)
+                head_name = key_prefix.split("/", 1)[1]
+                pl_module.log(
+                    f"{stage}/{metric_name}_epoch/{head_name}",
+                    avg,
+                    prog_bar=(metric_name == "ssim"),
+                )
+                cross_head_avgs.setdefault(metric_name, []).append(avg)
+
+        # Cross-head average — useful for single-task convenience and avoids
+        # the per-head value being overwritten when multiple heads contribute.
+        for metric_name, avgs in cross_head_avgs.items():
+            if avgs:
+                pl_module.log(f"{stage}/{metric_name}_epoch", sum(avgs) / len(avgs))
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         if "train" in self.stages:

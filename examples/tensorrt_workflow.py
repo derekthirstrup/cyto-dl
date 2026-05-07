@@ -213,7 +213,7 @@ def main():
 
         # Step 2: Export to TensorRT
         result = export_to_tensorrt(ckpt_path)
-        if result[0] is None:
+        if result is None or result[0] is None:
             print("\n✗ TensorRT export failed! Exiting...")
             print("You can still use the PyTorch model with Phase 1 optimizations.")
             return
