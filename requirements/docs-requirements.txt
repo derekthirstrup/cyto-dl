@@ -98,9 +98,9 @@ alembic==1.18.4 \
     # via
     #   mlflow
     #   optuna
-anndata==0.12.13 \
-    --hash=sha256:8fbe923c64dc75da50e472de9dcd87c0aa034d35c412ac4ed61f29c5c71074d5 \
-    --hash=sha256:a66b00590aa47c5b31aee0ac20c7ba63b55b6f868d5b70e7ecb32a97fbf5f058
+anndata==0.12.12 \
+    --hash=sha256:e559df09059672c3d3468f33c7705180237d65d55057d22208980966ddc971eb \
+    --hash=sha256:eafa19259b2e8ff954965d5973a25fcf20f90ab71d2ddb7dd26dc5ff6d0f48be
     # via cyto-dl
 annotated-doc==0.0.4 \
     --hash=sha256:571ac1dc6991c450b25a9c2d84a3705e2ae7a53467b5d111c24fa8baabbed320 \
@@ -722,9 +722,9 @@ gnureadline==8.3.3 ; sys_platform == 'darwin' \
     --hash=sha256:da1335bdc70fc99f45578d7cdeb89bd5a16e0d26785bbe5bcc1dc1acdd7a7734 \
     --hash=sha256:dfd893dac7b63f71dc41dce5d31c05388e55cb7bc6b58535e2a0eb29a5ad0352
     # via cmd2
-google-auth==2.51.0 \
-    --hash=sha256:230bd016f50d4c0b82fda2f50db5d372bc02cfd9bdab4ce5a9ce0d8c0f06bba5 \
-    --hash=sha256:a8191008d6aaace30f0823daa3f0073c734f8b4da8b8de074b5151aa9aa732c5
+google-auth==2.50.0 \
+    --hash=sha256:04382175e28b94f49694977f0a792688b59a668def1499e9d8de996dc9ce5b15 \
+    --hash=sha256:f35eafb191195328e8ce10a7883970877e7aeb49c2bfaa54aa0e394316d353d0
     # via databricks-sdk
 google-crc32c==1.8.0 \
     --hash=sha256:3b9776774b24ba76831609ffbabce8cdf6fa2bd5e9df37b594221c7e333a81fa \
@@ -1096,9 +1096,9 @@ mako==1.3.12 \
     --hash=sha256:8f61569480282dbf557145ce441e4ba888be453c30989f879f0d652e39f53ea9 \
     --hash=sha256:9f778e93289bd410bb35daadeb4fc66d95a746f0b75777b942088b7fd7af550a
     # via alembic
-markdown-it-py==4.2.0 \
-    --hash=sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49 \
-    --hash=sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a
+markdown-it-py==4.1.0 \
+    --hash=sha256:760e3f87b2787c044c5138a5ba107b7c2be26c03b13cc7f8fe42756b65b1df6c \
+    --hash=sha256:d4939a62a2dd0cd9cb80a191a711ba1d39bac8ed5ef9e9966895b0171c01c46d
     # via rich
 markupsafe==3.0.3 \
     --hash=sha256:0eb9ff8191e8498cca014656ae6b8d61f39da5f95b488805da4bb029cccbfbaf \
@@ -2529,9 +2529,9 @@ universal-pathlib==0.3.10 \
     --hash=sha256:4487cbc90730a48cfb64f811d99e14b6faed6d738420cd5f93f59f48e6930bfb \
     --hash=sha256:dfaf2fb35683d2eb1287a3ed7b215e4d6016aa6eaf339c607023d22f90821c66
     # via cyto-dl
-urllib3==2.7.0 \
-    --hash=sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c \
-    --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897
+urllib3==2.6.3 \
+    --hash=sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed \
+    --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4
     # via
     #   botocore
     #   distributed

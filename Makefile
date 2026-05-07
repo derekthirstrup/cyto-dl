@@ -65,31 +65,29 @@ test: ## Run not slow tests
 test-full: ## Run all tests
 	pytest
 
-UV_INDEX_ARGS = --index https://download.pytorch.org/whl/cu130 --index-strategy unsafe-best-match
-
 # `uv lock` should respect versions in an existing uv.lock file if they do not conflict
-# with the pyproject.toml.
+# with the pyproject.toml
 uv.lock: pyproject.toml
-	uv lock $(UV_INDEX_ARGS)
+	uv lock
 
-# --no-emit-project is required here because the cyto-dl source is a directory.
+# --no-emit-project is required here because the requirements.txt files have hashes
+# and the cyto-dl source is a directory, which pip cannot hash.
 requirements/requirements.txt: uv.lock
 	mkdir -p requirements/
-	uv export $(UV_INDEX_ARGS) --no-emit-project --no-hashes -o $@
+	uv export --no-emit-project -o $@
 
 requirements/all-requirements.txt: uv.lock
 	mkdir -p requirements/
-	uv export $(UV_INDEX_ARGS) --no-emit-project --no-hashes --all-extras -o $@
+	uv export --no-emit-project --all-extras -o $@
 
 requirements/%-requirements.txt: uv.lock
 	mkdir -p requirements/
-	uv export $(UV_INDEX_ARGS) --no-emit-project --no-hashes --extra $(subst -requirements.txt,,$(notdir $@)) -o $@
+	uv export --no-emit-project --extra $(subst -requirements.txt,,$(notdir $@)) -o $@
 
 sync-reqs-files: requirements/requirements.txt \
                  requirements/torchserve-requirements.txt \
                  requirements/equiv-requirements.txt \
                  requirements/spharm-requirements.txt \
-                 requirements/tensorrt-requirements.txt \
                  requirements/all-requirements.txt \
                  requirements/test-requirements.txt \
                  requirements/docs-requirements.txt
