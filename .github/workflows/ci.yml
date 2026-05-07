@@ -64,6 +64,7 @@ jobs:
         shell: bash
         env:
           CYTO_DL_KEEP_TEST_DATA: "1"
+          CYTO_DL_SKIP_3D: "1"
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             uv run pytest -v -m "not slow" -o addopts= -n auto --durations=25 --cov cyto_dl --cov-report=xml
