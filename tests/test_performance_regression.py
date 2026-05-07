@@ -112,7 +112,7 @@ def benchmark_model(model, sample_input, device="cuda", num_iterations=20):
     )
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_baseline_performance_2d(conv2d_model, sample_input_2d):
     """Test that baseline 2D performance meets expectations."""
     if not torch.cuda.is_available():
@@ -133,7 +133,7 @@ def test_baseline_performance_2d(conv2d_model, sample_input_2d):
     )
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_baseline_performance_3d(conv3d_model, sample_input_3d):
     """Test that baseline 3D performance meets expectations."""
     if not torch.cuda.is_available():
@@ -154,7 +154,7 @@ def test_baseline_performance_3d(conv3d_model, sample_input_3d):
     )
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_phase1_speedup(conv2d_model, sample_input_2d):
     """Test that Phase 1 optimizations provide expected speedup."""
     if not torch.cuda.is_available():
@@ -182,7 +182,7 @@ def test_phase1_speedup(conv2d_model, sample_input_2d):
     assert speedup >= 1.2, f"Phase 1 speedup {speedup:.2f}x is less than expected 1.2x"
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="Requires CUDA")
 def test_quantization_size_reduction(conv2d_model):
     """Test that quantization reduces model size."""
@@ -207,7 +207,7 @@ def test_quantization_size_reduction(conv2d_model):
     ), f"Size reduction {size_reduction:.2f}x is less than expected 2.0x"
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_memory_leak_detection(conv2d_model, sample_input_2d):
     """Test that training loop doesn't leak memory."""
     if not torch.cuda.is_available():
@@ -242,7 +242,7 @@ def test_memory_leak_detection(conv2d_model, sample_input_2d):
     assert len(leaks) == 0, f"Memory leaks detected: {leaks}"
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_accuracy_after_optimization(conv2d_model, sample_input_2d):
     """Test that optimizations maintain accuracy."""
     try:
@@ -270,7 +270,7 @@ def test_accuracy_after_optimization(conv2d_model, sample_input_2d):
     ), f"Max output difference {comparison['max_diff']} exceeds threshold"
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_benchmark_suite():
     """Test BenchmarkSuite functionality."""
     from cyto_dl.utils.benchmark import BenchmarkSuite
@@ -313,7 +313,7 @@ def load_baselines(input_path="performance_baselines.json"):
         return json.load(f)
 
 
-@pytest.mark.performance
+@pytest.mark.slow
 def test_no_performance_regression():
     """Test that recent changes haven't degraded performance."""
     # This test would compare against saved baseline results

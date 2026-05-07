@@ -1,4 +1,5 @@
 import copy
+import os
 from typing import Generator
 
 import pyrootutils
@@ -121,5 +122,24 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    # Set CYTO_DL_KEEP_TEST_DATA=1 in CI to preserve the cached download
+    # between runs; skipped under pytest-xdist worker shutdown to avoid
+    # racing siblings that still hold references.
+    if os.environ.get("CYTO_DL_KEEP_TEST_DATA"):
+        return exitstatus
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        return exitstatus
     delete_test_data()
     return exitstatus
+
+
+def pytest_collection_modifyitems(config, items):
+    # CYTO_DL_SKIP_3D=1 skips spatial_dims=3 parametrizations on PR runs.
+    # 3D models build slower on CPU and roughly double the matrix; the
+    # full 2D+3D matrix runs on the slow-tests workflow on push to main.
+    if not os.environ.get("CYTO_DL_SKIP_3D"):
+        return
+    skip_3d = pytest.mark.skip(reason="3D tests skipped on PR runs (CYTO_DL_SKIP_3D=1)")
+    for item in items:
+        if item.name.endswith("-3]") or "-3-" in item.name:
+            item.add_marker(skip_3d)
