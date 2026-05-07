@@ -90,9 +90,9 @@ alembic==1.18.4 \
     # via
     #   mlflow
     #   optuna
-anndata==0.12.12 \
-    --hash=sha256:e559df09059672c3d3468f33c7705180237d65d55057d22208980966ddc971eb \
-    --hash=sha256:eafa19259b2e8ff954965d5973a25fcf20f90ab71d2ddb7dd26dc5ff6d0f48be
+anndata==0.12.13 \
+    --hash=sha256:8fbe923c64dc75da50e472de9dcd87c0aa034d35c412ac4ed61f29c5c71074d5 \
+    --hash=sha256:a66b00590aa47c5b31aee0ac20c7ba63b55b6f868d5b70e7ecb32a97fbf5f058
     # via cyto-dl
 annotated-doc==0.0.4 \
     --hash=sha256:571ac1dc6991c450b25a9c2d84a3705e2ae7a53467b5d111c24fa8baabbed320 \
@@ -707,9 +707,9 @@ gnureadline==8.3.3 ; sys_platform == 'darwin' \
     --hash=sha256:da1335bdc70fc99f45578d7cdeb89bd5a16e0d26785bbe5bcc1dc1acdd7a7734 \
     --hash=sha256:dfd893dac7b63f71dc41dce5d31c05388e55cb7bc6b58535e2a0eb29a5ad0352
     # via cmd2
-google-auth==2.50.0 \
-    --hash=sha256:04382175e28b94f49694977f0a792688b59a668def1499e9d8de996dc9ce5b15 \
-    --hash=sha256:f35eafb191195328e8ce10a7883970877e7aeb49c2bfaa54aa0e394316d353d0
+google-auth==2.51.0 \
+    --hash=sha256:230bd016f50d4c0b82fda2f50db5d372bc02cfd9bdab4ce5a9ce0d8c0f06bba5 \
+    --hash=sha256:a8191008d6aaace30f0823daa3f0073c734f8b4da8b8de074b5151aa9aa732c5
     # via databricks-sdk
 google-crc32c==1.8.0 \
     --hash=sha256:3b9776774b24ba76831609ffbabce8cdf6fa2bd5e9df37b594221c7e333a81fa \
@@ -740,21 +740,16 @@ graphql-relay==3.2.0 \
     # via graphene
 greenlet==3.5.0 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64' \
     --hash=sha256:0ecec963079cd58cbd14723582384f11f166fd58883c15dcbfb342e0bc9b5846 \
-    --hash=sha256:1aa4ce8debcd4ea7fb2e150f3036588c41493d1d52c43538924ae1819003f4ce \
-    --hash=sha256:1bae92a1dd94c5f9d9493c3a212dd874c202442047cf96446412c862feca83a2 \
     --hash=sha256:2094acd54b272cb6eae8c03dd87b3fa1820a4cef18d6889c378d503500a1dc13 \
     --hash=sha256:3a717fbc46d8a354fa675f7c1e813485b6ba3885f9bef0cd56e5ba27d758ff5b \
     --hash=sha256:3bc59be3945ae9750b9e7d45067d01ae3fe90ea5f9ade99239dabdd6e28a5033 \
     --hash=sha256:47422135b1d308c14b2c6e758beedb1acd33bb91679f5670edf77bf46244722b \
-    --hash=sha256:4964101b8585c144cbda5532b1aa644255126c08a265dae90c16e7a0e63aaa9d \
     --hash=sha256:4a448128607be0de65342dc9b31be7f948ef4cc0bc8832069350abefd310a8f2 \
     --hash=sha256:55fa7ea52771be44af0de27d8b80c02cd18c2c3cddde6c847ecebdf72418b6a1 \
     --hash=sha256:57a43c6079a89713522bc4bcb9f75070ecf5d3dbad7792bfe42239362cbf2a16 \
     --hash=sha256:5a5ed18de6a0f6cc7087f1563f6bd93fc7df1c19165ca01e9bde5a5dc281d106 \
     --hash=sha256:5e05ba267789ea87b5a155cf0e810b1ab88bf18e9e8740813945ceb8ee4350ba \
     --hash=sha256:680bd0e7ad5e8daa8a4aa89f68fd6adc834b8a8036dc256533f7e08f4a4b01f7 \
-    --hash=sha256:7022615368890680e67b9965d33f5773aade330d5343bbe25560135aaa849eae \
-    --hash=sha256:728a73687e39ae9ca34e4694cbf2f049d3fbc7174639468d0f67200a97d8f9e2 \
     --hash=sha256:728d9667d8f2f586644b748dbd9bb67e50d6a9381767d1357714ea6825bb3bf5 \
     --hash=sha256:762612baf1161ccb8437c0161c668a688223cba28e1bf038f4eb47b13e39ccdf \
     --hash=sha256:7fc391b1566f2907d17aaebe78f8855dc45675159a775fcf9e61f8ee0078e87f \
@@ -762,7 +757,6 @@ greenlet==3.5.0 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or 
     --hash=sha256:a10a732421ab4fec934783ce3e54763470d0181db6e3468f9103a275c3ed1853 \
     --hash=sha256:a96fcee45e03fe30a62669fd16ab5c9d3c172660d3085605cb1e2d1280d3c988 \
     --hash=sha256:a97e4821aa710603f94de0da25f25096454d78ffdace5dc77f3a006bc01abba3 \
-    --hash=sha256:bf2d8a80bec89ab46221ae45c5373d5ba0bd36c19aa8508e85c6cd7e5106cd37 \
     --hash=sha256:d419647372241bc68e957bf38d5c1f98852155e4146bd1e4121adea81f4f01e4 \
     --hash=sha256:d60097128cb0a1cab9ea541186ea13cd7b847b8449a7787c2e2350da0cb82d86 \
     --hash=sha256:ddb36c7d6c9c0a65f18c7258634e0c416c6ab59caac8c987b96f80c2ebda0112 \
@@ -1085,9 +1079,9 @@ mako==1.3.12 \
     --hash=sha256:8f61569480282dbf557145ce441e4ba888be453c30989f879f0d652e39f53ea9 \
     --hash=sha256:9f778e93289bd410bb35daadeb4fc66d95a746f0b75777b942088b7fd7af550a
     # via alembic
-markdown-it-py==4.1.0 \
-    --hash=sha256:760e3f87b2787c044c5138a5ba107b7c2be26c03b13cc7f8fe42756b65b1df6c \
-    --hash=sha256:d4939a62a2dd0cd9cb80a191a711ba1d39bac8ed5ef9e9966895b0171c01c46d
+markdown-it-py==4.2.0 \
+    --hash=sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49 \
+    --hash=sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a
     # via rich
 markupsafe==3.0.3 \
     --hash=sha256:0eb9ff8191e8498cca014656ae6b8d61f39da5f95b488805da4bb029cccbfbaf \
