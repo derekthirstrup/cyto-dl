@@ -12,7 +12,7 @@ concurrency:
 jobs:
   slow-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +30,14 @@ jobs:
           uv pip install --no-deps -r requirements/test-requirements.txt
           uv pip install --no-deps .
 
-      - name: Run full pytest (including slow)
+      - name: Cache S3 test data
+        uses: actions/cache@v4
+        with:
+          path: data/example_experiment_data/s3_data
+          key: cyto-dl-test-data-v1-${{ hashFiles('cyto_dl/utils/download_test_data.py') }}
+
+      - name: Run full pytest (including slow, 2D + 3D)
         shell: bash
-        run: uv run pytest -v -o addopts= --durations=50
+        env:
+          CYTO_DL_KEEP_TEST_DATA: "1"
+        run: uv run pytest -v -o addopts= -n auto --durations=50
