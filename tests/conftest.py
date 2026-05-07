@@ -134,12 +134,18 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 def pytest_collection_modifyitems(config, items):
-    # CYTO_DL_SKIP_3D=1 skips spatial_dims=3 parametrizations on PR runs.
-    # 3D models build slower on CPU and roughly double the matrix; the
-    # full 2D+3D matrix runs on the slow-tests workflow on push to main.
-    if not os.environ.get("CYTO_DL_SKIP_3D"):
+    # CYTO_DL_SKIP_3D=1 or CYTO_DL_SKIP_2D=1 skips the corresponding
+    # spatial_dims parametrizations. PR runs set CYTO_DL_SKIP_3D=1 to keep
+    # CI fast; the slow-tests workflow on push-to-main splits the matrix
+    # across two parallel jobs (one with each skip flag) to halve wall time.
+    skip_3d = os.environ.get("CYTO_DL_SKIP_3D")
+    skip_2d = os.environ.get("CYTO_DL_SKIP_2D")
+    if not (skip_3d or skip_2d):
         return
-    skip_3d = pytest.mark.skip(reason="3D tests skipped on PR runs (CYTO_DL_SKIP_3D=1)")
+    skip_3d_marker = pytest.mark.skip(reason="3D tests skipped (CYTO_DL_SKIP_3D=1)")
+    skip_2d_marker = pytest.mark.skip(reason="2D tests skipped (CYTO_DL_SKIP_2D=1)")
     for item in items:
-        if item.name.endswith("-3]") or "-3-" in item.name:
-            item.add_marker(skip_3d)
+        if skip_3d and (item.name.endswith("-3]") or "-3-" in item.name):
+            item.add_marker(skip_3d_marker)
+        if skip_2d and (item.name.endswith("-2]") or "-2-" in item.name):
+            item.add_marker(skip_2d_marker)
