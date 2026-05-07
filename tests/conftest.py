@@ -1,3 +1,4 @@
+import copy
 import os
 from typing import Generator
 
@@ -88,7 +89,7 @@ def cfg_eval_global(request) -> DictConfig:
 # each test generates its own temporary logging path
 @pytest.fixture(scope="function")
 def cfg_train(cfg_train_global, tmp_path) -> Generator[DictConfig, None, None]:
-    cfg = cfg_train_global.copy()
+    cfg = copy.deepcopy(cfg_train_global)
 
     with open_dict(cfg):
         cfg.paths.output_dir = str(tmp_path)
@@ -104,7 +105,7 @@ def cfg_train(cfg_train_global, tmp_path) -> Generator[DictConfig, None, None]:
 # each test generates its own temporary logging path
 @pytest.fixture(scope="function")
 def cfg_eval(cfg_eval_global, tmp_path) -> Generator[DictConfig, None, None]:
-    cfg = cfg_eval_global.copy()
+    cfg = copy.deepcopy(cfg_eval_global)
 
     with open_dict(cfg):
         cfg.paths.output_dir = str(tmp_path)

@@ -50,6 +50,19 @@ def train(cfg: DictConfig, data=None) -> Tuple[dict, dict]:
     if cfg.get("seed"):
         lightning.seed_everything(cfg.seed, workers=True)
 
+    # Initialize GPU performance optimizations
+    if cfg.get("performance") and torch.cuda.is_available():
+        from cyto_dl.utils.performance import setup_gpu_optimizations
+
+        perf_cfg = cfg.performance
+        applied_settings = setup_gpu_optimizations(
+            enable_cudnn_benchmark=perf_cfg.get("enable_cudnn_benchmark", True),
+            enable_tf32=perf_cfg.get("enable_tf32", True),
+            matmul_precision=perf_cfg.get("matmul_precision", "high"),
+            channels_last=perf_cfg.get("channels_last", True),
+        )
+        log.info(f"Applied GPU optimizations: {applied_settings}")
+
     # resolve config to avoid unresolvable interpolations in the stored config
 
     OmegaConf.resolve(cfg)

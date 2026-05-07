@@ -1,0 +1,22 @@
+defaults:
+  - default.yaml
+
+# Optimized GPU training configuration for modern NVIDIA GPUs
+# Best for: RTX 4090, RTX 5080, A100, H100
+accelerator: gpu
+devices: 1
+
+# BF16 mixed precision - optimal for Ampere+ architecture
+# Provides better numerical stability than FP16 with same performance
+precision: bf16-mixed
+
+# Gradient clipping helps with training stability
+# Especially useful for ViT and transformer models
+gradient_clip_val: 1.0
+gradient_clip_algorithm: norm
+
+# Enable anomaly detection only during debugging (slow)
+detect_anomaly: False
+
+# Deterministic mode (slower but reproducible)
+deterministic: False

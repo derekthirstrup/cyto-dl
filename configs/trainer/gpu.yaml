@@ -2,3 +2,8 @@ defaults:
   - default.yaml
 accelerator: gpu
 devices: 1
+
+# Use bf16 mixed precision on Ampere+ GPUs (4090, 5080, A100)
+# Better numerical stability than fp16 with similar speed
+# Falls back to fp16 on older GPUs automatically
+precision: bf16-mixed

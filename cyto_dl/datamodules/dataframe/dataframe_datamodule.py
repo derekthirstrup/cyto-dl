@@ -167,6 +167,9 @@ class DataframeDatamodule(LightningDataModule):
         kwargs["shuffle"] = kwargs.get("shuffle", True) and split == "train"
         kwargs["batch_size"] = self.batch_size
 
+        if kwargs.get("num_workers", 0) == 0:
+            kwargs.pop("persistent_workers", None)
+
         subset = self.get_dataset(split)
         return DataLoader(dataset=subset, **kwargs)
 

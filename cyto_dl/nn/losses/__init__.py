@@ -4,6 +4,7 @@ from .continuous_bernoulli import CBLogLoss
 from .cosine_loss import CosineLoss
 from .gan_loss import GANLoss, Pix2PixHD
 from .gaussian_nll_loss import GaussianNLLLoss
+from .metric_loss import MetricTrackingLoss
 from .threshold_loss import ThresholdLoss
 from .vic_reg import VICRegLoss
 from .weibull import WeibullLogLoss

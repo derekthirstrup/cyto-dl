@@ -1,0 +1,21 @@
+# Default Performance Settings (Conservative)
+# Safe settings that work across all platforms
+
+enable_cudnn_benchmark: False
+enable_tf32: False
+matmul_precision: highest
+channels_last: False
+
+compile:
+  enabled: False
+  mode: default
+  fullgraph: False
+  dynamic: False
+
+cuda_graphs:
+  enabled: False
+  warmup_iterations: 3
+
+gradient_checkpointing:
+  enabled: False
+  checkpoint_segments: null

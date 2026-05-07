@@ -87,8 +87,15 @@ pcloud = [
     "Ninja>=1.11.1",
     "torchio>=0.19.1",
 ]
+tensorrt = [
+    "torch-tensorrt>=2.11.0",
+    "nvidia-tensorrt>=99.0.0",
+]
+gui = [
+    "streamlit>=1.57.0",
+]
 all = [
-    "cyto-dl[equiv,spharm,s3,torchserve,pcloud]",
+    "cyto-dl[equiv,spharm,s3,torchserve,pcloud,tensorrt,gui]",
 ]
 test = [
     "cyto-dl",
