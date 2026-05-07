@@ -290,6 +290,7 @@ def main():
         output_path=args.output,
         enable_dynamic_shapes=args.dynamic_shapes,
         device=args.device,
+        calibrator=calibrator,
     )
 
     if trt_model is None:

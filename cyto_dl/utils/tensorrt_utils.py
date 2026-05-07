@@ -58,6 +58,7 @@ def export_to_tensorrt(
     output_path: Optional[str] = None,
     enable_dynamic_shapes: bool = False,
     device: str = "cuda",
+    calibrator=None,
 ) -> Union[nn.Module, None]:
     """Export PyTorch model to TensorRT for optimized inference.
 
@@ -86,6 +87,9 @@ def export_to_tensorrt(
         Enable dynamic input shapes (slower but flexible)
     device : str
         Device to use (default: "cuda")
+    calibrator : optional
+        INT8 calibrator from ``create_int8_calibrator``. Required for
+        meaningful INT8 quantization; ignored for FP32/FP16.
 
     Returns
     -------
@@ -166,15 +170,22 @@ def export_to_tensorrt(
         ]
 
     # Compile with TensorRT
-    try:
-        trt_model = torch_tensorrt.compile(
-            traced_model,
-            inputs=inputs,
-            enabled_precisions=enabled_precisions,
-            workspace_size=workspace_size * (1 << 30),  # Convert GB to bytes
-            truncate_long_and_double=True,
-            device=torch.device(device),
+    compile_kwargs = dict(
+        inputs=inputs,
+        enabled_precisions=enabled_precisions,
+        workspace_size=workspace_size * (1 << 30),  # Convert GB to bytes
+        truncate_long_and_double=True,
+        device=torch.device(device),
+    )
+    if precision == "int8" and calibrator is not None:
+        compile_kwargs["calibrator"] = calibrator
+    elif precision == "int8":
+        logger.warning(
+            "INT8 precision requested but no calibrator provided; "
+            "TensorRT will run uncalibrated, which usually degrades accuracy"
         )
+    try:
+        trt_model = torch_tensorrt.compile(traced_model, **compile_kwargs)
 
         logger.info("✓ TensorRT compilation successful")
 

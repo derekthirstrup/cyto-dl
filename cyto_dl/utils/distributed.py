@@ -422,10 +422,15 @@ class DistributedMetrics:
         """
         result = {}
 
+        device = (
+            torch.device("cuda", torch.cuda.current_device())
+            if torch.cuda.is_available()
+            else torch.device("cpu")
+        )
         for name in self.metrics:
             # Create tensors for reduction
-            value_tensor = torch.tensor(self.metrics[name], device=torch.cuda.current_device())
-            count_tensor = torch.tensor(self.counts[name], device=torch.cuda.current_device())
+            value_tensor = torch.tensor(self.metrics[name], device=device)
+            count_tensor = torch.tensor(self.counts[name], device=device)
 
             # Reduce across processes
             if is_dist_available_and_initialized():
@@ -485,7 +490,9 @@ def setup_distributed(
     if world_size is None:
         world_size = int(os.environ.get("WORLD_SIZE", 1))
     if init_method is None:
-        init_method = os.environ.get("MASTER_ADDR", "tcp://localhost:12355")
+        master_addr = os.environ.get("MASTER_ADDR", "127.0.0.1")
+        master_port = os.environ.get("MASTER_PORT", "12355")
+        init_method = f"tcp://{master_addr}:{master_port}"
 
     try:
         dist.init_process_group(

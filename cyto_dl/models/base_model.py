@@ -257,10 +257,10 @@ class BaseModel(LightningModule, metaclass=BaseModelMeta):
 
             if not sys.platform.startswith("win"):
                 try:
-                    # Compile the model forward pass
-                    # Note: This is applied to self, which compiles the entire model
-                    # For more fine-grained control, subclasses can override
-                    self = torch.compile(self, mode=self._compile_mode)
+                    # Bind the compiled forward to this instance so the
+                    # trainer actually calls the compiled function.
+                    # Rebinding `self` would only affect the local scope.
+                    self.forward = torch.compile(self.forward, mode=self._compile_mode)
                     logger.info(f"✓ Applied torch.compile with mode='{self._compile_mode}'")
                 except Exception as e:
                     logger.warning(f"torch.compile failed: {e}, continuing without compilation")

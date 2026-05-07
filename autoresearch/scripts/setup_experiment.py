@@ -50,7 +50,7 @@ def validate_environment():
         cuda_available = torch.cuda.is_available()
         if cuda_available:
             gpu_name = torch.cuda.get_device_name(0)
-            gpu_mem = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+            gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)
             checks.append(("GPU", True, f"{gpu_name} ({gpu_mem:.1f} GB)"))
         else:
             checks.append(("GPU", False, "No CUDA GPU available"))
