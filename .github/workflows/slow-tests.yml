@@ -2,8 +2,8 @@ name: Slow Tests
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 7 * * 1"  # weekly Monday 07:00 UTC
+  push:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
