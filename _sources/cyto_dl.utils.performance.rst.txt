@@ -1,0 +1,7 @@
+cyto\_dl.utils.performance module
+=================================
+
+.. automodule:: cyto_dl.utils.performance
+   :members:
+   :show-inheritance:
+   :undoc-members:

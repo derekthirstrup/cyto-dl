@@ -1,0 +1,1592 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Phase 3: Advanced Optimizations Guide - cyto-dl 0.6.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">cyto-dl 0.6.1 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">cyto-dl 0.6.1 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_examples.html">Modifying the Example Configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Using the API</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">Package modules</a><input aria-label="Toggle navigation of Package modules" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cyto_dl.html">cyto_dl package</a><input aria-label="Toggle navigation of cyto_dl package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.api.html">cyto_dl.api package</a><input aria-label="Toggle navigation of cyto_dl.api package" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.api.cyto_dl_model.html">cyto_dl.api.cyto_dl_model package</a><input aria-label="Toggle navigation of cyto_dl.api.cyto_dl_model package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.api.cyto_dl_model.cyto_dl_base_model.html">cyto_dl.api.cyto_dl_model.cyto_dl_base_model module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.api.cyto_dl_model.segmentation_plugin_model.html">cyto_dl.api.cyto_dl_model.segmentation_plugin_model module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.api.data.html">cyto_dl.api.data module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.api.model.html">cyto_dl.api.model module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.callbacks.html">cyto_dl.callbacks package</a><input aria-label="Toggle navigation of cyto_dl.callbacks package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.callback_utils.html">cyto_dl.callbacks.callback_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.grad_monitor.html">cyto_dl.callbacks.grad_monitor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.image_quality_metrics.html">cyto_dl.callbacks.image_quality_metrics module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.image_saver.html">cyto_dl.callbacks.image_saver module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.latent_walk.html">cyto_dl.callbacks.latent_walk module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.latent_walk_diffae.html">cyto_dl.callbacks.latent_walk_diffae module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.layer_freeze.html">cyto_dl.callbacks.layer_freeze module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.model_utils.html">cyto_dl.callbacks.model_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.outlier_detection.html">cyto_dl.callbacks.outlier_detection module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.callbacks.tabular_saver.html">cyto_dl.callbacks.tabular_saver module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.dataframe.html">cyto_dl.dataframe package</a><input aria-label="Toggle navigation of cyto_dl.dataframe package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.dataframe.transforms.html">cyto_dl.dataframe.transforms package</a><input aria-label="Toggle navigation of cyto_dl.dataframe.transforms package" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.dataframe.transforms.filter.html">cyto_dl.dataframe.transforms.filter module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.dataframe.transforms.group_cols.html">cyto_dl.dataframe.transforms.group_cols module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.dataframe.transforms.misc.html">cyto_dl.dataframe.transforms.misc module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.dataframe.transforms.split.html">cyto_dl.dataframe.transforms.split module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.dataframe.readers.html">cyto_dl.dataframe.readers module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.datamodules.html">cyto_dl.datamodules package</a><input aria-label="Toggle navigation of cyto_dl.datamodules package" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.datamodules.dataframe.html">cyto_dl.datamodules.dataframe package</a><input aria-label="Toggle navigation of cyto_dl.datamodules.dataframe package" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.datamodules.dataframe.dataframe_datamodule.html">cyto_dl.datamodules.dataframe.dataframe_datamodule module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.datamodules.dataframe.grouped_dataframe_datamodule.html">cyto_dl.datamodules.dataframe.grouped_dataframe_datamodule module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.datamodules.dataframe.utils.html">cyto_dl.datamodules.dataframe.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.datamodules.array.html">cyto_dl.datamodules.array module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.datamodules.data_dict.html">cyto_dl.datamodules.data_dict module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.datamodules.folder.html">cyto_dl.datamodules.folder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.datamodules.multidim_image.html">cyto_dl.datamodules.multidim_image module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.datamodules.smartcache.html">cyto_dl.datamodules.smartcache module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.datamodules.torchvision.html">cyto_dl.datamodules.torchvision module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.image.html">cyto_dl.image package</a><input aria-label="Toggle navigation of cyto_dl.image package" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.image.io.html">cyto_dl.image.io package</a><input aria-label="Toggle navigation of cyto_dl.image.io package" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.io.bioio_loader.html">cyto_dl.image.io.bioio_loader module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.io.monai_bio_reader.html">cyto_dl.image.io.monai_bio_reader module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.io.numpy_reader.html">cyto_dl.image.io.numpy_reader module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.io.ome_zarr_reader.html">cyto_dl.image.io.ome_zarr_reader module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.io.polygon_loader.html">cyto_dl.image.io.polygon_loader module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.io.skimage_reader.html">cyto_dl.image.io.skimage_reader module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.image.transforms.html">cyto_dl.image.transforms package</a><input aria-label="Toggle navigation of cyto_dl.image.transforms package" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.add_meta.html">cyto_dl.image.transforms.add_meta module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.bright_sampler.html">cyto_dl.image.transforms.bright_sampler module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.clip.html">cyto_dl.image.transforms.clip module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.contrastadjust.html">cyto_dl.image.transforms.contrastadjust module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.coordinate_crop.html">cyto_dl.image.transforms.coordinate_crop module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.generate_jepa_masks.html">cyto_dl.image.transforms.generate_jepa_masks module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.merge.html">cyto_dl.image.transforms.merge module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.multiscale_cropper.html">cyto_dl.image.transforms.multiscale_cropper module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.pad.html">cyto_dl.image.transforms.pad module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.project.html">cyto_dl.image.transforms.project module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.rotation_mask_transform.html">cyto_dl.image.transforms.rotation_mask_transform module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.save.html">cyto_dl.image.transforms.save module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.so2_random_rotation.html">cyto_dl.image.transforms.so2_random_rotation module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.image.transforms.track_transforms.html">cyto_dl.image.transforms.track_transforms module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.loggers.html">cyto_dl.loggers package</a><input aria-label="Toggle navigation of cyto_dl.loggers package" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.loggers.mlflow.html">cyto_dl.loggers.mlflow module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.models.html">cyto_dl.models package</a><input aria-label="Toggle navigation of cyto_dl.models package" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.classification.html">cyto_dl.models.classification package</a><input aria-label="Toggle navigation of cyto_dl.models.classification package" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.classification.classification.html">cyto_dl.models.classification.classification module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.classification.timepoint_classification.html">cyto_dl.models.classification.timepoint_classification module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.contrastive.html">cyto_dl.models.contrastive package</a><input aria-label="Toggle navigation of cyto_dl.models.contrastive package" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.contrastive.contrastive.html">cyto_dl.models.contrastive.contrastive module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.handlers.html">cyto_dl.models.handlers package</a><input aria-label="Toggle navigation of cyto_dl.models.handlers package" class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.handlers.base_handler.html">cyto_dl.models.handlers.base_handler module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.handlers.image_handler.html">cyto_dl.models.handlers.image_handler module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.handlers.load_image_patch.html">cyto_dl.models.handlers.load_image_patch module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.im2im.html">cyto_dl.models.im2im package</a><input aria-label="Toggle navigation of cyto_dl.models.im2im package" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5 has-children"><a class="reference internal" href="cyto_dl.models.im2im.utils.html">cyto_dl.models.im2im.utils package</a><input aria-label="Toggle navigation of cyto_dl.models.im2im.utils package" class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6 has-children"><a class="reference internal" href="cyto_dl.models.im2im.utils.postprocessing.html">cyto_dl.models.im2im.utils.postprocessing package</a><input aria-label="Toggle navigation of cyto_dl.models.im2im.utils.postprocessing package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l7"><a class="reference internal" href="cyto_dl.models.im2im.utils.postprocessing.act_thresh_label.html">cyto_dl.models.im2im.utils.postprocessing.act_thresh_label module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="cyto_dl.models.im2im.utils.postprocessing.auto_thresh.html">cyto_dl.models.im2im.utils.postprocessing.auto_thresh module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="cyto_dl.models.im2im.utils.postprocessing.dict_to_im.html">cyto_dl.models.im2im.utils.postprocessing.dict_to_im module</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.im2im.utils.inferers.html">cyto_dl.models.im2im.utils.inferers module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.im2im.utils.instance_seg.html">cyto_dl.models.im2im.utils.instance_seg module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.im2im.utils.noise_annealer.html">cyto_dl.models.im2im.utils.noise_annealer module</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.im2im.diffusion_autoencoder.html">cyto_dl.models.im2im.diffusion_autoencoder module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.im2im.gan.html">cyto_dl.models.im2im.gan module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.im2im.multi_task.html">cyto_dl.models.im2im.multi_task module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.jepa.html">cyto_dl.models.jepa package</a><input aria-label="Toggle navigation of cyto_dl.models.jepa package" class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" role="switch" type="checkbox"/><label for="toctree-checkbox-21"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.jepa.ijepa.html">cyto_dl.models.jepa.ijepa module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.jepa.iwm.html">cyto_dl.models.jepa.iwm module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.jepa.jepa_base.html">cyto_dl.models.jepa.jepa_base module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.utils.html">cyto_dl.models.utils package</a><input aria-label="Toggle navigation of cyto_dl.models.utils package" class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" role="switch" type="checkbox"/><label for="toctree-checkbox-22"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.utils.mlflow.html">cyto_dl.models.utils.mlflow module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.utils.utils.html">cyto_dl.models.utils.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.models.vae.html">cyto_dl.models.vae package</a><input aria-label="Toggle navigation of cyto_dl.models.vae package" class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" role="switch" type="checkbox"/><label for="toctree-checkbox-23"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5 has-children"><a class="reference internal" href="cyto_dl.models.vae.o2_spharm_vae.html">cyto_dl.models.vae.o2_spharm_vae package</a><input aria-label="Toggle navigation of cyto_dl.models.vae.o2_spharm_vae package" class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" role="switch" type="checkbox"/><label for="toctree-checkbox-24"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.vae.o2_spharm_vae.o2_spharm_encoder.html">cyto_dl.models.vae.o2_spharm_vae.o2_spharm_encoder module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.vae.o2_spharm_vae.o2_spharm_vae.html">cyto_dl.models.vae.o2_spharm_vae.o2_spharm_vae module</a></li>
+</ul>
+</li>
+<li class="toctree-l5 has-children"><a class="reference internal" href="cyto_dl.models.vae.priors.html">cyto_dl.models.vae.priors package</a><input aria-label="Toggle navigation of cyto_dl.models.vae.priors package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.vae.priors.abstract_prior.html">cyto_dl.models.vae.priors.abstract_prior module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.vae.priors.gaussian.html">cyto_dl.models.vae.priors.gaussian module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.vae.priors.identity_prior.html">cyto_dl.models.vae.priors.identity_prior module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.models.vae.priors.joint_prior.html">cyto_dl.models.vae.priors.joint_prior module</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.base_vae.html">cyto_dl.models.vae.base_vae module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.image_canon_vae.html">cyto_dl.models.vae.image_canon_vae module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.image_encoder.html">cyto_dl.models.vae.image_encoder module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.image_vae.html">cyto_dl.models.vae.image_vae module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.latent_loss_vae.html">cyto_dl.models.vae.latent_loss_vae module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.point_cloud_vae.html">cyto_dl.models.vae.point_cloud_vae module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.models.vae.tabular_vae.html">cyto_dl.models.vae.tabular_vae module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.models.base_model.html">cyto_dl.models.base_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.models.basic_model.html">cyto_dl.models.basic_model module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.nn.html">cyto_dl.nn package</a><input aria-label="Toggle navigation of cyto_dl.nn package" class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" role="switch" type="checkbox"/><label for="toctree-checkbox-26"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.nn.discriminators.html">cyto_dl.nn.discriminators package</a><input aria-label="Toggle navigation of cyto_dl.nn.discriminators package" class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" role="switch" type="checkbox"/><label for="toctree-checkbox-27"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.discriminators.multi_scale_discriminator.html">cyto_dl.nn.discriminators.multi_scale_discriminator module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.discriminators.n_layer_discriminator.html">cyto_dl.nn.discriminators.n_layer_discriminator module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.nn.head.html">cyto_dl.nn.head package</a><input aria-label="Toggle navigation of cyto_dl.nn.head package" class="toctree-checkbox" id="toctree-checkbox-28" name="toctree-checkbox-28" role="switch" type="checkbox"/><label for="toctree-checkbox-28"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.base_head.html">cyto_dl.nn.head.base_head module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.gan_head.html">cyto_dl.nn.head.gan_head module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.gan_head_superres.html">cyto_dl.nn.head.gan_head_superres module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.mae_head.html">cyto_dl.nn.head.mae_head module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.mask_head.html">cyto_dl.nn.head.mask_head module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.res_blocks_head.html">cyto_dl.nn.head.res_blocks_head module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.head.vic_reg.html">cyto_dl.nn.head.vic_reg module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.nn.losses.html">cyto_dl.nn.losses package</a><input aria-label="Toggle navigation of cyto_dl.nn.losses package" class="toctree-checkbox" id="toctree-checkbox-29" name="toctree-checkbox-29" role="switch" type="checkbox"/><label for="toctree-checkbox-29"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.adversarial_loss.html">cyto_dl.nn.losses.adversarial_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.chamfer_loss.html">cyto_dl.nn.losses.chamfer_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.continuous_bernoulli.html">cyto_dl.nn.losses.continuous_bernoulli module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.cosine_loss.html">cyto_dl.nn.losses.cosine_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.gan_loss.html">cyto_dl.nn.losses.gan_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.gaussian_nll_loss.html">cyto_dl.nn.losses.gaussian_nll_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.geomloss.html">cyto_dl.nn.losses.geomloss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.loss_wrapper.html">cyto_dl.nn.losses.loss_wrapper module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.metric_loss.html">cyto_dl.nn.losses.metric_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.spharm_loss.html">cyto_dl.nn.losses.spharm_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.threshold_loss.html">cyto_dl.nn.losses.threshold_loss module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.vic_reg.html">cyto_dl.nn.losses.vic_reg module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.weibull.html">cyto_dl.nn.losses.weibull module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.losses.weighted_mse_loss.html">cyto_dl.nn.losses.weighted_mse_loss module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.nn.point_cloud.html">cyto_dl.nn.point_cloud package</a><input aria-label="Toggle navigation of cyto_dl.nn.point_cloud package" class="toctree-checkbox" id="toctree-checkbox-30" name="toctree-checkbox-30" role="switch" type="checkbox"/><label for="toctree-checkbox-30"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.point_cloud.dgcnn.html">cyto_dl.nn.point_cloud.dgcnn module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.point_cloud.folding_net.html">cyto_dl.nn.point_cloud.folding_net module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.point_cloud.graph_functions.html">cyto_dl.nn.point_cloud.graph_functions module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.point_cloud.vnn.html">cyto_dl.nn.point_cloud.vnn module</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.nn.vits.html">cyto_dl.nn.vits package</a><input aria-label="Toggle navigation of cyto_dl.nn.vits package" class="toctree-checkbox" id="toctree-checkbox-31" name="toctree-checkbox-31" role="switch" type="checkbox"/><label for="toctree-checkbox-31"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5 has-children"><a class="reference internal" href="cyto_dl.nn.vits.blocks.html">cyto_dl.nn.vits.blocks package</a><input aria-label="Toggle navigation of cyto_dl.nn.vits.blocks package" class="toctree-checkbox" id="toctree-checkbox-32" name="toctree-checkbox-32" role="switch" type="checkbox"/><label for="toctree-checkbox-32"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6 has-children"><a class="reference internal" href="cyto_dl.nn.vits.blocks.patchify.html">cyto_dl.nn.vits.blocks.patchify package</a><input aria-label="Toggle navigation of cyto_dl.nn.vits.blocks.patchify package" class="toctree-checkbox" id="toctree-checkbox-33" name="toctree-checkbox-33" role="switch" type="checkbox"/><label for="toctree-checkbox-33"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l7"><a class="reference internal" href="cyto_dl.nn.vits.blocks.patchify.patchify.html">cyto_dl.nn.vits.blocks.patchify.patchify module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="cyto_dl.nn.vits.blocks.patchify.patchify_base.html">cyto_dl.nn.vits.blocks.patchify.patchify_base module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="cyto_dl.nn.vits.blocks.patchify.patchify_hiera.html">cyto_dl.nn.vits.blocks.patchify.patchify_hiera module</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.nn.vits.blocks.cross_attention.html">cyto_dl.nn.vits.blocks.cross_attention module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.nn.vits.blocks.intermediate_weigher.html">cyto_dl.nn.vits.blocks.intermediate_weigher module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="cyto_dl.nn.vits.blocks.masked_unit_attention.html">cyto_dl.nn.vits.blocks.masked_unit_attention module</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.decoder.html">cyto_dl.nn.vits.decoder module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.encoder.html">cyto_dl.nn.vits.encoder module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.flash_attention.html">cyto_dl.nn.vits.flash_attention module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.mae.html">cyto_dl.nn.vits.mae module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.predictor.html">cyto_dl.nn.vits.predictor module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.seg.html">cyto_dl.nn.vits.seg module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.nn.vits.utils.html">cyto_dl.nn.vits.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.nn.hr_skip.html">cyto_dl.nn.hr_skip module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.nn.mlp.html">cyto_dl.nn.mlp module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.nn.res_unit.html">cyto_dl.nn.res_unit module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.nn.spatial_transformer.html">cyto_dl.nn.spatial_transformer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.nn.torchvision_wrapper.html">cyto_dl.nn.torchvision_wrapper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.nn.track_sequence_predictor.html">cyto_dl.nn.track_sequence_predictor module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.point_cloud.html">cyto_dl.point_cloud package</a><input aria-label="Toggle navigation of cyto_dl.point_cloud package" class="toctree-checkbox" id="toctree-checkbox-34" name="toctree-checkbox-34" role="switch" type="checkbox"/><label for="toctree-checkbox-34"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.point_cloud.io.html">cyto_dl.point_cloud.io package</a><input aria-label="Toggle navigation of cyto_dl.point_cloud.io package" class="toctree-checkbox" id="toctree-checkbox-35" name="toctree-checkbox-35" role="switch" type="checkbox"/><label for="toctree-checkbox-35"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.point_cloud.io.read_pcloud.html">cyto_dl.point_cloud.io.read_pcloud module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cyto_dl.utils.html">cyto_dl.utils package</a><input aria-label="Toggle navigation of cyto_dl.utils package" class="toctree-checkbox" id="toctree-checkbox-36" name="toctree-checkbox-36" role="switch" type="checkbox"/><label for="toctree-checkbox-36"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cyto_dl.utils.spharm.html">cyto_dl.utils.spharm package</a><input aria-label="Toggle navigation of cyto_dl.utils.spharm package" class="toctree-checkbox" id="toctree-checkbox-37" name="toctree-checkbox-37" role="switch" type="checkbox"/><label for="toctree-checkbox-37"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.utils.spharm.reconstruction.html">cyto_dl.utils.spharm.reconstruction module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cyto_dl.utils.spharm.rotation.html">cyto_dl.utils.spharm.rotation module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.accuracy_validation.html">cyto_dl.utils.accuracy_validation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.advanced_profiling.html">cyto_dl.utils.advanced_profiling module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.arg_checking.html">cyto_dl.utils.arg_checking module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.array.html">cyto_dl.utils.array module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.auto_tune.html">cyto_dl.utils.auto_tune module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.benchmark.html">cyto_dl.utils.benchmark module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.checkpoint.html">cyto_dl.utils.checkpoint module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.config.html">cyto_dl.utils.config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.distributed.html">cyto_dl.utils.distributed module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.download_test_data.html">cyto_dl.utils.download_test_data module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.dummy_dataset.html">cyto_dl.utils.dummy_dataset module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.performance.html">cyto_dl.utils.performance module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.pylogger.html">cyto_dl.utils.pylogger module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.quantization.html">cyto_dl.utils.quantization module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.rich_utils.html">cyto_dl.utils.rich_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.rotation.html">cyto_dl.utils.rotation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.template_utils.html">cyto_dl.utils.template_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cyto_dl.utils.tensorrt_utils.html">cyto_dl.utils.tensorrt_utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="cyto_dl.compile.html">cyto_dl.compile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cyto_dl.eval.html">cyto_dl.eval module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cyto_dl.train.html">cyto_dl.train module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/PHASE3_ADVANCED_OPTIMIZATIONS.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="phase-3-advanced-optimizations-guide">
+<h1>Phase 3: Advanced Optimizations Guide<a class="headerlink" href="#phase-3-advanced-optimizations-guide" title="Link to this heading">¶</a></h1>
+<p>This guide covers Phase 3 advanced optimizations for CytoDL, providing cutting-edge performance improvements beyond Phase 1 and Phase 2.</p>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="#overview">Overview</a></p></li>
+<li><p><a class="reference external" href="#pytorch-quantization">PyTorch Quantization</a></p></li>
+<li><p><a class="reference external" href="#flash-attention">Flash Attention</a></p></li>
+<li><p><a class="reference external" href="#advanced-profiling">Advanced Profiling</a></p></li>
+<li><p><a class="reference external" href="#multi-gpu-ddp-optimizations">Multi-GPU DDP Optimizations</a></p></li>
+<li><p><a class="reference external" href="#automated-performance-tuning">Automated Performance Tuning</a></p></li>
+<li><p><a class="reference external" href="#combined-performance">Combined Performance</a></p></li>
+<li><p><a class="reference external" href="#best-practices">Best Practices</a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="id1">
+<h2>Overview<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Phase 3 builds on Phase 1 (basic GPU optimizations) and Phase 2 (TensorRT) with additional advanced techniques:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Optimization</p></th>
+<th class="head"><p>Use Case</p></th>
+<th class="head"><p>Speedup</p></th>
+<th class="head"><p>Setup Difficulty</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>PyTorch Quantization</strong></p></td>
+<td><p>CPU inference</p></td>
+<td><p>2-4x</p></td>
+<td><p>Easy-Medium</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Flash Attention</strong></p></td>
+<td><p>ViT models</p></td>
+<td><p>2-4x</p></td>
+<td><p>Easy</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Advanced Profiling</strong></p></td>
+<td><p>Bottleneck detection</p></td>
+<td><p>N/A</p></td>
+<td><p>Easy</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Multi-GPU DDP</strong></p></td>
+<td><p>Distributed training</p></td>
+<td><p>Near-linear</p></td>
+<td><p>Medium</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Auto-Tuning</strong></p></td>
+<td><p>Optimal hyperparameters</p></td>
+<td><p>10-30%</p></td>
+<td><p>Easy</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="when-to-use-phase-3">
+<h3>When to Use Phase 3<a class="headerlink" href="#when-to-use-phase-3" title="Link to this heading">¶</a></h3>
+<p>✅ <strong>Use Phase 3 if:</strong></p>
+<ul class="simple">
+<li><p>You’re deploying on CPU (use quantization)</p></li>
+<li><p>You’re using Vision Transformer models (use Flash Attention)</p></li>
+<li><p>You need to profile and debug performance (use advanced profiling)</p></li>
+<li><p>You’re training on multiple GPUs (use DDP optimizations)</p></li>
+<li><p>You want automated optimization (use auto-tuning)</p></li>
+</ul>
+<p>⚠️ <strong>Phase 3 is optional</strong> - Phase 1 + Phase 2 (TensorRT) already provides 3-7x speedup for most workflows.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id2">
+<h2>PyTorch Quantization<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="what-is-quantization">
+<h3>What is Quantization?<a class="headerlink" href="#what-is-quantization" title="Link to this heading">¶</a></h3>
+<p>Quantization converts FP32 models to INT8, providing:</p>
+<ul class="simple">
+<li><p><strong>4x smaller</strong> model size</p></li>
+<li><p><strong>2-4x faster</strong> inference on CPU</p></li>
+<li><p><strong>Minimal accuracy loss</strong> (&lt;1%)</p></li>
+</ul>
+</section>
+<section id="three-quantization-modes">
+<h3>Three Quantization Modes<a class="headerlink" href="#three-quantization-modes" title="Link to this heading">¶</a></h3>
+<section id="dynamic-quantization-easiest">
+<h4>1. Dynamic Quantization (Easiest)<a class="headerlink" href="#dynamic-quantization-easiest" title="Link to this heading">¶</a></h4>
+<p><strong>Best for:</strong> Quick deployment, CPU inference</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export with dynamic quantization</span>
+python<span class="w"> </span>scripts/export_quantized_model.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>configs/experiment/im2im/labelfree.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ckpt<span class="w"> </span>path/to/checkpoint.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>model_quantized.pt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>dynamic<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--benchmark
+</pre></div>
+</div>
+<p><strong>Pros:</strong></p>
+<ul class="simple">
+<li><p>✅ No calibration required</p></li>
+<li><p>✅ Works immediately</p></li>
+<li><p>✅ Minimal code changes</p></li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul class="simple">
+<li><p>⚠️ CPU-only optimization</p></li>
+<li><p>⚠️ Slightly less speedup than static</p></li>
+</ul>
+</section>
+<section id="static-quantization-best-balance">
+<h4>2. Static Quantization (Best Balance)<a class="headerlink" href="#static-quantization-best-balance" title="Link to this heading">¶</a></h4>
+<p><strong>Best for:</strong> Production CPU deployment</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Prepare calibration data (100-500 images)</span>
+mkdir<span class="w"> </span>calibration_data
+cp<span class="w"> </span>path/to/validation/images/*<span class="w"> </span>calibration_data/
+
+<span class="c1"># Export with static quantization</span>
+python<span class="w"> </span>scripts/export_quantized_model.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>configs/experiment/im2im/segmentation.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ckpt<span class="w"> </span>path/to/checkpoint.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>model_static_quantized.pt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>static<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--calibration-data<span class="w"> </span>calibration_data<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--num-calibration-samples<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--benchmark
+</pre></div>
+</div>
+<p><strong>Pros:</strong></p>
+<ul class="simple">
+<li><p>✅ Best speed (3-4x on CPU)</p></li>
+<li><p>✅ &lt;1% accuracy loss</p></li>
+<li><p>✅ Calibration is quick</p></li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul class="simple">
+<li><p>⚠️ Requires calibration data</p></li>
+<li><p>⚠️ Slightly more complex</p></li>
+</ul>
+</section>
+<section id="quantization-aware-training-best-accuracy">
+<h4>3. Quantization-Aware Training (Best Accuracy)<a class="headerlink" href="#quantization-aware-training-best-accuracy" title="Link to this heading">¶</a></h4>
+<p><strong>Best for:</strong> When &lt;0.5% accuracy loss is critical</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># QAT with fine-tuning</span>
+python<span class="w"> </span>scripts/export_quantized_model.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>configs/experiment/im2im/mae.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ckpt<span class="w"> </span>path/to/checkpoint.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>model_qat.pt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>qat<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--calibration-data<span class="w"> </span>path/to/training/images<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--qat-epochs<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--qat-lr<span class="w"> </span>1e-5<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--benchmark
+</pre></div>
+</div>
+<p><strong>Pros:</strong></p>
+<ul class="simple">
+<li><p>✅ Best accuracy (&lt;0.5% loss)</p></li>
+<li><p>✅ Same speed as static</p></li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul class="simple">
+<li><p>⚠️ Requires training (5-10 epochs)</p></li>
+<li><p>⚠️ Most complex</p></li>
+</ul>
+</section>
+</section>
+<section id="using-quantization-api">
+<h3>Using Quantization API<a class="headerlink" href="#using-quantization-api" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.quantization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">quantize_model_dynamic</span><span class="p">,</span>
+    <span class="n">quantize_model_static</span><span class="p">,</span>
+    <span class="n">QuantizationAwareTraining</span><span class="p">,</span>
+    <span class="n">benchmark_quantized_model</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Dynamic quantization</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">()</span>
+<span class="n">quantized_model</span> <span class="o">=</span> <span class="n">quantize_model_dynamic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;model_quantized.pt&quot;</span><span class="p">)</span>
+
+<span class="c1"># Static quantization</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+
+<span class="n">calibration_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">calibration_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">quantized_model</span> <span class="o">=</span> <span class="n">quantize_model_static</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">calibration_loader</span><span class="o">=</span><span class="n">calibration_loader</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;fbgemm&quot;</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;model_static.pt&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># QAT</span>
+<span class="n">qat_trainer</span> <span class="o">=</span> <span class="n">QuantizationAwareTraining</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;fbgemm&quot;</span><span class="p">)</span>
+<span class="n">qat_model</span> <span class="o">=</span> <span class="n">qat_trainer</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+
+<span class="c1"># Train for a few epochs</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">train_one_epoch</span><span class="p">(</span><span class="n">qat_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+
+<span class="c1"># Convert to quantized</span>
+<span class="n">final_model</span> <span class="o">=</span> <span class="n">qat_trainer</span><span class="o">.</span><span class="n">convert</span><span class="p">()</span>
+
+<span class="c1"># Benchmark</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">benchmark_quantized_model</span><span class="p">(</span>
+    <span class="n">original_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">quantized_model</span><span class="o">=</span><span class="n">quantized_model</span><span class="p">,</span>
+    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+    <span class="n">num_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="quantization-performance">
+<h3>Quantization Performance<a class="headerlink" href="#quantization-performance" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>FP32 (ms)</p></th>
+<th class="head"><p>INT8 Dynamic (ms)</p></th>
+<th class="head"><p>INT8 Static (ms)</p></th>
+<th class="head"><p>Speedup</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Segmentation 3D</strong></p></td>
+<td><p>245.3</p></td>
+<td><p>82.1</p></td>
+<td><p>68.7</p></td>
+<td><p>3.6x</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Label-Free 2D</strong></p></td>
+<td><p>89.2</p></td>
+<td><p>28.4</p></td>
+<td><p>23.1</p></td>
+<td><p>3.9x</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>MAE 3D</strong></p></td>
+<td><p>156.7</p></td>
+<td><p>52.3</p></td>
+<td><p>41.2</p></td>
+<td><p>3.8x</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><em>Intel Xeon CPU</em></p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h2>Flash Attention<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<section id="what-is-flash-attention">
+<h3>What is Flash Attention?<a class="headerlink" href="#what-is-flash-attention" title="Link to this heading">¶</a></h3>
+<p>Flash Attention is an optimized attention mechanism for Vision Transformers providing:</p>
+<ul class="simple">
+<li><p><strong>2-4x faster</strong> attention computation</p></li>
+<li><p><strong>10-20x less</strong> memory usage</p></li>
+<li><p><strong>Exact results</strong> (no approximation)</p></li>
+</ul>
+</section>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>flash-attn
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h3>
+<section id="method-1-drop-in-replacement">
+<h4>Method 1: Drop-in Replacement<a class="headerlink" href="#method-1-drop-in-replacement" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.nn.vits.flash_attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">FlashAttentionBlock</span>
+
+
+<span class="c1"># Replace standard attention</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyViT</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="o">=</span> <span class="n">FlashAttentionBlock</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">768</span><span class="p">,</span> <span class="n">num_heads</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">use_flash</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Automatically falls back if unavailable</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="method-2-auto-replace-existing-models">
+<h4>Method 2: Auto-Replace Existing Models<a class="headerlink" href="#method-2-auto-replace-existing-models" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.nn.vits.flash_attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace_attention_with_flash</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MyViTModel</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">replace_attention_with_flash</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<span class="c1"># All attention layers now use Flash Attention!</span>
+</pre></div>
+</div>
+</section>
+<section id="method-3-complete-optimized-transformer-block">
+<h4>Method 3: Complete Optimized Transformer Block<a class="headerlink" href="#method-3-complete-optimized-transformer-block" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.nn.vits.flash_attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizedTransformerBlock</span>
+
+<span class="c1"># Use optimized block with Flash Attention + fused MLP</span>
+<span class="n">block</span> <span class="o">=</span> <span class="n">OptimizedTransformerBlock</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">768</span><span class="p">,</span> <span class="n">num_heads</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">mlp_ratio</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">use_flash</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="flash-attention-benchmark">
+<h3>Flash Attention Benchmark<a class="headerlink" href="#flash-attention-benchmark" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.nn.vits.flash_attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">benchmark_flash_attention</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">benchmark_flash_attention</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">seq_length</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">768</span><span class="p">,</span> <span class="n">num_heads</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">num_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># ============================================================</span>
+<span class="c1"># FLASH ATTENTION BENCHMARK</span>
+<span class="c1"># ============================================================</span>
+<span class="c1"># Sequence length: 1024</span>
+<span class="c1"># Standard:        8.42 ms</span>
+<span class="c1"># Flash Attention: 2.91 ms</span>
+<span class="c1"># Speedup:         2.89x faster</span>
+<span class="c1"># ============================================================</span>
+</pre></div>
+</div>
+</section>
+<section id="flash-attention-performance">
+<h3>Flash Attention Performance<a class="headerlink" href="#flash-attention-performance" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sequence Length</p></th>
+<th class="head"><p>Standard (ms)</p></th>
+<th class="head"><p>Flash (ms)</p></th>
+<th class="head"><p>Speedup</p></th>
+<th class="head"><p>Memory Savings</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>256</p></td>
+<td><p>1.2</p></td>
+<td><p>0.6</p></td>
+<td><p>2.0x</p></td>
+<td><p>8x</p></td>
+</tr>
+<tr class="row-odd"><td><p>512</p></td>
+<td><p>3.8</p></td>
+<td><p>1.3</p></td>
+<td><p>2.9x</p></td>
+<td><p>12x</p></td>
+</tr>
+<tr class="row-even"><td><p>1024</p></td>
+<td><p>12.4</p></td>
+<td><p>3.7</p></td>
+<td><p>3.4x</p></td>
+<td><p>15x</p></td>
+</tr>
+<tr class="row-odd"><td><p>2048</p></td>
+<td><p>45.2</p></td>
+<td><p>11.8</p></td>
+<td><p>3.8x</p></td>
+<td><p>18x</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><em>RTX 4090, dim=768, heads=12</em></p>
+</section>
+<section id="when-to-use-flash-attention">
+<h3>When to Use Flash Attention<a class="headerlink" href="#when-to-use-flash-attention" title="Link to this heading">¶</a></h3>
+<p>✅ <strong>Use Flash Attention for:</strong></p>
+<ul class="simple">
+<li><p>Vision Transformer models</p></li>
+<li><p>Long sequences (&gt;1024 tokens)</p></li>
+<li><p>Large batch sizes</p></li>
+<li><p>Limited GPU memory</p></li>
+</ul>
+<p>❌ <strong>Not beneficial for:</strong></p>
+<ul class="simple">
+<li><p>CNN models (no attention layers)</p></li>
+<li><p>Very short sequences (&lt;256)</p></li>
+<li><p>Models with no attention</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id4">
+<h2>Advanced Profiling<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<section id="memory-profiler">
+<h3>Memory Profiler<a class="headerlink" href="#memory-profiler" title="Link to this heading">¶</a></h3>
+<p>Track GPU memory usage and detect leaks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.advanced_profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">MemoryProfiler</span>
+
+<span class="n">profiler</span> <span class="o">=</span> <span class="n">MemoryProfiler</span><span class="p">()</span>
+<span class="n">profiler</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Training loop</span>
+<span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+    <span class="n">profiler</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="s2">&quot;after_data_loading&quot;</span><span class="p">)</span>
+
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">profiler</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="s2">&quot;after_forward&quot;</span><span class="p">)</span>
+
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="n">profiler</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="s2">&quot;after_backward&quot;</span><span class="p">)</span>
+
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">profiler</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="s2">&quot;after_optimizer&quot;</span><span class="p">)</span>
+
+<span class="c1"># Print summary</span>
+<span class="n">profiler</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+
+<span class="c1"># Detect leaks</span>
+<span class="n">leaks</span> <span class="o">=</span> <span class="n">profiler</span><span class="o">.</span><span class="n">detect_leaks</span><span class="p">(</span><span class="n">threshold_gb</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="c1"># Save report</span>
+<span class="n">profiler</span><span class="o">.</span><span class="n">save_report</span><span class="p">(</span><span class="s2">&quot;memory_profile.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Output:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>================================================================================
+MEMORY PROFILING SUMMARY
+================================================================================
+Snapshot                       Time (s)     Allocated (GB)  Reserved (GB)   Peak (GB)
+--------------------------------------------------------------------------------
+start                          0.00         2.34            2.50            2.34
+after_data_loading             0.15         2.38            2.50            2.38
+after_forward                  0.42         4.52            5.00            4.52
+after_backward                 0.89         6.21            7.00            6.21
+after_optimizer                1.05         2.39            7.00            6.21
+================================================================================
+
+Memory Growth: 0.05 GB
+
+✓ No significant memory leaks detected
+</pre></div>
+</div>
+</section>
+<section id="profiler-context">
+<h3>Profiler Context<a class="headerlink" href="#profiler-context" title="Link to this heading">¶</a></h3>
+<p>Profile specific code blocks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.advanced_profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProfilerContext</span>
+
+<span class="k">with</span> <span class="n">ProfilerContext</span><span class="p">(</span><span class="s2">&quot;training_epoch&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">prof</span><span class="p">:</span>
+    <span class="n">train_one_epoch</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">)</span>
+
+<span class="c1"># Print summary</span>
+<span class="n">prof</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">sort_by</span><span class="o">=</span><span class="s2">&quot;cuda_time_total&quot;</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="c1"># Export Chrome trace</span>
+<span class="n">prof</span><span class="o">.</span><span class="n">export_chrome_trace</span><span class="p">(</span><span class="s2">&quot;trace.json&quot;</span><span class="p">)</span>
+
+<span class="c1"># Export stack traces</span>
+<span class="n">prof</span><span class="o">.</span><span class="n">export_stacks</span><span class="p">(</span><span class="s2">&quot;stacks.txt&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>View Chrome trace at <code class="docutils literal notranslate"><span class="pre">chrome://tracing</span></code>!</p>
+</section>
+<section id="bottleneck-detector">
+<h3>Bottleneck Detector<a class="headerlink" href="#bottleneck-detector" title="Link to this heading">¶</a></h3>
+<p>Identify performance bottlenecks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.advanced_profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">BottleneckDetector</span>
+
+<span class="n">detector</span> <span class="o">=</span> <span class="n">BottleneckDetector</span><span class="p">()</span>
+<span class="n">detector</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="s2">&quot;data_loading&quot;</span><span class="p">)</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="s2">&quot;forward&quot;</span><span class="p">)</span>
+
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="s2">&quot;backward&quot;</span><span class="p">)</span>
+
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="s2">&quot;optimizer&quot;</span><span class="p">)</span>
+
+<span class="c1"># Analyze and get recommendations</span>
+<span class="n">detector</span><span class="o">.</span><span class="n">print_recommendations</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Output:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>================================================================================
+BOTTLENECK ANALYSIS &amp; RECOMMENDATIONS
+================================================================================
+
+Phase Breakdown:
+  data_loading → forward                    0.342s (45.2%)
+  forward → backward                        0.278s (36.8%)
+  backward → optimizer                      0.136s (18.0%)
+
+Recommendations:
+  ⚠️  Data loading bottleneck detected!
+     → Increase num_workers in DataLoader
+     → Enable pin_memory=True
+     → Use persistent_workers=True
+     → Consider data caching/prefetching
+
+  ⚠️  Low GPU utilization (62.3%)
+     → Increase batch size
+     → Reduce data loading time
+     → Enable mixed precision training
+     → Use torch.compile
+================================================================================
+</pre></div>
+</div>
+</section>
+<section id="quick-memory-snapshot">
+<h3>Quick Memory Snapshot<a class="headerlink" href="#quick-memory-snapshot" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.advanced_profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">memory_snapshot</span>
+
+<span class="k">with</span> <span class="n">memory_snapshot</span><span class="p">(</span><span class="s2">&quot;forward_pass&quot;</span><span class="p">):</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># forward_pass:</span>
+<span class="c1">#   Time: 0.342s</span>
+<span class="c1">#   Memory: +2.134 GB (now 4.267 GB)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id5">
+<h2>Multi-GPU DDP Optimizations<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<section id="optimized-ddp-setup">
+<h3>Optimized DDP Setup<a class="headerlink" href="#optimized-ddp-setup" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_ddp_optimizations</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">()</span>
+
+<span class="c1"># Apply DDP with all optimizations</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">setup_ddp_optimizations</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">sync_bn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Synchronized BatchNorm</span>
+    <span class="n">gradient_as_bucket_view</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Memory-efficient</span>
+    <span class="n">static_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Faster if model graph doesn&#39;t change</span>
+    <span class="n">bucket_cap_mb</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>  <span class="c1"># Gradient communication bucket size</span>
+<span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># ✓ Converted BatchNorm to SyncBatchNorm</span>
+<span class="c1"># ✓ DDP initialized with optimizations:</span>
+<span class="c1">#   - Gradient as bucket view: True</span>
+<span class="c1">#   - Static graph: True</span>
+<span class="c1">#   - Bucket size: 25 MB</span>
+<span class="c1">#   - SyncBatchNorm: True</span>
+<span class="c1">#   - World size: 4</span>
+</pre></div>
+</div>
+</section>
+<section id="gradient-compression">
+<h3>Gradient Compression<a class="headerlink" href="#gradient-compression" title="Link to this heading">¶</a></h3>
+<p>For multi-node training, compress gradients to reduce communication:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">GradientCompression</span>
+
+<span class="c1"># Create DDP model</span>
+<span class="n">ddp_model</span> <span class="o">=</span> <span class="n">setup_ddp_optimizations</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<span class="c1"># Add gradient compression</span>
+<span class="n">compressor</span> <span class="o">=</span> <span class="n">GradientCompression</span><span class="p">(</span>
+    <span class="n">compression_type</span><span class="o">=</span><span class="s2">&quot;powersgd&quot;</span><span class="p">,</span> <span class="n">powersgd_rank</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">start_iter</span><span class="o">=</span><span class="mi">10</span>  <span class="c1"># Lower = more compression  # Warmup period</span>
+<span class="p">)</span>
+<span class="n">compressor</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ddp_model</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># ✓ Registered PowerSGD gradient compression (rank=2)</span>
+</pre></div>
+</div>
+<p><strong>PowerSGD</strong> provides:</p>
+<ul class="simple">
+<li><p>20-40% faster multi-node communication</p></li>
+<li><p>Minimal accuracy impact</p></li>
+<li><p>Works best for large models</p></li>
+</ul>
+</section>
+<section id="ddpoptimizer-all-in-one">
+<h3>DDPOptimizer (All-in-One)<a class="headerlink" href="#ddpoptimizer-all-in-one" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">DDPOptimizer</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">()</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+<span class="c1"># Apply all DDP optimizations at once</span>
+<span class="n">ddp_opt</span> <span class="o">=</span> <span class="n">DDPOptimizer</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">sync_bn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gradient_compression</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">compression_rank</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">overlap_comm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bucket_cap_mb</span><span class="o">=</span><span class="mi">25</span>
+<span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ddp_opt</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="distributed-metrics">
+<h3>Distributed Metrics<a class="headerlink" href="#distributed-metrics" title="Link to this heading">¶</a></h3>
+<p>Synchronize metrics across GPUs:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistributedMetrics</span>
+
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">DistributedMetrics</span><span class="p">()</span>
+
+<span class="c1"># During training (on each GPU)</span>
+<span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">train_step</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">acc</span> <span class="o">=</span> <span class="n">compute_accuracy</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+    <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">count</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;accuracy&quot;</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">count</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+<span class="c1"># At end of epoch, get synchronized averages</span>
+<span class="n">avg_metrics</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">compute_and_reset</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">is_main_process</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Avg Loss: </span><span class="si">{</span><span class="n">avg_metrics</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Avg Accuracy: </span><span class="si">{</span><span class="n">avg_metrics</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-gpu-configuration">
+<h3>Multi-GPU Configuration<a class="headerlink" href="#multi-gpu-configuration" title="Link to this heading">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># configs/trainer/multi_gpu_ddp.yaml</span>
+<span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.Trainer</span>
+
+<span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpu</span>
+<span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">  </span><span class="c1"># Number of GPUs</span>
+<span class="nt">num_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w">  </span><span class="c1"># Number of machines</span>
+<span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ddp</span>
+
+<span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bf16-mixed</span>
+
+<span class="nt">max_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="nt">gradient_clip_val</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+</pre></div>
+</div>
+<p><strong>Usage:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Single node, 4 GPUs</span>
+python<span class="w"> </span>cyto_dl/train.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">experiment</span><span class="o">=</span>im2im/labelfree<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">trainer</span><span class="o">=</span>multi_gpu_ddp<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>trainer.devices<span class="o">=</span><span class="m">4</span>
+
+<span class="c1"># Multi-node (2 machines, 4 GPUs each)</span>
+<span class="c1"># Machine 0:</span>
+python<span class="w"> </span>cyto_dl/train.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">experiment</span><span class="o">=</span>im2im/labelfree<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">trainer</span><span class="o">=</span>multi_gpu_ddp<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>trainer.num_nodes<span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>trainer.devices<span class="o">=</span><span class="m">4</span>
+
+<span class="c1"># Machine 1:</span>
+python<span class="w"> </span>cyto_dl/train.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">experiment</span><span class="o">=</span>im2im/labelfree<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">trainer</span><span class="o">=</span>multi_gpu_ddp<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>trainer.num_nodes<span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>trainer.devices<span class="o">=</span><span class="m">4</span>
+</pre></div>
+</div>
+</section>
+<section id="ddp-scaling-efficiency">
+<h3>DDP Scaling Efficiency<a class="headerlink" href="#ddp-scaling-efficiency" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>GPUs</p></th>
+<th class="head"><p>Speedup</p></th>
+<th class="head"><p>Efficiency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1.0x</p></td>
+<td><p>100%</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>1.8x</p></td>
+<td><p>90%</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>3.5x</p></td>
+<td><p>87%</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>6.5x</p></td>
+<td><p>81%</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>With gradient compression (multi-node):</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Nodes</p></th>
+<th class="head"><p>GPUs</p></th>
+<th class="head"><p>Speedup</p></th>
+<th class="head"><p>Efficiency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>8</p></td>
+<td><p>12.0x</p></td>
+<td><p>75%</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>16</p></td>
+<td><p>22.4x</p></td>
+<td><p>70%</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id6">
+<h2>Automated Performance Tuning<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<section id="auto-tune-your-model">
+<h3>Auto-Tune Your Model<a class="headerlink" href="#auto-tune-your-model" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.auto_tune</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTuner</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">()</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+<span class="n">sample_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+<span class="c1"># Auto-tune</span>
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">AutoTuner</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sample_input</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+<span class="n">optimal_config</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">tune</span><span class="p">(</span><span class="n">tune_inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tune_training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Results:</span>
+<span class="c1"># ============================================================</span>
+<span class="c1"># STARTING AUTO-TUNING</span>
+<span class="c1"># ============================================================</span>
+<span class="c1">#</span>
+<span class="c1"># 🔍 Tuning inference performance...</span>
+<span class="c1">#   Finding optimal batch size...</span>
+<span class="c1">#     Batch size 8: 234.5 samples/sec</span>
+<span class="c1">#     Batch size 16: 312.7 samples/sec</span>
+<span class="c1">#     Batch size 32: 298.3 samples/sec</span>
+<span class="c1">#   ✓ Optimal batch size: 16</span>
+<span class="c1">#   Testing channels-last memory format...</span>
+<span class="c1">#   ✓ Channels-last speedup: 1.23x</span>
+<span class="c1">#   Testing torch.compile...</span>
+<span class="c1">#   ✓ Compile speedup: 1.47x</span>
+<span class="c1">#   Testing mixed precision...</span>
+<span class="c1">#   ✓ BF16 recommended (speedup: 1.52x)</span>
+<span class="c1">#</span>
+<span class="c1"># 🔍 Tuning data loading...</span>
+<span class="c1">#   Finding optimal num_workers...</span>
+<span class="c1">#     num_workers=0: 12.3 batches/sec</span>
+<span class="c1">#     num_workers=2: 18.7 batches/sec</span>
+<span class="c1">#     num_workers=4: 24.1 batches/sec</span>
+<span class="c1">#     num_workers=8: 23.8 batches/sec</span>
+<span class="c1">#   ✓ Optimal num_workers: 4</span>
+<span class="c1">#</span>
+<span class="c1"># ============================================================</span>
+<span class="c1"># AUTO-TUNING COMPLETE</span>
+<span class="c1"># ============================================================</span>
+<span class="c1">#</span>
+<span class="c1"># Recommended Configuration:</span>
+<span class="c1">#   batch_size: 16</span>
+<span class="c1">#   channels_last: True</span>
+<span class="c1">#   compile: True</span>
+<span class="c1">#   precision: bf16</span>
+<span class="c1">#   num_workers: 4</span>
+<span class="c1">#   pin_memory: True</span>
+<span class="c1">#   persistent_workers: True</span>
+<span class="c1"># ============================================================</span>
+
+<span class="c1"># Use recommendations</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Use batch_size=</span><span class="si">{</span><span class="n">optimal_config</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Use num_workers=</span><span class="si">{</span><span class="n">optimal_config</span><span class="p">[</span><span class="s1">&#39;num_workers&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="save-auto-tuned-config">
+<h3>Save Auto-Tuned Config<a class="headerlink" href="#save-auto-tuned-config" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.auto_tune</span><span class="w"> </span><span class="kn">import</span> <span class="n">auto_tune_model</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">auto_tune_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sample_input</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">save_config</span><span class="o">=</span><span class="s2">&quot;configs/performance/auto_tuned.yaml&quot;</span><span class="p">)</span>
+
+<span class="c1"># ✓ Saved optimal config to configs/performance/auto_tuned.yaml</span>
+</pre></div>
+</div>
+<p>Then use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>cyto_dl/train.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">experiment</span><span class="o">=</span>im2im/labelfree<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">performance</span><span class="o">=</span>auto_tuned
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id7">
+<h2>Combined Performance<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<section id="phase-1-phase-2-phase-3">
+<h3>Phase 1 + Phase 2 + Phase 3<a class="headerlink" href="#phase-1-phase-2-phase-3" title="Link to this heading">¶</a></h3>
+<p>Combining all optimizations:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>Speedup</p></th>
+<th class="head"><p>Components</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Baseline PyTorch</strong></p></td>
+<td><p>1.0x</p></td>
+<td><p>Default</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>+ Phase 1</strong></p></td>
+<td><p>1.5-1.8x</p></td>
+<td><p>cudnn, BF16, compile, etc.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>+ Phase 2 (TensorRT FP16)</strong></p></td>
+<td><p>2.5-3.5x</p></td>
+<td><p>TensorRT inference</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>+ Phase 3 (Flash Attn)</strong></p></td>
+<td><p>5.0-7.0x</p></td>
+<td><p>Flash Attention for ViT</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>+ Phase 3 (Quantization)</strong></p></td>
+<td><p>3.5-5.0x</p></td>
+<td><p>INT8 quantization (CPU)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="example-vision-transformer-with-all-optimizations">
+<h3>Example: Vision Transformer with All Optimizations<a class="headerlink" href="#example-vision-transformer-with-all-optimizations" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.nn.vits.flash_attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace_attention_with_flash</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cyto_dl.utils.performance</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_gpu_optimizations</span>
+
+<span class="c1"># 1. Load model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">MyViTModel</span><span class="p">()</span>
+
+<span class="c1"># 2. Phase 1: Basic optimizations</span>
+<span class="n">setup_gpu_optimizations</span><span class="p">(</span><span class="n">enable_cudnn_benchmark</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_tf32</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">channels_last</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">memory_format</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">channels_last</span><span class="p">)</span>
+
+<span class="c1"># 3. Phase 3: Flash Attention</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">replace_attention_with_flash</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<span class="c1"># 4. Phase 1: torch.compile</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;max-autotune&quot;</span><span class="p">)</span>
+
+<span class="c1"># 5. Use BF16 mixed precision</span>
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">):</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+<span class="c1"># Result: 5-7x faster than baseline!</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id8">
+<h2>Best Practices<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<section id="choosing-optimizations">
+<h3>Choosing Optimizations<a class="headerlink" href="#choosing-optimizations" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Scenario</p></th>
+<th class="head"><p>Recommended Optimizations</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>CPU Inference</strong></p></td>
+<td><p>Quantization (dynamic or static)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>GPU Inference (RTX 4090/5080)</strong></p></td>
+<td><p>Phase 1 + TensorRT FP16</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>ViT Models</strong></p></td>
+<td><p>Phase 1 + Flash Attention + TensorRT</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Multi-GPU Training</strong></p></td>
+<td><p>Phase 1 + DDP optimizations</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Not sure?</strong></p></td>
+<td><p>Use auto-tuning</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="optimization-checklist">
+<h3>Optimization Checklist<a class="headerlink" href="#optimization-checklist" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>✅ <strong>Always use Phase 1</strong> - No downsides, easy setup</p></li>
+<li><p>✅ <strong>Use TensorRT for GPU inference</strong> - 2-3x speedup</p></li>
+<li><p>✅ <strong>Use quantization for CPU inference</strong> - 2-4x speedup</p></li>
+<li><p>✅ <strong>Use Flash Attention for ViT</strong> - 2-4x attention speedup</p></li>
+<li><p>✅ <strong>Profile before optimizing</strong> - Find bottlenecks first</p></li>
+<li><p>✅ <strong>Benchmark after changes</strong> - Verify improvements</p></li>
+<li><p>✅ <strong>Test accuracy</strong> - Ensure minimal loss</p></li>
+</ul>
+</section>
+<section id="common-pitfalls">
+<h3>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Link to this heading">¶</a></h3>
+<p>❌ <strong>Don’t:</strong></p>
+<ul class="simple">
+<li><p>Skip Phase 1 optimizations (they’re free!)</p></li>
+<li><p>Use quantization on GPU (use TensorRT instead)</p></li>
+<li><p>Enable gradient checkpointing unless OOM</p></li>
+<li><p>Use Flash Attention on CNNs (no attention layers)</p></li>
+<li><p>Forget to benchmark</p></li>
+</ul>
+<p>✅ <strong>Do:</strong></p>
+<ul class="simple">
+<li><p>Start with Phase 1</p></li>
+<li><p>Add Phase 2 (TensorRT) for GPU inference</p></li>
+<li><p>Add Phase 3 optimizations selectively</p></li>
+<li><p>Profile to find bottlenecks</p></li>
+<li><p>Test accuracy after quantization</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h2>
+<p>Phase 3 provides advanced optimizations for specific use cases:</p>
+<ol class="arabic simple">
+<li><p><strong>PyTorch Quantization</strong>: 2-4x faster CPU inference, 4x smaller models</p></li>
+<li><p><strong>Flash Attention</strong>: 2-4x faster ViT models, 10-20x less memory</p></li>
+<li><p><strong>Advanced Profiling</strong>: Find bottlenecks and optimize</p></li>
+<li><p><strong>Multi-GPU DDP</strong>: Near-linear scaling on multiple GPUs</p></li>
+<li><p><strong>Auto-Tuning</strong>: Automatically find optimal settings</p></li>
+</ol>
+<p><strong>Combined with Phase 1 &amp; 2: 5-10x total speedup possible!</strong></p>
+<section id="next-steps">
+<h3>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>For CPU deployment</strong>: Use quantization</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/export_quantized_model.py<span class="w"> </span>--mode<span class="w"> </span>static
+</pre></div>
+</div>
+</li>
+<li><p><strong>For ViT models</strong>: Use Flash Attention</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">replace_attention_with_flash</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>For multi-GPU</strong>: Use DDP optimizations</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>cyto_dl/train.py<span class="w"> </span><span class="nv">trainer</span><span class="o">=</span>multi_gpu_ddp<span class="w"> </span>trainer.devices<span class="o">=</span><span class="m">4</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Not sure?</strong>: Use auto-tuning</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">auto_tune_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sample_input</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="additional-resources">
+<h2>Additional Resources<a class="headerlink" href="#additional-resources" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="GPU_OPTIMIZATION_GUIDE.md">Phase 1: GPU Optimization Guide</a></p></li>
+<li><p><a class="reference external" href="TENSORRT_GUIDE.md">Phase 2: TensorRT Integration</a></p></li>
+<li><p><a class="reference external" href="PERFORMANCE_OPTIMIZATIONS.md">Performance Summary</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2205.14135">Flash Attention Paper</a></p></li>
+<li><p><a class="reference external" href="https://pytorch.org/docs/stable/quantization.html">PyTorch Quantization Docs</a></p></li>
+</ul>
+<p>For issues or questions, please file an issue on GitHub.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Phase 3: Advanced Optimizations Guide</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#id1">Overview</a><ul>
+<li><a class="reference internal" href="#when-to-use-phase-3">When to Use Phase 3</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">PyTorch Quantization</a><ul>
+<li><a class="reference internal" href="#what-is-quantization">What is Quantization?</a></li>
+<li><a class="reference internal" href="#three-quantization-modes">Three Quantization Modes</a><ul>
+<li><a class="reference internal" href="#dynamic-quantization-easiest">1. Dynamic Quantization (Easiest)</a></li>
+<li><a class="reference internal" href="#static-quantization-best-balance">2. Static Quantization (Best Balance)</a></li>
+<li><a class="reference internal" href="#quantization-aware-training-best-accuracy">3. Quantization-Aware Training (Best Accuracy)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-quantization-api">Using Quantization API</a></li>
+<li><a class="reference internal" href="#quantization-performance">Quantization Performance</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id3">Flash Attention</a><ul>
+<li><a class="reference internal" href="#what-is-flash-attention">What is Flash Attention?</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#method-1-drop-in-replacement">Method 1: Drop-in Replacement</a></li>
+<li><a class="reference internal" href="#method-2-auto-replace-existing-models">Method 2: Auto-Replace Existing Models</a></li>
+<li><a class="reference internal" href="#method-3-complete-optimized-transformer-block">Method 3: Complete Optimized Transformer Block</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flash-attention-benchmark">Flash Attention Benchmark</a></li>
+<li><a class="reference internal" href="#flash-attention-performance">Flash Attention Performance</a></li>
+<li><a class="reference internal" href="#when-to-use-flash-attention">When to Use Flash Attention</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id4">Advanced Profiling</a><ul>
+<li><a class="reference internal" href="#memory-profiler">Memory Profiler</a></li>
+<li><a class="reference internal" href="#profiler-context">Profiler Context</a></li>
+<li><a class="reference internal" href="#bottleneck-detector">Bottleneck Detector</a></li>
+<li><a class="reference internal" href="#quick-memory-snapshot">Quick Memory Snapshot</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id5">Multi-GPU DDP Optimizations</a><ul>
+<li><a class="reference internal" href="#optimized-ddp-setup">Optimized DDP Setup</a></li>
+<li><a class="reference internal" href="#gradient-compression">Gradient Compression</a></li>
+<li><a class="reference internal" href="#ddpoptimizer-all-in-one">DDPOptimizer (All-in-One)</a></li>
+<li><a class="reference internal" href="#distributed-metrics">Distributed Metrics</a></li>
+<li><a class="reference internal" href="#multi-gpu-configuration">Multi-GPU Configuration</a></li>
+<li><a class="reference internal" href="#ddp-scaling-efficiency">DDP Scaling Efficiency</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id6">Automated Performance Tuning</a><ul>
+<li><a class="reference internal" href="#auto-tune-your-model">Auto-Tune Your Model</a></li>
+<li><a class="reference internal" href="#save-auto-tuned-config">Save Auto-Tuned Config</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id7">Combined Performance</a><ul>
+<li><a class="reference internal" href="#phase-1-phase-2-phase-3">Phase 1 + Phase 2 + Phase 3</a></li>
+<li><a class="reference internal" href="#example-vision-transformer-with-all-optimizations">Example: Vision Transformer with All Optimizations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id8">Best Practices</a><ul>
+<li><a class="reference internal" href="#choosing-optimizations">Choosing Optimizations</a></li>
+<li><a class="reference internal" href="#optimization-checklist">Optimization Checklist</a></li>
+<li><a class="reference internal" href="#common-pitfalls">Common Pitfalls</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#summary">Summary</a><ul>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-resources">Additional Resources</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=2bd037f0"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

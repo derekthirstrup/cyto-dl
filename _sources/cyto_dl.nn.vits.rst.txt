@@ -22,6 +22,7 @@ Submodules
 
    cyto_dl.nn.vits.decoder
    cyto_dl.nn.vits.encoder
+   cyto_dl.nn.vits.flash_attention
    cyto_dl.nn.vits.mae
    cyto_dl.nn.vits.predictor
    cyto_dl.nn.vits.seg

@@ -1,0 +1,7 @@
+cyto\_dl.utils.tensorrt\_utils module
+=====================================
+
+.. automodule:: cyto_dl.utils.tensorrt_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+cyto\_dl.utils.benchmark module
+===============================
+
+.. automodule:: cyto_dl.utils.benchmark
+   :members:
+   :show-inheritance:
+   :undoc-members:
