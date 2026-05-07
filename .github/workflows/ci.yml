@@ -57,9 +57,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            uv run pytest -v --cov cyto_dl --cov-report=xml
+            uv run pytest -v -m "not slow" -o addopts= --durations=25 --cov cyto_dl --cov-report=xml
           else
-            uv run pytest -v
+            uv run pytest -v -m "not slow" -o addopts= --durations=25
           fi
 
       - name: Upload coverage
