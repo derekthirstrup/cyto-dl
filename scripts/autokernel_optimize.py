@@ -34,8 +34,9 @@ RESULTS_MARKER = "### AUTOKERNEL_RESULTS_JSON ###"
 
 
 def _shim_for_lightning(ckpt_path: str, target_module: str) -> str:
-    return textwrap.dedent(
-        f'''
+    return (
+        textwrap.dedent(
+            f'''
         """Auto-generated shim. Loads a cyto-dl Lightning checkpoint and exposes
         its underlying network as a plain nn.Module for AutoKernel profiling."""
         from __future__ import annotations
@@ -57,12 +58,15 @@ def _shim_for_lightning(ckpt_path: str, target_module: str) -> str:
             def forward(self, x: torch.Tensor) -> torch.Tensor:
                 return self.inner(x)
         '''
-    ).strip() + "\n"
+        ).strip()
+        + "\n"
+    )
 
 
 def _shim_for_cellpose(ckpt_path: str) -> str:
-    return textwrap.dedent(
-        f'''
+    return (
+        textwrap.dedent(
+            f'''
         """Auto-generated shim. Loads a Cellpose 4 fine-tuned model and exposes
         its underlying torch network as nn.Module for AutoKernel profiling."""
         from __future__ import annotations
@@ -81,17 +85,22 @@ def _shim_for_cellpose(ckpt_path: str) -> str:
             def forward(self, x: torch.Tensor) -> torch.Tensor:
                 return self.inner(x)
         '''
-    ).strip() + "\n"
+        ).strip()
+        + "\n"
+    )
 
 
 def _shim_for_class(module: str, class_name: str) -> str:
-    return textwrap.dedent(
-        f'''
+    return (
+        textwrap.dedent(
+            f'''
         """Auto-generated shim. Re-exports the user-specified cyto-dl class so
         AutoKernel's --class-name flag finds it at a stable location."""
         from {module} import {class_name} as ExportedModel  # noqa: F401
         '''
-    ).strip() + "\n"
+        ).strip()
+        + "\n"
+    )
 
 
 def _resolve_defaults(config_path: str | None) -> dict:
@@ -214,23 +223,31 @@ def main() -> int:
 
     profile_cmd = _autokernel_cmd(
         "profile.py",
-        "--model", module_arg,
-        "--class-name", class_arg,
-        "--input-shape", ",".join(shape_args),
-        "--dtype", dtype,
+        "--model",
+        module_arg,
+        "--class-name",
+        class_arg,
+        "--input-shape",
+        ",".join(shape_args),
+        "--dtype",
+        dtype,
     )
     extract_cmd = _autokernel_cmd("extract.py", "--top", str(top_n), "--backend", backend)
     bench_cmd = _autokernel_cmd(
         "bench.py",
-        "--max-experiments", str(experiments),
-        "--target-metric", target_metric,
+        "--max-experiments",
+        str(experiments),
+        "--target-metric",
+        target_metric,
     )
     if args.llm_model:
         bench_cmd += ["--llm-model", args.llm_model]
 
     print(f"AutoKernel workspace: {workspace}")
     print(f"Shim file: {shim_path}")
-    print(f"Backend={backend} dtype={dtype} top_n={top_n} experiments={experiments} target={target_metric}")
+    print(
+        f"Backend={backend} dtype={dtype} top_n={top_n} experiments={experiments} target={target_metric}"
+    )
 
     for step_name, cmd in (
         ("profile", profile_cmd),

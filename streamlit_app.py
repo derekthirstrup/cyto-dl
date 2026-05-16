@@ -1398,12 +1398,10 @@ def autokernel_is_installed() -> bool:
 def autokernel_commit() -> str:
     if not AUTOKERNEL_SENTINEL.is_file():
         return ""
-    try:
+    with suppress(OSError):
         for line in AUTOKERNEL_SENTINEL.read_text(encoding="utf-8").splitlines():
             if line.startswith("commit="):
                 return line.split("=", 1)[1].strip()
-    except OSError:
-        pass
     return ""
 
 
@@ -1435,14 +1433,22 @@ def launch_autokernel(params: dict):
         "python",
         "-u",
         str(PROJECT_ROOT / "scripts" / "autokernel_optimize.py"),
-        "--source", params["source"],
-        "--input-shape", *(str(d) for d in params["input_shape"]),
-        "--dtype", params["dtype"],
-        "--backend", params["backend"],
-        "--top-n", str(params["top_n"]),
-        "--experiments-per-kernel", str(params["experiments_per_kernel"]),
-        "--target-metric", params["target_metric"],
-        "--workspace", params["workspace"],
+        "--source",
+        params["source"],
+        "--input-shape",
+        *(str(d) for d in params["input_shape"]),
+        "--dtype",
+        params["dtype"],
+        "--backend",
+        params["backend"],
+        "--top-n",
+        str(params["top_n"]),
+        "--experiments-per-kernel",
+        str(params["experiments_per_kernel"]),
+        "--target-metric",
+        params["target_metric"],
+        "--workspace",
+        params["workspace"],
     ]
     if params["source"] == "cytodl_class":
         cmd += ["--module", params["module"], "--class-name", params["class_name"]]
@@ -2966,7 +2972,11 @@ output = engine(input_tensor)""",
         st.markdown("#### Setup")
         installed = autokernel_is_installed()
         setup_proc = st.session_state.autokernel_setup_process
-        if setup_proc and setup_proc.poll() is not None and st.session_state.autokernel_setup_running:
+        if (
+            setup_proc
+            and setup_proc.poll() is not None
+            and st.session_state.autokernel_setup_running
+        ):
             st.session_state.autokernel_setup_running = False
             installed = autokernel_is_installed()
 
@@ -2974,9 +2984,7 @@ output = engine(input_tensor)""",
             commit = autokernel_commit() or "unknown"
             st.success(f"AutoKernel ready at `vendor/autokernel/` (commit `{commit}`).")
             with st.expander("Reinstall / update AutoKernel"):
-                if st.button(
-                    "Re-run setup (git pull + uv sync)", key="autokernel_setup_rerun"
-                ):
+                if st.button("Re-run setup (git pull + uv sync)", key="autokernel_setup_rerun"):
                     launch_autokernel_setup()
                     st.toast("AutoKernel setup re-launched.")
                     st.rerun()
@@ -2987,9 +2995,7 @@ output = engine(input_tensor)""",
                 "and run `uv sync`. Requires `uv` and a CUDA/ROCm GPU."
             )
             if not st.session_state.autokernel_setup_running:
-                if st.button(
-                    "Install AutoKernel", type="primary", key="autokernel_setup_btn"
-                ):
+                if st.button("Install AutoKernel", type="primary", key="autokernel_setup_btn"):
                     launch_autokernel_setup()
                     st.toast("AutoKernel setup launched.")
                     st.rerun()
@@ -3026,9 +3032,7 @@ output = engine(input_tensor)""",
         ak_module = ""
         ak_class_name = ""
         ak_ckpt = ""
-        default_ckpt = _find_best_checkpoint(
-            str(PROJECT_ROOT / "logs")
-        ) or ""
+        default_ckpt = _find_best_checkpoint(str(PROJECT_ROOT / "logs")) or ""
 
         if ak_source == "cytodl_class":
             col1, col2 = st.columns(2)
@@ -3220,9 +3224,7 @@ output = engine(input_tensor)""",
                     st.error(f"AutoKernel exited with code {ak_proc.returncode}")
 
             if st.session_state.autokernel_log:
-                st.code(
-                    "\n".join(st.session_state.autokernel_log[-200:]), language="log"
-                )
+                st.code("\n".join(st.session_state.autokernel_log[-200:]), language="log")
             if st.session_state.autokernel_running:
                 if st.button("Refresh log", key="autokernel_refresh_log"):
                     st.rerun()

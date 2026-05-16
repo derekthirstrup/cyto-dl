@@ -30,7 +30,9 @@ SENTINEL = VENDOR_DIR / ".cytodl_ready"
 
 def _run(cmd: list[str], cwd: Path | None = None) -> int:
     print(f"$ {' '.join(cmd)}", flush=True)
-    return subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=False).returncode  # nosec: B603
+    return subprocess.run(
+        cmd, cwd=str(cwd) if cwd else None, check=False
+    ).returncode  # nosec: B603
 
 
 def _check_uv() -> bool:
@@ -73,7 +75,9 @@ def main() -> int:
     args = parser.parse_args()
 
     if not _check_uv():
-        print("ERROR: `uv` is not on PATH. Install from https://docs.astral.sh/uv/", file=sys.stderr)
+        print(
+            "ERROR: `uv` is not on PATH. Install from https://docs.astral.sh/uv/", file=sys.stderr
+        )
         return 1
 
     VENDOR_DIR.parent.mkdir(parents=True, exist_ok=True)
@@ -83,12 +87,16 @@ def main() -> int:
         shutil.rmtree(VENDOR_DIR)
 
     if not (VENDOR_DIR / ".git").is_dir():
-        rc = _run(["git", "clone", "--depth", "1", "--branch", args.ref, args.repo, str(VENDOR_DIR)])
+        rc = _run(
+            ["git", "clone", "--depth", "1", "--branch", args.ref, args.repo, str(VENDOR_DIR)]
+        )
         if rc != 0:
             print("ERROR: git clone failed", file=sys.stderr)
             return 1
     else:
-        print(f"AutoKernel repo already present at {VENDOR_DIR} (commit {_read_commit(VENDOR_DIR)})")
+        print(
+            f"AutoKernel repo already present at {VENDOR_DIR} (commit {_read_commit(VENDOR_DIR)})"
+        )
 
     if not args.skip_sync:
         rc = _run(["uv", "sync"], cwd=VENDOR_DIR)
