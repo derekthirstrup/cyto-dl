@@ -94,6 +94,13 @@ tensorrt = [
 gui = [
     "streamlit>=1.57.0",
 ]
+autokernel = [
+    # AutoKernel itself is cloned + uv-synced into vendor/autokernel/ by
+    # scripts/setup_autokernel.py. The cellpose dep is only needed if you want
+    # the AutoKernel tab's "Cellpose 4" source path; everything else uses
+    # cyto-dl's existing torch/lightning stack.
+    "cellpose>=4.0",
+]
 all = [
     "cyto-dl[equiv,spharm,s3,torchserve,pcloud,tensorrt,gui]",
 ]

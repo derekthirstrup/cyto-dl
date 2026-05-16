@@ -1,0 +1,12 @@
+# Defaults consumed by scripts/autokernel_optimize.py and the Streamlit GUI tab.
+# CLI flags / GUI controls override anything set here.
+
+backend: triton          # triton | cuda
+dtype: float16           # float16 | float32
+top_n: 5                 # number of hottest kernels to extract
+experiments_per_kernel: 50   # AutoKernel agent budget per kernel (~90s each)
+target_metric: throughput    # throughput | latency | vram
+
+# Optional overrides
+# llm_model: ""          # passes through to AutoKernel agent if set
+# workspace: outputs/autokernel/run
