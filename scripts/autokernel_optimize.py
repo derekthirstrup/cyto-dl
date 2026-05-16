@@ -163,28 +163,42 @@ def main() -> int:
         required=True,
         help="Input tensor shape, e.g. 1 1 16 128 128 (batch + channels + spatial).",
     )
-    parser.add_argument("--dtype", choices=["float16", "float32"], default="float16")
-    parser.add_argument("--backend", choices=["triton", "cuda"], default="triton")
-    parser.add_argument("--top-n", type=int, default=5)
-    parser.add_argument("--experiments-per-kernel", type=int, default=50)
-    parser.add_argument(
-        "--target-metric", choices=["throughput", "latency", "vram"], default="throughput"
-    )
+    parser.add_argument("--dtype", choices=["float16", "float32"], default=None)
+    parser.add_argument("--backend", choices=["triton", "cuda"], default=None)
+    parser.add_argument("--top-n", type=int, default=None)
+    parser.add_argument("--experiments-per-kernel", type=int, default=None)
+    parser.add_argument("--target-metric", choices=["throughput", "latency", "vram"], default=None)
     parser.add_argument(
         "--workspace",
-        default=str(PROJECT_ROOT / "outputs" / "autokernel" / "run"),
+        default=None,
         help="Where to copy results, shim, and logs.",
     )
-    parser.add_argument("--llm-model", default="", help="Optional LLM identifier passed through.")
+    parser.add_argument(
+        "--llm-model", default=None, help="Optional LLM identifier passed through."
+    )
     parser.add_argument("--config", default=None, help="Optional YAML defaults override.")
     args = parser.parse_args()
 
     defaults = _resolve_defaults(args.config)
-    backend = args.backend or defaults.get("backend", "triton")
-    dtype = args.dtype or defaults.get("dtype", "float16")
-    top_n = args.top_n or defaults.get("top_n", 5)
-    experiments = args.experiments_per_kernel or defaults.get("experiments_per_kernel", 50)
-    target_metric = args.target_metric or defaults.get("target_metric", "throughput")
+    backend = args.backend if args.backend is not None else defaults.get("backend", "triton")
+    dtype = args.dtype if args.dtype is not None else defaults.get("dtype", "float16")
+    top_n = args.top_n if args.top_n is not None else defaults.get("top_n", 5)
+    experiments = (
+        args.experiments_per_kernel
+        if args.experiments_per_kernel is not None
+        else defaults.get("experiments_per_kernel", 50)
+    )
+    target_metric = (
+        args.target_metric
+        if args.target_metric is not None
+        else defaults.get("target_metric", "throughput")
+    )
+    workspace_arg = (
+        args.workspace
+        if args.workspace is not None
+        else defaults.get("workspace", str(PROJECT_ROOT / "outputs" / "autokernel" / "run"))
+    )
+    llm_model = args.llm_model if args.llm_model is not None else defaults.get("llm_model", "")
 
     if not SENTINEL.is_file():
         print(
@@ -193,7 +207,7 @@ def main() -> int:
         )
         return 1
 
-    workspace = Path(args.workspace).resolve()
+    workspace = Path(workspace_arg).resolve()
     workspace.mkdir(parents=True, exist_ok=True)
 
     shim_path = workspace / "_model_shim.py"
@@ -240,8 +254,8 @@ def main() -> int:
         "--target-metric",
         target_metric,
     )
-    if args.llm_model:
-        bench_cmd += ["--llm-model", args.llm_model]
+    if llm_model:
+        bench_cmd += ["--llm-model", llm_model]
 
     print(f"AutoKernel workspace: {workspace}")
     print(f"Shim file: {shim_path}")

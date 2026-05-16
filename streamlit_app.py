@@ -2984,7 +2984,7 @@ output = engine(input_tensor)""",
             commit = autokernel_commit() or "unknown"
             st.success(f"AutoKernel ready at `vendor/autokernel/` (commit `{commit}`).")
             with st.expander("Reinstall / update AutoKernel"):
-                if st.button("Re-run setup (git pull + uv sync)", key="autokernel_setup_rerun"):
+                if st.button("Re-run uv sync", key="autokernel_setup_rerun"):
                     launch_autokernel_setup()
                     st.toast("AutoKernel setup re-launched.")
                     st.rerun()
@@ -3070,12 +3070,20 @@ output = engine(input_tensor)""",
             )
 
         st.markdown("**Input shape**")
+        ak_spatial_dims = st.radio(
+            "Spatial dimensions",
+            [2, 3],
+            index=0 if ak_source == "cellpose4" else 1,
+            horizontal=True,
+            key="autokernel_spatial_dims",
+            help="Cellpose 4 is 2D. cyto-dl models can be either; check your training config.",
+        )
         shape_cols = st.columns(5)
         with shape_cols[0]:
             ak_n = st.number_input("N (batch)", min_value=1, value=1, key="autokernel_n")
         with shape_cols[1]:
             ak_c = st.number_input("C (channels)", min_value=1, value=1, key="autokernel_c")
-        is_2d = ak_source == "cellpose4"
+        is_2d = ak_spatial_dims == 2
         if is_2d:
             with shape_cols[2]:
                 ak_h = st.number_input("H", min_value=1, value=256, key="autokernel_h2d")

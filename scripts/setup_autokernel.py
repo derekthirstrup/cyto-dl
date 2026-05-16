@@ -44,9 +44,9 @@ def _check_gpu() -> tuple[bool, str]:
         import torch  # noqa: PLC0415
 
         if torch.cuda.is_available():
+            if getattr(torch.version, "hip", None):
+                return True, f"ROCm/HIP device: {torch.cuda.get_device_name(0)}"
             return True, f"CUDA device: {torch.cuda.get_device_name(0)}"
-        if hasattr(torch.version, "hip") and torch.version.hip:
-            return True, f"ROCm/HIP: {torch.version.hip}"
         return False, "torch.cuda.is_available() is False"
     except ImportError:
         return False, "torch is not importable"
@@ -74,7 +74,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if not _check_uv():
+    if not args.skip_sync and not _check_uv():
         print(
             "ERROR: `uv` is not on PATH. Install from https://docs.astral.sh/uv/", file=sys.stderr
         )
