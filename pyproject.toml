@@ -93,6 +93,9 @@ tensorrt = [
 ]
 gui = [
     "streamlit>=1.57.0",
+    # napari powers the optional "Open in napari" 3D/multichannel viewer launched
+    # from the prediction preview; requires a Qt backend + display on the host.
+    "napari[pyqt5]>=0.4.19",
 ]
 autokernel = [
     # AutoKernel itself is cloned + uv-synced into vendor/autokernel/ by
