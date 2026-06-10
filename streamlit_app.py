@@ -1186,7 +1186,7 @@ def build_full_config(params: dict) -> dict:
         "_aux": {
             "patch_shape": params["patch_shape"],
             "_scales_dict": [
-                [params["target_col"], [1]],
+                *[[t, [1]] for t in all_target_cols],
                 [params["source_col"], [1]],
             ],
         },
@@ -1506,7 +1506,15 @@ def _find_run_directories(search_roots: list) -> list:
                         break
                 else:
                     runs.add(hit.parent)
-    return sorted((str(r) for r in runs), key=lambda p: Path(p).stat().st_mtime, reverse=True)
+
+    def _safe_mtime(p: str) -> float:
+        # A run dir can vanish between rglob discovery and sorting; don't crash the UI.
+        try:
+            return Path(p).stat().st_mtime
+        except OSError:
+            return 0.0
+
+    return sorted((str(r) for r in runs), key=_safe_mtime, reverse=True)
 
 
 def _tail_log_files(monitor_dir: str, n: int = 200) -> str:

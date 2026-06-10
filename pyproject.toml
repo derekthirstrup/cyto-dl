@@ -95,7 +95,8 @@ gui = [
     "streamlit>=1.57.0",
     # napari powers the optional "Open in napari" 3D/multichannel viewer launched
     # from the prediction preview; requires a Qt backend + display on the host.
-    "napari[pyqt5]>=0.4.19",
+    # 0.5.5 is the first release supporting Python 3.13 (this project requires >=3.13).
+    "napari[pyqt5]>=0.5.5",
 ]
 autokernel = [
     # AutoKernel itself is cloned + uv-synced into vendor/autokernel/ by
