@@ -164,3 +164,7 @@ requirements/local
 
 # uv
 uv.lock
+
+# AutoKernel vendored clone (managed by scripts/setup_autokernel.py)
+vendor/autokernel/
+outputs/autokernel/

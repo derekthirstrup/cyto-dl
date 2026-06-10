@@ -563,6 +563,14 @@ def _init_state():
         "eval_process": None,
         "eval_log": [],
         "eval_running": False,
+        "autokernel_process": None,
+        "autokernel_log": [],
+        "autokernel_running": False,
+        "autokernel_log_thread": None,
+        "autokernel_results": None,
+        "autokernel_setup_process": None,
+        "autokernel_setup_log": [],
+        "autokernel_setup_running": False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -1376,6 +1384,124 @@ def stop_tensorrt():
 
 
 # ---------------------------------------------------------------------------
+# AutoKernel
+# ---------------------------------------------------------------------------
+AUTOKERNEL_VENDOR_DIR = PROJECT_ROOT / "vendor" / "autokernel"
+AUTOKERNEL_SENTINEL = AUTOKERNEL_VENDOR_DIR / ".cytodl_ready"
+AUTOKERNEL_RESULTS_MARKER = "### AUTOKERNEL_RESULTS_JSON ###"
+
+
+def autokernel_is_installed() -> bool:
+    return AUTOKERNEL_SENTINEL.is_file()
+
+
+def autokernel_commit() -> str:
+    if not AUTOKERNEL_SENTINEL.is_file():
+        return ""
+    with suppress(OSError):
+        for line in AUTOKERNEL_SENTINEL.read_text(encoding="utf-8").splitlines():
+            if line.startswith("commit="):
+                return line.split("=", 1)[1].strip()
+    return ""
+
+
+def launch_autokernel_setup():
+    cmd = ["python", "-u", str(PROJECT_ROOT / "scripts" / "setup_autokernel.py")]
+    process = subprocess.Popen(  # nosec: B603
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        cwd=str(PROJECT_ROOT),
+        preexec_fn=os.setsid if os.name != "nt" else None,
+    )
+    st.session_state.autokernel_setup_process = process
+    st.session_state.autokernel_setup_log = []
+    st.session_state.autokernel_setup_running = True
+    t = threading.Thread(
+        target=_stream_output,
+        args=(process, st.session_state.autokernel_setup_log),
+        daemon=True,
+    )
+    t.start()
+
+
+def launch_autokernel(params: dict):
+    """Run scripts/autokernel_optimize.py as a subprocess; stream into session log."""
+    cmd = [
+        "python",
+        "-u",
+        str(PROJECT_ROOT / "scripts" / "autokernel_optimize.py"),
+        "--source",
+        params["source"],
+        "--input-shape",
+        *(str(d) for d in params["input_shape"]),
+        "--dtype",
+        params["dtype"],
+        "--backend",
+        params["backend"],
+        "--top-n",
+        str(params["top_n"]),
+        "--experiments-per-kernel",
+        str(params["experiments_per_kernel"]),
+        "--target-metric",
+        params["target_metric"],
+        "--workspace",
+        params["workspace"],
+    ]
+    if params["source"] == "cytodl_class":
+        cmd += ["--module", params["module"], "--class-name", params["class_name"]]
+    else:
+        cmd += ["--ckpt", params["ckpt"]]
+    if params.get("llm_model"):
+        cmd += ["--llm-model", params["llm_model"]]
+    if params.get("config_path"):
+        cmd += ["--config", params["config_path"]]
+
+    process = subprocess.Popen(  # nosec: B603
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        cwd=str(PROJECT_ROOT),
+        preexec_fn=os.setsid if os.name != "nt" else None,
+    )
+    st.session_state.autokernel_process = process
+    st.session_state.autokernel_log = []
+    st.session_state.autokernel_running = True
+    st.session_state.autokernel_results = None
+    t = threading.Thread(
+        target=_stream_output,
+        args=(process, st.session_state.autokernel_log),
+        daemon=True,
+    )
+    t.start()
+    st.session_state.autokernel_log_thread = t
+
+
+def stop_autokernel():
+    _kill_process_group(st.session_state.autokernel_process)
+    st.session_state.autokernel_running = False
+
+
+def _parse_autokernel_results(log_lines: list) -> dict | None:
+    """Find the trailing JSON blob emitted by autokernel_optimize.py."""
+    import json as _json
+
+    for idx in range(len(log_lines) - 1, -1, -1):
+        if log_lines[idx].strip() == AUTOKERNEL_RESULTS_MARKER:
+            payload = "\n".join(log_lines[idx + 1 :]).strip()
+            if not payload:
+                return None
+            with suppress(ValueError):
+                return _json.loads(payload)
+            return None
+    return None
+
+
+# ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
 def main():
@@ -1399,7 +1525,8 @@ def main():
             "4. Set training parameters\n"
             "5. Enable GPU optimizations\n"
             "6. Generate config & launch\n"
-            "7. Export to TensorRT (optional)"
+            "7. Export to TensorRT (optional)\n"
+            "8. Optimize kernels with AutoKernel (optional)"
         )
         st.divider()
         st.markdown(f"**Project root:** `{PROJECT_ROOT}`")
@@ -1418,6 +1545,7 @@ def main():
         tab_gpu,
         tab_launch,
         tab_trt,
+        tab_autokernel,
     ) = st.tabs(
         [
             "Experiment",
@@ -1430,6 +1558,7 @@ def main():
             "GPU / Perf",
             "Launch",
             "TensorRT Export",
+            "AutoKernel",
         ]
     )
 
@@ -2827,6 +2956,325 @@ engine = TensorRTInferenceEngine("model_trt.ts", input_shape=(1, 1, 16, 128, 128
 output = engine(input_tensor)""",
                 language="python",
             )
+
+    # ------------------------------------------------------------------ #
+    # TAB: AutoKernel
+    # ------------------------------------------------------------------ #
+    with tab_autokernel:
+        st.subheader("AutoKernel Optimization")
+        st.caption(
+            "Profile a trained model and let RightNow-AI's AutoKernel rewrite the "
+            "hottest kernels in Triton or CUDA C++. Each experiment ≈ 90 s on a "
+            "modern NVIDIA/AMD GPU."
+        )
+
+        # --- Setup card ----------------------------------------------------
+        st.markdown("#### Setup")
+        installed = autokernel_is_installed()
+        setup_proc = st.session_state.autokernel_setup_process
+        if (
+            setup_proc
+            and setup_proc.poll() is not None
+            and st.session_state.autokernel_setup_running
+        ):
+            st.session_state.autokernel_setup_running = False
+            installed = autokernel_is_installed()
+
+        if installed:
+            commit = autokernel_commit() or "unknown"
+            st.success(f"AutoKernel ready at `vendor/autokernel/` (commit `{commit}`).")
+            with st.expander("Reinstall / update AutoKernel"):
+                if st.button("Re-run uv sync", key="autokernel_setup_rerun"):
+                    launch_autokernel_setup()
+                    st.toast("AutoKernel setup re-launched.")
+                    st.rerun()
+        else:
+            st.warning(
+                "AutoKernel is not installed. Click below to clone "
+                "`https://github.com/RightNow-AI/autokernel` into `vendor/autokernel/` "
+                "and run `uv sync`. Requires `uv` and a CUDA/ROCm GPU."
+            )
+            if not st.session_state.autokernel_setup_running:
+                if st.button("Install AutoKernel", type="primary", key="autokernel_setup_btn"):
+                    launch_autokernel_setup()
+                    st.toast("AutoKernel setup launched.")
+                    st.rerun()
+            else:
+                st.info("Setup running...")
+
+        if st.session_state.autokernel_setup_log:
+            with st.expander("Setup log", expanded=st.session_state.autokernel_setup_running):
+                st.code(
+                    "\n".join(st.session_state.autokernel_setup_log[-200:]),
+                    language="log",
+                )
+                if st.session_state.autokernel_setup_running:
+                    if st.button("Refresh setup log", key="autokernel_setup_refresh"):
+                        st.rerun()
+
+        st.divider()
+
+        # --- Model source selection ---------------------------------------
+        st.markdown("#### Model Source")
+        ak_source_label = st.radio(
+            "Where does the model come from?",
+            ["cyto-dl class", "Lightning checkpoint (.ckpt)", "Cellpose 4 (.pt)"],
+            horizontal=True,
+            key="autokernel_source_radio",
+        )
+        ak_source_map = {
+            "cyto-dl class": "cytodl_class",
+            "Lightning checkpoint (.ckpt)": "lightning_ckpt",
+            "Cellpose 4 (.pt)": "cellpose4",
+        }
+        ak_source = ak_source_map[ak_source_label]
+
+        ak_module = ""
+        ak_class_name = ""
+        ak_ckpt = ""
+        default_ckpt = _find_best_checkpoint(str(PROJECT_ROOT / "logs")) or ""
+
+        if ak_source == "cytodl_class":
+            col1, col2 = st.columns(2)
+            with col1:
+                ak_module = st.text_input(
+                    "Python module path",
+                    value="cyto_dl.models.im2im.MultiTaskIm2Im",
+                    help="Importable Python path to the nn.Module class.",
+                    key="autokernel_module",
+                )
+            with col2:
+                ak_class_name = st.text_input(
+                    "Class name",
+                    value="MultiTaskIm2Im",
+                    help="Class within the module above.",
+                    key="autokernel_classname",
+                )
+        elif ak_source == "lightning_ckpt":
+            ak_ckpt = st.text_input(
+                "Checkpoint path (.ckpt)",
+                value=default_ckpt,
+                help="Lightning checkpoint produced by cyto-dl training.",
+                key="autokernel_ckpt_lightning",
+            )
+        else:  # cellpose4
+            ak_ckpt = st.text_input(
+                "Cellpose 4 weights path (.pt)",
+                value="",
+                help="Path to a Cellpose 4 fine-tuned PyTorch weights file.",
+                key="autokernel_ckpt_cellpose",
+            )
+            st.caption(
+                "Requires the `cellpose>=4.0` package "
+                "(install with `pip install -e .[autokernel]`)."
+            )
+
+        st.markdown("**Input shape**")
+        ak_spatial_dims = st.radio(
+            "Spatial dimensions",
+            [2, 3],
+            index=0 if ak_source == "cellpose4" else 1,
+            horizontal=True,
+            key="autokernel_spatial_dims",
+            help="Cellpose 4 is 2D. cyto-dl models can be either; check your training config.",
+        )
+        shape_cols = st.columns(5)
+        with shape_cols[0]:
+            ak_n = st.number_input("N (batch)", min_value=1, value=1, key="autokernel_n")
+        with shape_cols[1]:
+            ak_c = st.number_input("C (channels)", min_value=1, value=1, key="autokernel_c")
+        is_2d = ak_spatial_dims == 2
+        if is_2d:
+            with shape_cols[2]:
+                ak_h = st.number_input("H", min_value=1, value=256, key="autokernel_h2d")
+            with shape_cols[3]:
+                ak_w = st.number_input("W", min_value=1, value=256, key="autokernel_w2d")
+            ak_input_shape = [ak_n, ak_c, ak_h, ak_w]
+            with shape_cols[4]:
+                st.caption("(2D: N C H W)")
+        else:
+            with shape_cols[2]:
+                ak_z = st.number_input("Z", min_value=1, value=16, key="autokernel_z")
+            with shape_cols[3]:
+                ak_h = st.number_input("Y/H", min_value=1, value=128, key="autokernel_h3d")
+            with shape_cols[4]:
+                ak_w = st.number_input("X/W", min_value=1, value=128, key="autokernel_w3d")
+            ak_input_shape = [ak_n, ak_c, ak_z, ak_h, ak_w]
+
+        st.divider()
+
+        # --- Tuning controls ----------------------------------------------
+        st.markdown("#### Tuning")
+        with st.expander("Optimization parameters", expanded=True):
+            tcol1, tcol2, tcol3 = st.columns(3)
+            with tcol1:
+                ak_dtype = st.selectbox(
+                    "dtype", ["float16", "float32"], index=0, key="autokernel_dtype"
+                )
+            with tcol2:
+                ak_backend = st.radio(
+                    "Backend", ["triton", "cuda"], horizontal=True, key="autokernel_backend"
+                )
+            with tcol3:
+                ak_target = st.radio(
+                    "Target metric",
+                    ["throughput", "latency", "vram"],
+                    horizontal=True,
+                    key="autokernel_target",
+                )
+
+            tcol4, tcol5 = st.columns(2)
+            with tcol4:
+                ak_top_n = st.slider(
+                    "Top-N kernels to optimize",
+                    min_value=1,
+                    max_value=20,
+                    value=5,
+                    key="autokernel_top_n",
+                )
+            with tcol5:
+                ak_experiments = st.slider(
+                    "Experiments per kernel",
+                    min_value=10,
+                    max_value=500,
+                    value=50,
+                    step=10,
+                    key="autokernel_experiments",
+                )
+            est_minutes = (ak_top_n * ak_experiments * 90) / 60
+            st.caption(
+                f"Estimated wall time: ≈ {est_minutes:.0f} min "
+                f"({ak_top_n} kernels × {ak_experiments} experiments × ~90 s)"
+            )
+
+            ak_llm = st.text_input(
+                "LLM model (optional)",
+                value="",
+                help="Pass-through to AutoKernel agent (e.g. claude-opus-4 / gpt-4o).",
+                key="autokernel_llm_model",
+            )
+            ak_workspace = st.text_input(
+                "Workspace directory",
+                value=str(
+                    PROJECT_ROOT
+                    / "outputs"
+                    / "autokernel"
+                    / datetime.datetime.now().strftime("run_%Y%m%d_%H%M")
+                ),
+                key="autokernel_workspace",
+            )
+
+        st.divider()
+
+        # --- Launch / Stop -------------------------------------------------
+        st.markdown("#### Run")
+        run_cols = st.columns(2)
+        with run_cols[0]:
+            if not st.session_state.autokernel_running:
+                if st.button(
+                    "Start AutoKernel optimization",
+                    type="primary",
+                    use_container_width=True,
+                    disabled=not installed,
+                    key="autokernel_start_btn",
+                ):
+                    valid = True
+                    if ak_source == "cytodl_class" and not (ak_module and ak_class_name):
+                        st.error("Please provide both module path and class name.")
+                        valid = False
+                    if ak_source in ("lightning_ckpt", "cellpose4") and not ak_ckpt:
+                        st.error("Please provide a checkpoint/weights path.")
+                        valid = False
+                    if valid:
+                        params = {
+                            "source": ak_source,
+                            "module": ak_module,
+                            "class_name": ak_class_name,
+                            "ckpt": ak_ckpt,
+                            "input_shape": ak_input_shape,
+                            "dtype": ak_dtype,
+                            "backend": ak_backend,
+                            "top_n": ak_top_n,
+                            "experiments_per_kernel": ak_experiments,
+                            "target_metric": ak_target,
+                            "workspace": ak_workspace,
+                            "llm_model": ak_llm,
+                            "config_path": str(
+                                PROJECT_ROOT / "configs" / "autokernel" / "default.yaml"
+                            ),
+                        }
+                        launch_autokernel(params)
+                        st.toast("AutoKernel launched!")
+                        st.rerun()
+            else:
+                st.warning("AutoKernel is running...")
+        with run_cols[1]:
+            if st.session_state.autokernel_running:
+                if st.button(
+                    "Stop", type="secondary", use_container_width=True, key="autokernel_stop_btn"
+                ):
+                    stop_autokernel()
+                    st.info("AutoKernel stopped.")
+                    st.rerun()
+
+        # --- Live log + completion handling -------------------------------
+        if st.session_state.autokernel_running or st.session_state.autokernel_log:
+            st.markdown("#### Run log")
+            ak_proc = st.session_state.autokernel_process
+            if ak_proc and ak_proc.poll() is not None and st.session_state.autokernel_running:
+                st.session_state.autokernel_running = False
+                st.session_state.autokernel_results = _parse_autokernel_results(
+                    st.session_state.autokernel_log
+                )
+                if ak_proc.returncode == 0:
+                    st.success("AutoKernel run finished.")
+                else:
+                    st.error(f"AutoKernel exited with code {ak_proc.returncode}")
+
+            if st.session_state.autokernel_log:
+                st.code("\n".join(st.session_state.autokernel_log[-200:]), language="log")
+            if st.session_state.autokernel_running:
+                if st.button("Refresh log", key="autokernel_refresh_log"):
+                    st.rerun()
+
+        # --- Results panel -------------------------------------------------
+        results_payload = st.session_state.autokernel_results or _parse_autokernel_results(
+            st.session_state.autokernel_log or []
+        )
+        if results_payload and results_payload.get("results"):
+            st.divider()
+            st.markdown("#### Results")
+            try:
+                import pandas as _pd
+
+                df = _pd.DataFrame(results_payload["results"])
+                st.dataframe(df, use_container_width=True)
+            except ImportError:
+                st.json(results_payload["results"])
+
+            tsv_path = Path(results_payload.get("workspace", "")) / "results.tsv"
+            if tsv_path.is_file():
+                with tsv_path.open("rb") as f:
+                    st.download_button(
+                        "Download results.tsv",
+                        f.read(),
+                        file_name=tsv_path.name,
+                        mime="text/tab-separated-values",
+                        key="autokernel_download_tsv",
+                    )
+
+        # --- Footer help ---------------------------------------------------
+        st.divider()
+        st.markdown("#### Notes")
+        st.markdown(
+            "- AutoKernel writes optimized kernels to "
+            "`vendor/autokernel/workspace/` and logs each experiment in "
+            "`results.tsv`.\n"
+            "- Use the `Cellpose 4 (.pt)` source to optimize fine-tuned cpsam "
+            "checkpoints (requires the optional `cellpose` dependency).\n"
+            "- Long runs are CPU-cheap but GPU-busy; stop early if you hit a "
+            "speedup ceiling."
+        )
 
 
 if __name__ == "__main__":
