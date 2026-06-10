@@ -11,6 +11,10 @@ from lightning.pytorch.demos.boring_classes import BoringModel
 from cyto_dl.loggers import MLFlowLogger
 from cyto_dl.models.utils.mlflow import get_config
 
+# These tests use a file-based tracking URI under tmpdir; MLflow >= 3.6 refuses the
+# filesystem backend unless this opt-out is set.
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
+
 
 @mock.patch("lightning.pytorch.loggers.mlflow._MLFLOW_AVAILABLE", return_value=True)
 @pytest.mark.parametrize("monitor", [True, False])
