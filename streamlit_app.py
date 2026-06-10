@@ -823,10 +823,10 @@ def _build_data_transforms(params: dict) -> dict:
     """Build train/test/predict/valid transform groups for DataframeDatamodule.
 
     Mirrors the maintained pipelines in ``configs/data/im2im/segmentation.yaml`` and
-    ``configs/data/im2im/labelfree.yaml`` (the datamodule requires a ``transforms``
-    dict, which the GUI previously omitted). Parameterized by the source/target
-    columns, reader channels, Z slices (2D), and downsample zoom exposed in the
-    Data tab so generated configs run instead of crashing at datamodule setup.
+    ``configs/data/im2im/labelfree.yaml`` (the datamodule requires a ``transforms`` dict, which the
+    GUI previously omitted). Parameterized by the source/target columns, reader channels, Z slices
+    (2D), and downsample zoom exposed in the Data tab so generated configs run instead of crashing
+    at datamodule setup.
     """
     exp_type = params["experiment_type"]
     src = params["source_col"]
@@ -837,7 +837,7 @@ def _build_data_transforms(params: dict) -> dict:
     zoom = params.get("zoom", 0.25)
 
     z_expr = "${eval:'None if ${spatial_dims}==3 else " + str(int(z_slices)) + "'}"
-    dim_expr = "${eval:'\"ZYX\" if ${spatial_dims}==3 else \"YX\"'}"
+    dim_expr = '${eval:\'"ZYX" if ${spatial_dims}==3 else "YX"\'}'
 
     def reader(channel):
         return [
@@ -1473,8 +1473,8 @@ def napari_available() -> bool:
 def launch_napari(image_path: str):
     """Open an image in napari as a detached subprocess (3D/multichannel viewer).
 
-    Runs on the host serving Streamlit and requires a display. Returns the Popen
-    handle, or None if napari is unavailable.
+    Runs on the host serving Streamlit and requires a display. Returns the Popen handle, or None if
+    napari is unavailable.
     """
     if not napari_available():
         return None
@@ -1630,7 +1630,9 @@ def _render_eval_checkpoint(monitor_dir: str, live: bool):
     st.text(f"Full path: {best_ckpt}")
     ckpt_stat = Path(best_ckpt).stat()
     ckpt_time = datetime.datetime.fromtimestamp(ckpt_stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
-    st.markdown(f"**Size:** {ckpt_stat.st_size / (1024 * 1024):.1f} MB  |  **Modified:** {ckpt_time}")
+    st.markdown(
+        f"**Size:** {ckpt_stat.st_size / (1024 * 1024):.1f} MB  |  **Modified:** {ckpt_time}"
+    )
 
     all_ckpts = list(Path(monitor_dir).rglob("*.ckpt"))
     if len(all_ckpts) > 1:
@@ -1737,9 +1739,8 @@ def _render_raw_log(monitor_dir: str, live: bool):
 def render_monitoring(monitor_dir: str, live: bool):
     """Render the training monitor (loss / checkpoint review / log).
 
-    Works for both the live in-session run and an attached on-disk run directory.
-    When ``live`` and auto-refresh is enabled, the body reruns on an interval via
-    ``st.fragment(run_every=...)``.
+    Works for both the live in-session run and an attached on-disk run directory. When ``live`` and
+    auto-refresh is enabled, the body reruns on an interval via ``st.fragment(run_every=...)``.
     """
     ctrl1, ctrl2 = st.columns([1, 2])
     with ctrl1:
@@ -1757,9 +1758,7 @@ def render_monitoring(monitor_dir: str, live: bool):
 
     @st.fragment(run_every=run_every)
     def _body():
-        tab_chart, tab_eval, tab_log = st.tabs(
-            ["Loss Monitor", "Evaluate Checkpoint", "Raw Log"]
-        )
+        tab_chart, tab_eval, tab_log = st.tabs(["Loss Monitor", "Evaluate Checkpoint", "Raw Log"])
         with tab_chart:
             _render_loss_monitor(monitor_dir, live)
         with tab_eval:
@@ -2924,9 +2923,7 @@ def main():
             else:
                 st.error(f"Training exited with code {proc.returncode}")
 
-        has_session_run = bool(
-            st.session_state.training_running or st.session_state.training_log
-        )
+        has_session_run = bool(st.session_state.training_running or st.session_state.training_log)
         source_options = (["Current session"] if has_session_run else []) + ["Existing run"]
         monitor_source = st.radio(
             "Monitor",
@@ -2960,7 +2957,6 @@ def main():
                 st.error(f"Directory does not exist: {attach_dir}")
             else:
                 st.info("Select or enter a run directory to monitor.")
-
 
     # ------------------------------------------------------------------ #
     # TAB: TensorRT Export
