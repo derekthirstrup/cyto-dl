@@ -5,11 +5,13 @@ model training. Optimized for CUDA 13 / Blackwell GPU workstations.
 """
 
 import datetime
+import importlib.util
 import logging
 import os
 import re
 import signal
 import subprocess  # nosec: B404
+import sys
 import threading
 from contextlib import suppress
 from pathlib import Path
@@ -817,6 +819,134 @@ def _build_task_head_config(head_cfg: dict, exp_type: str) -> dict:
     return result
 
 
+def _build_data_transforms(params: dict) -> dict:
+    """Build train/test/predict/valid transform groups for DataframeDatamodule.
+
+    Mirrors the maintained pipelines in ``configs/data/im2im/segmentation.yaml`` and
+    ``configs/data/im2im/labelfree.yaml`` (the datamodule requires a ``transforms`` dict, which the
+    GUI previously omitted). Parameterized by the source/target columns, reader channels, Z slices
+    (2D), and downsample zoom exposed in the Data tab so generated configs run instead of crashing
+    at datamodule setup.
+    """
+    exp_type = params["experiment_type"]
+    src = params["source_col"]
+    tgt = params["target_col"]
+    src_c = params.get("source_channel", 5)
+    tgt_c = params.get("target_channel", 0)
+    z_slices = params.get("z_slices", 38)
+    zoom = params.get("zoom", 0.25)
+
+    z_expr = "${eval:'None if ${spatial_dims}==3 else " + str(int(z_slices)) + "'}"
+    dim_expr = '${eval:\'"ZYX" if ${spatial_dims}==3 else "YX"\'}'
+
+    def reader(channel):
+        return [
+            {
+                "_target_": "cyto_dl.image.io.MonaiBioReader",
+                "dimension_order_out": dim_expr,
+                "C": int(channel),
+                "Z": z_expr,
+            }
+        ]
+
+    def load(key, channel):
+        return {"_target_": "monai.transforms.LoadImaged", "keys": key, "reader": reader(channel)}
+
+    def common_preamble(keys, with_target):
+        """Load + channel-first + zoom + tensor, shared by all stages."""
+        t = [load(src, src_c)]
+        if with_target:
+            t.append(load(tgt, tgt_c))
+        t += [
+            {
+                "_target_": "monai.transforms.EnsureChannelFirstd",
+                "channel_dim": "no_channel",
+                "keys": keys,
+            },
+            {
+                "_target_": "monai.transforms.Zoomd",
+                "keys": keys,
+                "zoom": zoom,
+                "keep_size": False,
+            },
+            {"_target_": "monai.transforms.ToTensord", "keys": keys},
+        ]
+        return t
+
+    crop = {
+        "_target_": "cyto_dl.image.transforms.RandomMultiScaleCropd",
+        "keys": "${data.columns}",
+        "patch_shape": "${data._aux.patch_shape}",
+        "patch_per_image": 1,
+        "scales_dict": "${kv_to_dict:${data._aux._scales_dict}}",
+    }
+    norm_src = {
+        "_target_": "monai.transforms.NormalizeIntensityd",
+        "keys": src,
+        "channel_wise": True,
+    }
+    threshold_tgt = {
+        "_target_": "monai.transforms.ThresholdIntensityd",
+        "keys": tgt,
+        "threshold": 0.1,
+        "above": False,
+        "cval": 1,
+    }
+
+    is_seg = exp_type == "segmentation"
+
+    # ---- train ----
+    train_t = common_preamble("${data.columns}", with_target=True) + [norm_src]
+    if is_seg:
+        train_t.append(threshold_tgt)
+    train_t.append(crop)
+    if is_seg:
+        train_t += [
+            {
+                "_target_": "monai.transforms.RandHistogramShiftd",
+                "prob": 0.1,
+                "keys": src,
+                "num_control_points": [90, 500],
+            },
+            {
+                "_target_": "monai.transforms.RandStdShiftIntensityd",
+                "prob": 0.1,
+                "keys": src,
+                "factors": 0.1,
+            },
+            {
+                "_target_": "monai.transforms.RandAdjustContrastd",
+                "prob": 0.1,
+                "keys": src,
+                "gamma": [0.9, 1.5],
+            },
+        ]
+
+    # ---- test (no crop: full field of view) ----
+    test_t = common_preamble("${data.columns}", with_target=True) + [norm_src]
+    if is_seg:
+        test_t.append(threshold_tgt)
+
+    # ---- valid (cropped, like train but deterministic) ----
+    valid_t = common_preamble("${data.columns}", with_target=True) + [norm_src]
+    if is_seg:
+        valid_t.append(threshold_tgt)
+    valid_t.append(crop)
+
+    # ---- predict (source only, no target available) ----
+    predict_t = common_preamble(src, with_target=False) + [norm_src]
+
+    def compose(transforms):
+        return {"_target_": "monai.transforms.Compose", "transforms": transforms}
+
+    return {
+        "train": compose(train_t),
+        "test": compose(test_t),
+        "valid": compose(valid_t),
+        "predict": compose(predict_t),
+    }
+
+
 def build_full_config(params: dict) -> dict:
     """Construct a complete Hydra-compatible config dict from GUI parameters."""
     exp_type = params["experiment_type"]
@@ -967,7 +1097,9 @@ def build_full_config(params: dict) -> dict:
         "_target_": "cyto_dl.callbacks.ImageSaver",
         "save_dir": "${paths.output_dir}",
         "save_every_n_epochs": params["save_images_every_n"],
-        "stages": ["train", "test", "val"],
+        # "predict" is required for the mid-training evaluation viewer: eval.py runs
+        # trainer.predict, and ImageSaver only writes images when "predict" is a stage.
+        "stages": ["train", "val", "test", "predict"],
         "save_input": True,
     }
 
@@ -1048,6 +1180,16 @@ def build_full_config(params: dict) -> dict:
         "persistent_workers": True,
         "split_column": None,
         "columns": all_columns,
+        # DataframeDatamodule requires a transforms pipeline; mirror the maintained
+        # configs/data/im2im/*.yaml so generated configs actually load images.
+        "transforms": _build_data_transforms(params),
+        "_aux": {
+            "patch_shape": params["patch_shape"],
+            "_scales_dict": [
+                *[[t, [1]] for t in all_target_cols],
+                [params["source_col"], [1]],
+            ],
+        },
     }
 
     # ---- paths ----
@@ -1284,6 +1426,9 @@ def launch_evaluation(config_path: str, checkpoint_path: str, output_dir: str):
         Path(config_path).stem,
         f"checkpoint.ckpt_path={checkpoint_path}",
         f"paths.output_dir={eval_output}",
+        # Force trainer.predict (not test) so the ImageSaver "predict" stage fires and
+        # writes preview images regardless of the train config's test flag.
+        "test=False",
     ]
 
     process = subprocess.Popen(  # nosec: B603
@@ -1318,6 +1463,318 @@ def _find_prediction_images(output_dir: str) -> list:
         images.extend(eval_dir.rglob(ext))
 
     return sorted(images, key=lambda p: p.stat().st_mtime, reverse=True)[:20]
+
+
+def napari_available() -> bool:
+    """Whether napari is importable in the current environment."""
+    return importlib.util.find_spec("napari") is not None
+
+
+def launch_napari(image_path: str):
+    """Open an image in napari as a detached subprocess (3D/multichannel viewer).
+
+    Runs on the host serving Streamlit and requires a display. Returns the Popen handle, or None if
+    napari is unavailable.
+    """
+    if not napari_available():
+        return None
+    process = subprocess.Popen(  # nosec: B603
+        [sys.executable, "-m", "napari", str(image_path)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        cwd=str(PROJECT_ROOT),
+        preexec_fn=os.setsid if os.name != "nt" else None,
+    )
+    return process
+
+
+def _find_run_directories(search_roots: list) -> list:
+    """List candidate experiment output dirs (those with metrics.csv or checkpoints)."""
+    runs = set()
+    for root in search_roots:
+        root = Path(root)
+        if not root.exists():
+            continue
+        for marker in ("metrics.csv", "*.ckpt"):
+            for hit in root.rglob(marker):
+                # The "run" dir is the ancestor holding checkpoints/ or the logger dir.
+                for parent in hit.parents:
+                    if parent == root.parent:
+                        break
+                    if (parent / "checkpoints").exists() or (parent / "configs").exists():
+                        runs.add(parent)
+                        break
+                else:
+                    runs.add(hit.parent)
+
+    def _safe_mtime(p: str) -> float:
+        # A run dir can vanish between rglob discovery and sorting; don't crash the UI.
+        try:
+            return Path(p).stat().st_mtime
+        except OSError:
+            return 0.0
+
+    return sorted((str(r) for r in runs), key=_safe_mtime, reverse=True)
+
+
+def _tail_log_files(monitor_dir: str, n: int = 200) -> str:
+    """Return the tail of the most recent *.log file under monitor_dir, if any."""
+    candidates = list(Path(monitor_dir).rglob("*.log"))
+    if not candidates:
+        return ""
+    newest = max(candidates, key=lambda p: p.stat().st_mtime)
+    try:
+        with newest.open("r", errors="replace") as f:
+            lines = f.readlines()
+        return f"# {newest}\n" + "".join(lines[-n:])
+    except OSError:
+        return ""
+
+
+def _render_loss_monitor(monitor_dir: str, live: bool):
+    """Loss curves from CSVLogger metrics (falls back to in-session log parsing)."""
+    st.markdown("#### Live Loss Curves")
+    csv_metrics = _load_csv_metrics(monitor_dir)
+    has_csv_chart = False
+
+    if csv_metrics is not None and not csv_metrics.empty:
+        try:
+            import pandas as pd
+
+            loss_cols = [c for c in csv_metrics.columns if "loss" in c.lower()]
+            epoch_col = (
+                "epoch"
+                if "epoch" in csv_metrics.columns
+                else "step" if "step" in csv_metrics.columns else None
+            )
+
+            if loss_cols and epoch_col:
+                plot_df = csv_metrics[[epoch_col] + loss_cols].dropna(subset=loss_cols, how="all")
+                if not plot_df.empty:
+                    train_cols = [c for c in loss_cols if "train" in c.lower()]
+                    val_cols = [c for c in loss_cols if "val" in c.lower()]
+                    other_cols = [
+                        c for c in loss_cols if c not in train_cols and c not in val_cols
+                    ]
+
+                    if train_cols or val_cols:
+                        chart_col1, chart_col2 = st.columns(2)
+                        with chart_col1:
+                            if train_cols:
+                                train_df = plot_df[[epoch_col] + train_cols].dropna()
+                                if not train_df.empty:
+                                    st.markdown("**Training Loss**")
+                                    st.line_chart(train_df.set_index(epoch_col))
+                        with chart_col2:
+                            if val_cols:
+                                val_df = plot_df[[epoch_col] + val_cols].dropna()
+                                if not val_df.empty:
+                                    st.markdown("**Validation Loss**")
+                                    st.line_chart(val_df.set_index(epoch_col))
+
+                    if other_cols:
+                        other_df = plot_df[[epoch_col] + other_cols].dropna()
+                        if not other_df.empty:
+                            st.line_chart(other_df.set_index(epoch_col))
+
+                    last_row = csv_metrics.iloc[-1]
+                    metric_cols = st.columns(min(4, len(loss_cols)))
+                    for idx, col_name in enumerate(loss_cols[:4]):
+                        val = last_row.get(col_name)
+                        if pd.notna(val):
+                            with metric_cols[idx]:
+                                st.metric(col_name, f"{val:.6f}")
+
+                    has_csv_chart = True
+        except Exception as chart_err:  # noqa: BLE001
+            st.caption(f"Could not render CSV metrics chart: {chart_err}")
+
+    if not has_csv_chart and st.session_state.training_log:
+        parsed = _parse_loss_from_logs(st.session_state.training_log)
+        train_losses = parsed["train_loss"]
+        val_losses = parsed["val_loss"]
+        if train_losses or val_losses:
+            try:
+                import pandas as pd
+
+                chart_col1, chart_col2 = st.columns(2)
+                with chart_col1:
+                    if train_losses:
+                        tdf = pd.DataFrame(train_losses, columns=["epoch", "train/loss"])
+                        st.markdown("**Training Loss**")
+                        st.line_chart(tdf.set_index("epoch"))
+                        st.metric("Latest train/loss", f"{train_losses[-1][1]:.6f}")
+                with chart_col2:
+                    if val_losses:
+                        vdf = pd.DataFrame(val_losses, columns=["epoch", "val/loss"])
+                        st.markdown("**Validation Loss**")
+                        st.line_chart(vdf.set_index("epoch"))
+                        st.metric("Latest val/loss", f"{val_losses[-1][1]:.6f}")
+            except ImportError:
+                st.warning("Install pandas for loss charts: `pip install pandas`")
+        else:
+            st.info("No loss values detected yet. Charts will appear as training progresses.")
+    elif not has_csv_chart:
+        st.info("No loss data available yet. Start or attach a run and charts will appear here.")
+
+
+def _render_eval_checkpoint(monitor_dir: str, live: bool):
+    """Checkpoint review + mid-training prediction preview with optional napari."""
+    st.markdown("#### Mid-Training Evaluation")
+    st.caption(
+        "Run prediction using the current best or latest checkpoint while training "
+        "continues. View sample outputs to assess model quality."
+    )
+
+    best_ckpt = _find_best_checkpoint(monitor_dir)
+    if not best_ckpt:
+        st.info(
+            "No checkpoints found yet. Checkpoints appear after the first validation "
+            "epoch completes."
+        )
+        return
+
+    st.success(f"Checkpoint found: `{Path(best_ckpt).name}`")
+    st.text(f"Full path: {best_ckpt}")
+    ckpt_stat = Path(best_ckpt).stat()
+    ckpt_time = datetime.datetime.fromtimestamp(ckpt_stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+    st.markdown(
+        f"**Size:** {ckpt_stat.st_size / (1024 * 1024):.1f} MB  |  **Modified:** {ckpt_time}"
+    )
+
+    all_ckpts = list(Path(monitor_dir).rglob("*.ckpt"))
+    if len(all_ckpts) > 1:
+        eval_ckpt_choice = st.selectbox(
+            "Select checkpoint to evaluate",
+            [str(c) for c in sorted(all_ckpts, key=lambda p: p.stat().st_mtime, reverse=True)],
+            format_func=lambda x: f"{Path(x).name} ({datetime.datetime.fromtimestamp(Path(x).stat().st_mtime).strftime('%H:%M:%S')})",
+            key="eval_ckpt_select",
+        )
+    else:
+        eval_ckpt_choice = best_ckpt
+
+    config_candidates = list(Path(monitor_dir).rglob("train_gui.yaml"))
+    eval_config = str(config_candidates[0]) if config_candidates else ""
+    if not eval_config:
+        st.warning(
+            "No training config (train_gui.yaml) found under this run directory; "
+            "evaluation needs the config that was used to launch training."
+        )
+
+    eval_proc = st.session_state.get("eval_process")
+    eval_running = st.session_state.get("eval_running", False)
+    if eval_proc and eval_proc.poll() is not None and eval_running:
+        st.session_state.eval_running = False
+        if eval_proc.returncode == 0:
+            st.success("Evaluation completed!")
+        else:
+            st.error(f"Evaluation exited with code {eval_proc.returncode}")
+
+    col_e1, col_e2 = st.columns(2)
+    with col_e1:
+        if not eval_running:
+            if st.button("Run Evaluation", type="primary", key="run_eval_btn"):
+                if eval_config and eval_ckpt_choice:
+                    launch_evaluation(eval_config, eval_ckpt_choice, monitor_dir)
+                    st.toast("Evaluation launched!")
+                    st.rerun()
+                else:
+                    st.error("Missing config or checkpoint path.")
+        else:
+            st.warning("Evaluation running...")
+    with col_e2:
+        if eval_running and st.button("Stop Evaluation", key="stop_eval_btn"):
+            _kill_process_group(st.session_state.eval_process)
+            st.session_state.eval_running = False
+            st.rerun()
+
+    if st.session_state.eval_log:
+        with st.expander("Evaluation Log", expanded=False):
+            st.code("\n".join(st.session_state.eval_log[-100:]), language="log")
+
+    pred_images = _find_prediction_images(monitor_dir)
+    if pred_images:
+        st.divider()
+        st.markdown("#### Prediction Preview")
+        st.caption("Sample outputs from the evaluated checkpoint.")
+        napari_ok = napari_available()
+        n_cols = min(3, len(pred_images))
+        for row_start in range(0, min(9, len(pred_images)), n_cols):
+            cols = st.columns(n_cols)
+            for j in range(n_cols):
+                idx = row_start + j
+                if idx >= len(pred_images):
+                    continue
+                img_path = pred_images[idx]
+                with cols[j]:
+                    try:
+                        img_arr, err = _try_load_image_preview(str(img_path))
+                        if img_arr is not None:
+                            st.image(
+                                img_arr,
+                                caption=img_path.name,
+                                use_container_width=True,
+                                clamp=True,
+                            )
+                        else:
+                            st.text(f"{img_path.name}\n({err})")
+                    except (OSError, ValueError):
+                        st.text(f"{img_path.name}\n(load error)")
+                    if napari_ok:
+                        if st.button("Open in napari", key=f"napari_{idx}_{img_path.name}"):
+                            launch_napari(str(img_path))
+                            st.toast(f"Opening {img_path.name} in napari...")
+        if not napari_ok:
+            st.caption(
+                "Install napari (`pip install cyto-dl[gui]`) for an interactive 3D viewer. "
+                "napari opens on the host running this Streamlit app."
+            )
+
+
+def _render_raw_log(monitor_dir: str, live: bool):
+    """Raw training log: in-session subprocess output, or on-disk log for attached runs."""
+    st.markdown("#### Training Log")
+    if st.session_state.training_log:
+        st.code("\n".join(st.session_state.training_log[-200:]), language="log")
+    else:
+        disk_log = _tail_log_files(monitor_dir)
+        if disk_log:
+            st.code(disk_log, language="log")
+        else:
+            st.info("No in-session log; no *.log file found under this run directory.")
+
+
+def render_monitoring(monitor_dir: str, live: bool):
+    """Render the training monitor (loss / checkpoint review / log).
+
+    Works for both the live in-session run and an attached on-disk run directory. When ``live`` and
+    auto-refresh is enabled, the body reruns on an interval via ``st.fragment(run_every=...)``.
+    """
+    ctrl1, ctrl2 = st.columns([1, 2])
+    with ctrl1:
+        auto = st.checkbox("Auto-refresh", value=live, key="mon_autorefresh")
+    with ctrl2:
+        interval = st.number_input(
+            "Refresh interval (s)",
+            min_value=2,
+            max_value=120,
+            value=10,
+            key="mon_interval",
+            disabled=not auto,
+        )
+    run_every = interval if (auto and live) else None
+
+    @st.fragment(run_every=run_every)
+    def _body():
+        tab_chart, tab_eval, tab_log = st.tabs(["Loss Monitor", "Evaluate Checkpoint", "Raw Log"])
+        with tab_chart:
+            _render_loss_monitor(monitor_dir, live)
+        with tab_eval:
+            _render_eval_checkpoint(monitor_dir, live)
+        with tab_log:
+            _render_raw_log(monitor_dir, live)
+
+    _body()
 
 
 def launch_tensorrt_export(trt_params: dict):
@@ -1634,6 +2091,45 @@ def main():
             with pc2:
                 px = st.number_input("X", min_value=1, value=256)
             patch_shape = [py_, px]
+
+        st.divider()
+        with st.expander("Image reader settings (channel / Z / downsample)", expanded=False):
+            st.caption(
+                "Controls how images are read by MonaiBioReader, mirroring "
+                "configs/data/im2im/*.yaml. Defaults match the bundled example data."
+            )
+            rc1, rc2 = st.columns(2)
+            with rc1:
+                source_channel = st.number_input(
+                    "Source channel index (C)",
+                    min_value=0,
+                    value=6 if exp_type == "labelfree" else 5,
+                    help="Channel to read from the source image.",
+                )
+            with rc2:
+                target_channel = st.number_input(
+                    "Target channel index (C)",
+                    min_value=0,
+                    value=5 if exp_type == "labelfree" else 0,
+                    help="Channel to read from the target image.",
+                )
+            zc1, zc2 = st.columns(2)
+            with zc1:
+                z_slices = st.number_input(
+                    "Z slices (2D only)",
+                    min_value=1,
+                    value=38,
+                    help="Number of Z slices to read when spatial dimensions = 2.",
+                )
+            with zc2:
+                zoom = st.number_input(
+                    "Downsample (zoom factor)",
+                    min_value=0.01,
+                    max_value=1.0,
+                    value=0.25,
+                    step=0.05,
+                    help="Zoom applied on load (0.25 = quarter size, like the example configs; 1.0 = no resize).",
+                )
 
     # ------------------------------------------------------------------ #
     # TAB: Data Preview
@@ -2342,6 +2838,10 @@ def main():
             "batch_size": batch_size,
             "num_workers": num_workers,
             "patch_shape": patch_shape,
+            "source_channel": source_channel,
+            "target_channel": target_channel,
+            "z_slices": z_slices,
+            "zoom": zoom,
             "architecture": arch_key,
             "in_channels": in_channels,
             "dropout": dropout,
@@ -2415,282 +2915,56 @@ def main():
                         st.info("Training stopped.")
                         st.rerun()
 
-            if st.session_state.training_running or st.session_state.training_log:
-                st.divider()
+        # ------------------------------------------------------------------ #
+        # Training monitor: watch the live in-session run, or attach to any
+        # existing run directory on disk (prior session / external launch).
+        # ------------------------------------------------------------------ #
+        st.divider()
+        st.subheader("Training Monitor")
 
-                # Check if process is still alive
-                proc = st.session_state.training_process
-                if proc and proc.poll() is not None and st.session_state.training_running:
-                    st.session_state.training_running = False
-                    if proc.returncode == 0:
-                        st.success("Training completed successfully!")
-                    else:
-                        st.error(f"Training exited with code {proc.returncode}")
+        # Reconcile in-session process liveness.
+        proc = st.session_state.training_process
+        if proc and proc.poll() is not None and st.session_state.training_running:
+            st.session_state.training_running = False
+            if proc.returncode == 0:
+                st.success("Training completed successfully!")
+            else:
+                st.error(f"Training exited with code {proc.returncode}")
 
-                # ----- Sub-tabs for monitoring -----
-                mon_tab_chart, mon_tab_eval, mon_tab_log = st.tabs(
-                    ["Loss Monitor", "Evaluate Checkpoint", "Raw Log"]
+        has_session_run = bool(st.session_state.training_running or st.session_state.training_log)
+        source_options = (["Current session"] if has_session_run else []) + ["Existing run"]
+        monitor_source = st.radio(
+            "Monitor",
+            source_options,
+            horizontal=True,
+            help="Watch the run launched in this session, or attach to a run directory on disk.",
+        )
+
+        if monitor_source == "Current session":
+            render_monitoring(output_dir, live=st.session_state.training_running)
+        else:
+            search_roots = [log_dir, str(PROJECT_ROOT / "logs"), str(Path(output_dir).parent)]
+            run_dirs = _find_run_directories(search_roots)
+            col_a, col_b = st.columns([3, 1])
+            with col_a:
+                picked = st.selectbox(
+                    "Detected run directories",
+                    ["(enter path manually)"] + run_dirs,
+                    help="Directories containing metrics.csv or a checkpoints/ folder.",
                 )
-
-                # ----- Loss Monitor -----
-                with mon_tab_chart:
-                    st.markdown("#### Live Loss Curves")
-
-                    # Try CSV metrics first (most reliable)
-                    csv_metrics = _load_csv_metrics(output_dir)
-                    has_csv_chart = False
-
-                    if csv_metrics is not None and not csv_metrics.empty:
-                        try:
-                            import pandas as pd
-
-                            loss_cols = [c for c in csv_metrics.columns if "loss" in c.lower()]
-                            epoch_col = (
-                                "epoch"
-                                if "epoch" in csv_metrics.columns
-                                else "step" if "step" in csv_metrics.columns else None
-                            )
-
-                            if loss_cols and epoch_col:
-                                # Group by epoch and get mean (CSVLogger logs per-step)
-                                plot_df = csv_metrics[[epoch_col] + loss_cols].dropna(
-                                    subset=loss_cols, how="all"
-                                )
-
-                                if not plot_df.empty:
-                                    # Separate train and val losses for cleaner display
-                                    train_cols = [c for c in loss_cols if "train" in c.lower()]
-                                    val_cols = [c for c in loss_cols if "val" in c.lower()]
-                                    other_cols = [
-                                        c
-                                        for c in loss_cols
-                                        if c not in train_cols and c not in val_cols
-                                    ]
-
-                                    if train_cols or val_cols:
-                                        chart_col1, chart_col2 = st.columns(2)
-                                        with chart_col1:
-                                            if train_cols:
-                                                train_df = plot_df[
-                                                    [epoch_col] + train_cols
-                                                ].dropna()
-                                                if not train_df.empty:
-                                                    st.markdown("**Training Loss**")
-                                                    st.line_chart(train_df.set_index(epoch_col))
-                                        with chart_col2:
-                                            if val_cols:
-                                                val_df = plot_df[[epoch_col] + val_cols].dropna()
-                                                if not val_df.empty:
-                                                    st.markdown("**Validation Loss**")
-                                                    st.line_chart(val_df.set_index(epoch_col))
-
-                                    if other_cols:
-                                        other_df = plot_df[[epoch_col] + other_cols].dropna()
-                                        if not other_df.empty:
-                                            st.line_chart(other_df.set_index(epoch_col))
-
-                                    # Show current metrics
-                                    last_row = csv_metrics.iloc[-1]
-                                    metric_cols = st.columns(min(4, len(loss_cols)))
-                                    for idx, col_name in enumerate(loss_cols[:4]):
-                                        val = last_row.get(col_name)
-                                        if pd.notna(val):
-                                            with metric_cols[idx]:
-                                                st.metric(col_name, f"{val:.6f}")
-
-                                    has_csv_chart = True
-                        except Exception as chart_err:
-                            st.caption(f"Could not render CSV metrics chart: {chart_err}")
-
-                    # Fallback: parse from log lines
-                    if not has_csv_chart and st.session_state.training_log:
-                        parsed = _parse_loss_from_logs(st.session_state.training_log)
-                        train_losses = parsed["train_loss"]
-                        val_losses = parsed["val_loss"]
-
-                        if train_losses or val_losses:
-                            try:
-                                import pandas as pd
-
-                                chart_col1, chart_col2 = st.columns(2)
-                                with chart_col1:
-                                    if train_losses:
-                                        tdf = pd.DataFrame(
-                                            train_losses, columns=["epoch", "train/loss"]
-                                        )
-                                        st.markdown("**Training Loss**")
-                                        st.line_chart(tdf.set_index("epoch"))
-                                        st.metric(
-                                            "Latest train/loss", f"{train_losses[-1][1]:.6f}"
-                                        )
-                                with chart_col2:
-                                    if val_losses:
-                                        vdf = pd.DataFrame(
-                                            val_losses, columns=["epoch", "val/loss"]
-                                        )
-                                        st.markdown("**Validation Loss**")
-                                        st.line_chart(vdf.set_index("epoch"))
-                                        st.metric("Latest val/loss", f"{val_losses[-1][1]:.6f}")
-                            except ImportError:
-                                st.warning("Install pandas for loss charts: `pip install pandas`")
-                        else:
-                            st.info(
-                                "No loss values detected yet. Charts will appear as training progresses."
-                            )
-                    elif not has_csv_chart:
-                        st.info(
-                            "No loss data available yet. Start training and charts will appear here."
-                        )
-
-                    if st.session_state.training_running:
-                        if st.button("Refresh Charts", key="refresh_charts"):
-                            st.rerun()
-
-                # ----- Evaluate Checkpoint -----
-                with mon_tab_eval:
-                    st.markdown("#### Mid-Training Evaluation")
-                    st.caption(
-                        "Run prediction using the current best or latest checkpoint while "
-                        "training continues. View sample outputs to assess model quality."
-                    )
-
-                    # Find available checkpoints
-                    best_ckpt = _find_best_checkpoint(output_dir)
-
-                    if best_ckpt:
-                        st.success(f"Checkpoint found: `{Path(best_ckpt).name}`")
-                        st.text(f"Full path: {best_ckpt}")
-
-                        # Show checkpoint metadata
-                        ckpt_stat = Path(best_ckpt).stat()
-                        ckpt_size_mb = ckpt_stat.st_size / (1024 * 1024)
-                        ckpt_time = datetime.datetime.fromtimestamp(ckpt_stat.st_mtime).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                        st.markdown(
-                            f"**Size:** {ckpt_size_mb:.1f} MB  |  **Modified:** {ckpt_time}"
-                        )
-
-                        # Also list all available checkpoints
-                        all_ckpts = list(Path(output_dir).rglob("*.ckpt"))
-                        if len(all_ckpts) > 1:
-                            eval_ckpt_choice = st.selectbox(
-                                "Select checkpoint to evaluate",
-                                [
-                                    str(c)
-                                    for c in sorted(
-                                        all_ckpts, key=lambda p: p.stat().st_mtime, reverse=True
-                                    )
-                                ],
-                                format_func=lambda x: f"{Path(x).name} ({datetime.datetime.fromtimestamp(Path(x).stat().st_mtime).strftime('%H:%M:%S')})",
-                                key="eval_ckpt_select",
-                            )
-                        else:
-                            eval_ckpt_choice = best_ckpt
-
-                        # Config path for evaluation
-                        config_candidates = list(Path(output_dir).rglob("train_gui.yaml"))
-                        eval_config = str(config_candidates[0]) if config_candidates else ""
-
-                        if not eval_config:
-                            st.warning(
-                                "No training config found in output directory. Generate and launch training first."
-                            )
-
-                        # Launch evaluation
-                        eval_proc = st.session_state.get("eval_process")
-                        eval_running = st.session_state.get("eval_running", False)
-
-                        # Check if eval finished
-                        if eval_proc and eval_proc.poll() is not None and eval_running:
-                            st.session_state.eval_running = False
-                            if eval_proc.returncode == 0:
-                                st.success("Evaluation completed!")
-                            else:
-                                st.error(f"Evaluation exited with code {eval_proc.returncode}")
-
-                        col_e1, col_e2 = st.columns(2)
-                        with col_e1:
-                            if not eval_running:
-                                if st.button("Run Evaluation", type="primary", key="run_eval_btn"):
-                                    if eval_config and eval_ckpt_choice:
-                                        launch_evaluation(
-                                            eval_config, eval_ckpt_choice, output_dir
-                                        )
-                                        st.toast("Evaluation launched!")
-                                        st.rerun()
-                                    else:
-                                        st.error("Missing config or checkpoint path.")
-                            else:
-                                st.warning("Evaluation running...")
-                        with col_e2:
-                            if eval_running:
-                                if st.button("Stop Evaluation", key="stop_eval_btn"):
-                                    _kill_process_group(st.session_state.eval_process)
-                                    st.session_state.eval_running = False
-                                    st.rerun()
-
-                        # Show evaluation log
-                        if st.session_state.eval_log:
-                            with st.expander("Evaluation Log", expanded=False):
-                                st.code(
-                                    "\n".join(st.session_state.eval_log[-100:]), language="log"
-                                )
-
-                        # Show prediction images
-                        pred_images = _find_prediction_images(output_dir)
-                        if pred_images:
-                            st.divider()
-                            st.markdown("#### Prediction Preview")
-                            st.caption("Sample outputs from the evaluated checkpoint.")
-
-                            # Display in a grid
-                            n_cols = min(3, len(pred_images))
-                            for row_start in range(0, min(9, len(pred_images)), n_cols):
-                                cols = st.columns(n_cols)
-                                for j in range(n_cols):
-                                    idx = row_start + j
-                                    if idx < len(pred_images):
-                                        img_path = pred_images[idx]
-                                        with cols[j]:
-                                            # Try to load and display the image
-                                            try:
-                                                img_arr, err = _try_load_image_preview(
-                                                    str(img_path)
-                                                )
-                                                if img_arr is not None:
-                                                    st.image(
-                                                        img_arr,
-                                                        caption=img_path.name,
-                                                        use_container_width=True,
-                                                        clamp=True,
-                                                    )
-                                                else:
-                                                    st.text(f"{img_path.name}\n({err})")
-                                            except (OSError, ValueError):
-                                                st.text(f"{img_path.name}\n(load error)")
-
-                        if eval_running:
-                            if st.button("Refresh Evaluation", key="refresh_eval"):
-                                st.rerun()
-                    else:
-                        st.info(
-                            "No checkpoints found yet. Checkpoints appear after the first "
-                            "validation epoch completes."
-                        )
-
-                # ----- Raw Log -----
-                with mon_tab_log:
-                    st.markdown("#### Training Log")
-                    if st.session_state.training_log:
-                        log_text = "\n".join(st.session_state.training_log[-200:])
-                        st.code(log_text, language="log")
-                    else:
-                        st.info("No log output yet.")
-
-                    if st.session_state.training_running:
-                        if st.button("Refresh Log", key="refresh_raw_log"):
-                            st.rerun()
+            with col_b:
+                st.caption(f"{len(run_dirs)} run(s) found")
+            manual = st.text_input(
+                "Run directory",
+                value="" if picked == "(enter path manually)" else picked,
+            )
+            attach_dir = manual.strip()
+            if attach_dir and Path(attach_dir).exists():
+                render_monitoring(attach_dir, live=False)
+            elif attach_dir:
+                st.error(f"Directory does not exist: {attach_dir}")
+            else:
+                st.info("Select or enter a run directory to monitor.")
 
     # ------------------------------------------------------------------ #
     # TAB: TensorRT Export
